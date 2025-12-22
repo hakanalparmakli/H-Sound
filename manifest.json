@@ -1,0 +1,75 @@
+{
+  "name": "H-Sound - Sosyal Müzik Uygulaması",
+  "short_name": "H-Sound",
+  "description": "Arkadaşlarınla müzik dinle, paylaş ve keşfet. YouTube entegrasyonu ile milyonlarca şarkı.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#3498db",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "tr",
+  "categories": ["music", "entertainment", "social"],
+  "icons": [
+    {
+      "src": "h-sound-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "h-sound-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "h-sound-logo.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "h-sound-logo.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "h-sound-logo.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "shortcuts": [
+    {
+      "name": "Müzik Ara",
+      "short_name": "Ara",
+      "description": "Hızlı müzik arama",
+      "url": "/?action=search",
+      "icons": [
+        {
+          "src": "h-sound-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Arkadaşlar",
+      "short_name": "Arkadaşlar", 
+      "description": "Arkadaş listesi",
+      "url": "/?action=friends",
+      "icons": [
+        {
+          "src": "h-sound-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
