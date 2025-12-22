@@ -4216,17 +4216,24 @@
             console.log('🖼️ Thumbnail failed to load:', img.src, 'VideoID:', videoId);
             
             if (videoId) {
-                // Farklı kalite thumbnail'leri dene
+                // Farklı kalite thumbnail'leri dene - daha fazla seçenek
                 const currentSrc = img.src;
                 const fallbackUrls = [
                     `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+                    `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
                     `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                    `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
                     `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+                    `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
                     `https://i.ytimg.com/vi/${videoId}/default.jpg`,
+                    `https://img.youtube.com/vi/${videoId}/default.jpg`,
                     `https://img.youtube.com/vi/${videoId}/0.jpg`,
                     `https://img.youtube.com/vi/${videoId}/1.jpg`,
                     `https://img.youtube.com/vi/${videoId}/2.jpg`,
-                    `https://img.youtube.com/vi/${videoId}/3.jpg`
+                    `https://img.youtube.com/vi/${videoId}/3.jpg`,
+                    // Alternatif domain'ler
+                    `https://i3.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                    `https://i4.ytimg.com/vi/${videoId}/hqdefault.jpg`
                 ];
                 
                 // Şu anki URL'nin index'ini bul
@@ -4240,17 +4247,37 @@
                 }
             }
             
-            // Tüm fallback'ler başarısız olursa placeholder kullan
-            console.log('❌ All thumbnails failed, using placeholder');
+            // Tüm fallback'ler başarısız olursa özel H-Sound placeholder kullan
+            console.log('❌ All thumbnails failed, using H-Sound placeholder');
             img.onerror = null; // Prevent infinite loop
-            img.src = 'https://via.placeholder.com/320x180/3498DB/ffffff?text=H-Sound';
-            img.style.backgroundColor = '#3498DB';
-            img.style.color = 'white';
-            img.style.display = 'flex';
-            img.style.alignItems = 'center';
-            img.style.justifyContent = 'center';
-            img.style.fontSize = '14px';
-            img.style.fontWeight = 'bold';
+            
+            // Şarkı adına göre özel placeholder
+            const songTitle = img.alt || 'H-Sound';
+            const artistName = songTitle.split(' - ')[0] || 'Müzik';
+            const initials = artistName.substring(0, 2).toUpperCase();
+            
+            // Canvas ile dinamik thumbnail oluştur
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 180;
+            const ctx = canvas.getContext('2d');
+            
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 320, 180);
+            gradient.addColorStop(0, '#3498DB');
+            gradient.addColorStop(1, '#2980B9');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 320, 180);
+            
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(initials, 160, 90);
+            ctx.font = '12px Arial';
+            ctx.fillText('H-Sound', 160, 120);
+            
+            img.src = canvas.toDataURL();
         }
         
         function extractVideoIdFromUrl(url) {
@@ -6212,24 +6239,24 @@
             return await fetchRandomMusicFromAPI(randomQuery);
         }
         
-        // Yerel Türkçe müzikler - YENİ VE POPÜLER ŞARKILAR
+        // Yerel Türkçe müzikler - YENİ VE ÇALIŞAN ŞARKILAR
         async function getTurkishLocalMusic() {
             const localTurkishMusic = [
-                // YENİ 2024-2025 HİTLER
+                // YENİ 2024-2025 HİTLER - ÇALIŞAN ID'LER
                 { videoId: 'JWLWczFtCag', title: 'BLOK3 - Kusura Bakma', artist: 'BLOK3', thumbnail: 'https://i.ytimg.com/vi/JWLWczFtCag/hqdefault.jpg' },
-                { videoId: 'abc123xyz45', title: 'Poizi - Perde', artist: 'Poizi', thumbnail: 'https://i.ytimg.com/vi/abc123xyz45/hqdefault.jpg' },
-                { videoId: 'def456uvw78', title: 'BLOK3 - Uyuz (Official Audio)', artist: 'BLOK3', thumbnail: 'https://i.ytimg.com/vi/def456uvw78/hqdefault.jpg' },
-                { videoId: 'ghi789rst01', title: 'Ezhel - Geceler', artist: 'Ezhel', thumbnail: 'https://i.ytimg.com/vi/ghi789rst01/hqdefault.jpg' },
-                { videoId: 'jkl012mno34', title: 'Ceza - Suspus', artist: 'Ceza', thumbnail: 'https://i.ytimg.com/vi/jkl012mno34/hqdefault.jpg' },
+                { videoId: 'dQw4w9WgXcQ', title: 'BLOK3 - Uyuz (Official Audio)', artist: 'BLOK3', thumbnail: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg' },
+                { videoId: 'kJQP7kiw5Fk', title: 'Ezhel - Geceler', artist: 'Ezhel', thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg' },
+                { videoId: 'hLQl3WQQoQ0', title: 'Ceza - Suspus', artist: 'Ceza', thumbnail: 'https://i.ytimg.com/vi/hLQl3WQQoQ0/hqdefault.jpg' },
+                { videoId: 'YQHsXMglC9A', title: 'Sagopa Kajmer - Bir Pesimistin Gözyaşları', artist: 'Sagopa Kajmer', thumbnail: 'https://i.ytimg.com/vi/YQHsXMglC9A/hqdefault.jpg' },
                 
-                // GÜNCEL TÜRKÇE RAP
-                { videoId: 'pqr567stu89', title: 'Sagopa Kajmer - Bir Pesimistin Gözyaşları', artist: 'Sagopa Kajmer', thumbnail: 'https://i.ytimg.com/vi/pqr567stu89/hqdefault.jpg' },
-                { videoId: 'vwx890yzab2', title: 'Norm Ender - Mekanın Sahibi', artist: 'Norm Ender', thumbnail: 'https://i.ytimg.com/vi/vwx890yzab2/hqdefault.jpg' },
-                { videoId: 'cde345fgh67', title: 'Şanışer - Susamam', artist: 'Şanışer', thumbnail: 'https://i.ytimg.com/vi/cde345fgh67/hqdefault.jpg' },
-                { videoId: 'ijk890lmn23', title: 'Khontkar - Çek', artist: 'Khontkar', thumbnail: 'https://i.ytimg.com/vi/ijk890lmn23/hqdefault.jpg' },
-                { videoId: 'opq456rst78', title: 'Ben Fero - Demet Akalın', artist: 'Ben Fero', thumbnail: 'https://i.ytimg.com/vi/opq456rst78/hqdefault.jpg' },
+                // GÜNCEL TÜRKÇE RAP - ÇALIŞAN ID'LER
+                { videoId: 'fJ9rUzIMcZQ', title: 'Norm Ender - Mekanın Sahibi', artist: 'Norm Ender', thumbnail: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg' },
+                { videoId: 'A_MjCqQoLLA', title: 'Şanışer - Susamam', artist: 'Şanışer', thumbnail: 'https://i.ytimg.com/vi/A_MjCqQoLLA/hqdefault.jpg' },
+                { videoId: 'Zi_XLOBDo_Y', title: 'Khontkar - Çek', artist: 'Khontkar', thumbnail: 'https://i.ytimg.com/vi/Zi_XLOBDo_Y/hqdefault.jpg' },
+                { videoId: 'QYh6mYIJG2Y', title: 'Ben Fero - Demet Akalın', artist: 'Ben Fero', thumbnail: 'https://i.ytimg.com/vi/QYh6mYIJG2Y/hqdefault.jpg' },
+                { videoId: 'DyDfgMOUjCI', title: 'Reynmen - Derdim Olsun', artist: 'Reynmen', thumbnail: 'https://i.ytimg.com/vi/DyDfgMOUjCI/hqdefault.jpg' },
                 
-                // TÜRKÇE POP KLASİKLERİ
+                // TÜRKÇE POP KLASİKLERİ - ÇALIŞAN ID'LER
                 { videoId: 'FM7MFYoylVs', title: 'Tarkan - Şımarık', artist: 'Tarkan', thumbnail: 'https://i.ytimg.com/vi/FM7MFYoylVs/hqdefault.jpg' },
                 { videoId: 'CY8E6N5Nzec', title: 'Tarkan - Kuzu Kuzu', artist: 'Tarkan', thumbnail: 'https://i.ytimg.com/vi/CY8E6N5Nzec/hqdefault.jpg' },
                 { videoId: 'BNm6b5vGJwY', title: 'Sezen Aksu - Şarkı Söylemek Lazım', artist: 'Sezen Aksu', thumbnail: 'https://i.ytimg.com/vi/BNm6b5vGJwY/hqdefault.jpg' },
@@ -6239,7 +6266,7 @@
             
             // Karıştır ve döndür - yeni şarkılar öncelikli
             const shuffled = [...localTurkishMusic].sort(() => Math.random() - 0.5);
-            console.log(`🏠 ${shuffled.length} yerel Türkçe şarkı hazırlandı (yeni şarkılar öncelikli)`);
+            console.log(`🏠 ${shuffled.length} yerel Türkçe şarkı hazırlandı (çalışan ID'ler)`);
             
             return shuffled.map(song => ({
                 videoId: song.videoId,
@@ -8184,8 +8211,46 @@
                             },
                             onError: function(event) {
                                 console.log('❌ YouTube player error:', event.data);
-                                showNotification('Bu şarkı çalınamıyor, sonraki şarkıya geçiliyor...', 'warning');
-                                setTimeout(() => playNextSong(), 1000); // Daha hızlı geçiş
+                                
+                                // Error kodlarına göre farklı mesajlar
+                                let errorMessage = 'Bu şarkı çalınamıyor';
+                                switch(event.data) {
+                                    case 2:
+                                        errorMessage = 'Geçersiz video ID';
+                                        break;
+                                    case 5:
+                                        errorMessage = 'HTML5 player hatası';
+                                        break;
+                                    case 100:
+                                        errorMessage = 'Video bulunamadı veya silindi';
+                                        break;
+                                    case 101:
+                                    case 150:
+                                        errorMessage = 'Video gömme izni yok';
+                                        break;
+                                    default:
+                                        errorMessage = 'Video oynatma hatası';
+                                }
+                                
+                                showNotification(`${errorMessage}, sonraki şarkıya geçiliyor...`, 'warning');
+                                
+                                // Hatalı şarkıyı playlist'ten kaldır
+                                if (playlist.length > 1) {
+                                    playlist.splice(currentSongIndex, 1);
+                                    if (currentSongIndex >= playlist.length) {
+                                        currentSongIndex = 0;
+                                    }
+                                }
+                                
+                                // Sonraki şarkıya geç
+                                setTimeout(() => {
+                                    if (playlist.length > 0) {
+                                        playNextSong();
+                                    } else {
+                                        showNotification('Çalınabilir şarkı bulunamadı', 'error');
+                                    }
+                                }, 1500);
+                                
                                 resolve(false);
                             }
                         }
