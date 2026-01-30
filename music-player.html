@@ -1,0 +1,3788 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>H-Sound Müzik Çalar</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #3498DB; /* Vibrant Blue */
+            --primary-hover-color: #5DADE2;
+            --background-color: #1A1A1A;
+            --sidebar-background-color: #0D0D0D;
+            --content-background-color: #1A1A1A;
+            --text-color: #ffffff;
+            --secondary-text-color: #A9A9A9;
+            --border-color: #2C2C2C;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+
+
+        #app-container {
+            display: flex;
+            height: 100vh;
+            padding-bottom: 80px; /* Player footer için boşluk */
+            box-sizing: border-box;
+        }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            width: 230px;
+            background-color: var(--sidebar-background-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease-in-out;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        #sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        #sidebar a {
+            color: var(--secondary-text-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 6px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        #sidebar a:hover,
+        #sidebar a.active {
+            background-color: #1C1C1C;
+            color: var(--text-color);
+        }
+
+        #sidebar a i {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+
+        .brand {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        
+        /* YAPIMCI BİLGİSİ STİLİ (Sidebar ve Ayarlar için ortak) */
+        .developer-info {
+            padding: 20px 0;
+            margin-top: auto;
+            text-align: center;
+            color: var(--secondary-text-color);
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-top: 1px solid #2C2C2C;
+        }
+
+        .developer-info i {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        /* --------------------------- */
+
+        /* --- Main Content --- */
+        #main-content {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background-color: var(--content-background-color);
+        }
+
+        .menu-toggle-btn {
+            display: none; 
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            position: fixed; 
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+        }
+
+        /* --- Search Container --- */
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #search-bar {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #2C2C2C;
+            color: var(--text-color);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #search-bar::placeholder {
+            color: var(--secondary-text-color);
+        }
+
+        #search-bar:focus {
+            border-color: var(--primary-color);
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .search-btn:hover {
+            background-color: var(--primary-hover-color);
+        }
+
+        /* --- Content Area & Results --- */
+        .content-area {
+            min-height: 500px;
+        }
+
+        .content-header {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        /* ŞARKI KARTI STİLİ */
+        .result-item {
+            background-color: #1C1C1C;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+            position: relative;
+        }
+
+        .result-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        .result-item-play-area {
+            cursor: pointer;
+        }
+
+        .result-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+        }
+
+        .item-title {
+            padding: 10px 40px 10px 10px; /* Sağa butona yer açtık */
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            height: 44px; 
+            line-height: 1.5;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        /* ÇALMA LİSTESİNE EKLE BUTONU */
+        .add-to-playlist-btn {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            background: none;
+            border: none;
+            color: var(--secondary-text-color);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: color 0.2s, background-color 0.2s;
+            z-index: 5;
+        }
+        
+        .add-to-playlist-btn:hover {
+            color: var(--primary-color);
+            background-color: #333;
+        }
+        /* --------------------------- */
+        
+        /* ÇALMA LİSTELERİ KUTULARI */
+        .playlist-card {
+            background-color: #1C1C1C;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 150px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .playlist-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .playlist-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        
+        .playlist-stats {
+            font-size: 13px;
+            color: var(--secondary-text-color);
+        }
+        
+        .playlist-controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .playlist-controls button {
+            background: none;
+            border: none;
+            color: var(--secondary-text-color);
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .playlist-controls button:hover {
+            color: var(--primary-color);
+        }
+        
+        .create-playlist-btn {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .create-playlist-btn:hover {
+            background-color: var(--primary-hover-color);
+        }
+        
+        /* ÇALMA LİSTESİ LOGO STİLİ */
+        .playlist-header-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1C1C1C 0%, #2C2C2C 100%);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .playlist-header-logo i {
+            font-size: 48px;
+            color: var(--primary-color);
+        }
+        
+        .playlist-header-logo-text h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        
+        .playlist-header-logo-text p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: var(--secondary-text-color);
+        }
+        
+        /* ŞARKI LİSTESİ GÖRÜNÜMÜ */
+        .song-list-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #1C1C1C;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            position: relative;
+            cursor: move;
+        }
+        
+        .song-list-item:hover {
+            background-color: #2C2C2C;
+        }
+        
+        .song-list-item.dragging {
+            opacity: 0.5;
+            background-color: var(--primary-color);
+        }
+        
+        .song-list-item.drag-over {
+            border-top: 3px solid var(--primary-color);
+        }
+        
+        .song-list-item .drag-handle {
+            margin-right: 10px;
+            color: var(--secondary-text-color);
+            cursor: grab;
+            font-size: 18px;
+        }
+        
+        .song-list-item .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .song-list-item .song-thumbnail {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            border-radius: 4px;
+        }
+        
+        .song-list-item-info {
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        
+        .song-list-item-title {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .song-list-item-artist {
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+
+        .song-list-item .playlist-controls {
+            margin-top: 0;
+            margin-left: 15px;
+        }
+        
+        .song-list-item .play-song-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-text-color);
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+            margin-right: 10px;
+            padding: 8px;
+            z-index: 10;
+            position: relative;
+        }
+
+        .song-list-item .play-song-btn:hover {
+            color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 50%;
+        }
+        
+        .song-list-item .play-song-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .song-list-item .delete-song-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-text-color);
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 8px;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .song-list-item .delete-song-btn:hover {
+            color: #E74C3C;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 50%;
+        }
+        
+        .song-list-item .delete-song-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* MODAL (Çalma Listesine Ekleme Menüsü) */
+        .playlist-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1C1C1C;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            width: 300px;
+        }
+        
+        .playlist-modal h3 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .playlist-modal-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0 0 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .playlist-modal-list li {
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .playlist-modal-list li:hover {
+            background-color: #2C2C2C;
+            color: var(--primary-color);
+        }
+        
+        /* --- Loading & Error Messages --- */
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 50px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background-color: #331f1f;
+            border: 1px solid #722f2f;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .error-message h2 {
+            color: #E74C3C;
+            margin-top: 0;
+        }
+
+        .error-detail {
+            color: #FADBD8;
+            background-color: #4A2323;
+            padding: 10px;
+            border-radius: 4px;
+            word-wrap: break-word;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+        
+        .no-content-message {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 16px;
+            color: var(--secondary-text-color);
+        }
+
+        /* --- Player Footer --- */
+        .player-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background-color: #111111;
+            border-top: 1px solid #2C2C2C;
+            z-index: 1000;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .player-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .song-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            max-width: 30%;
+        }
+
+        .song-thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        .text-info {
+            overflow: hidden;
+        }
+
+        .song-title {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .song-artist {
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+
+        .player-controls {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .control-btn:hover {
+            color: var(--primary-color);
+            background-color: #2C2C2C;
+        }
+        
+        /* OYNATMA MODU STİLLERİ */
+        .player-controls .control-btn.active {
+            color: var(--primary-color);
+            background-color: #2C2C2C;
+        }
+
+        /* Karışık Çalma Modu */
+        #mode-btn[data-play-mode="shuffle"] {
+            color: var(--primary-color);
+        }
+
+        /* Tekrar Modu (Tüm Liste) */
+        #mode-btn[data-play-mode="repeat-all"] {
+            color: var(--primary-color);
+        }
+
+        /* Tek Şarkı Tekrar Modu */
+        #mode-btn[data-play-mode="repeat-one"] {
+            color: #E67E22; /* Turuncu */
+        }
+        /* --------------------- */
+
+
+        #play-pause-btn {
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+        
+        .progress-container {
+            flex: 1;
+            max-width: 30%;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            gap: 10px;
+        }
+        
+        /* Mobilde progress-container'ı gizle */
+        @media (max-width: 768px) {
+            .progress-container {
+                display: none !important;
+            }
+        }
+        
+        .progress-time {
+            font-size: 12px;
+            color: var(--secondary-text-color);
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .progress-bar-bg {
+            flex-grow: 1;
+            height: 4px;
+            background-color: #535353;
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-bar-fg {
+            height: 100%;
+            width: 0%; 
+            background-color: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        /* --- Utility & Responsive classes --- */
+        .hidden {
+            display: none !important;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1500;
+        }
+
+        /* --- Video Modal Styles --- */
+        .modal {
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: transparent; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 960px;
+            aspect-ratio: 16 / 9;
+            padding: 0;
+            box-sizing: border-box;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: black;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        #modal-player {
+            width: 100%;
+            height: 100%;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--text-color);
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            z-index: 2010;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+        
+        .modal-close-btn:hover {
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        .modal-controls {
+            display: none; 
+            justify-content: center;
+            gap: 20px;
+            padding: 10px 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .modal-controls button {
+             color: var(--text-color);
+             background: none;
+             border: none;
+             font-size: 24px;
+             cursor: pointer;
+        }
+        
+        .modal-controls button:hover {
+            color: var(--primary-color);
+        }
+        
+        /* --- Settings Styles --- */
+        .settings-container {
+            padding: 20px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #1C1C1C;
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .setting-control {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: #2C2C2C;
+            color: var(--text-color);
+        }
+        
+        #logout-btn {
+            transition: all 0.3s;
+        }
+        
+        #logout-btn:hover {
+            background-color: #C0392B !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+        }
+        
+        #logout-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Ayarlar sayfasındaki Yapımcı Bilgisi */
+        .setting-developer-info {
+            background-color: #1C1C1C;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .setting-developer-info .developer-info {
+            padding: 0;
+            margin-top: 0;
+            border: none;
+            font-size: 14px;
+        }
+        
+        /* --- RESPONSIVE MOBILE STYLES --- */
+        @media (max-width: 768px) {
+            #app-container {
+                padding-bottom: 90px;
+            }
+
+            #sidebar {
+                position: fixed;
+                height: 100%;
+                z-index: 1600;
+                transform: translateX(-100%);
+                width: 250px;
+            }
+            
+            #sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .menu-toggle-btn {
+                display: block;
+                top: 15px;
+                left: 15px;
+                background-color: rgba(0, 0, 0, 0.5);
+                padding: 5px 10px;
+                border-radius: 4px;
+                z-index: 1001;
+            }
+
+            #main-content {
+                padding: 60px 15px 15px 15px; 
+                width: 100%;
+            }
+
+            .player-footer {
+                height: 80px;
+            }
+            
+            .player-content {
+                flex-wrap: nowrap;
+                padding: 15px;
+                align-items: center;
+                justify-content: space-between;
+                gap: 15px;
+            }
+            
+            .song-info {
+                margin-top: 0;
+                max-width: 45%;
+                flex: 0 0 45%;
+                gap: 10px;
+                min-width: 0;
+            }
+            
+            .song-thumbnail {
+                width: 55px;
+                height: 55px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+            }
+            
+            .song-title {
+                font-size: 12px;
+            }
+            
+            .song-artist {
+                font-size: 11px;
+            }
+            
+            .player-controls {
+                margin-top: 0;
+                flex: 0 0 auto;
+                justify-content: flex-end;
+                gap: 8px;
+                display: flex !important;
+            }
+            
+            .control-btn {
+                font-size: 18px;
+                padding: 8px;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            #play-pause-btn {
+                font-size: 22px;
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+            }
+            
+            .item-title {
+                font-size: 13px;
+                padding: 8px 35px 8px 8px;
+            }
+            
+            .modal-controls {
+                display: flex; 
+            }
+            
+
+            
+            .login-container {
+                padding: 30px 20px;
+                margin: 0 15px;
+            }
+            
+            .content-header {
+                font-size: 20px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            #refresh-music-btn {
+                width: 100%;
+                margin-top: 5px;
+            }
+            
+            .search-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-btn {
+                width: 100%;
+            }
+            
+            .playlist-card {
+                height: auto;
+                min-height: 120px;
+            }
+            
+            .playlist-title {
+                font-size: 16px;
+            }
+            
+            .song-list-item {
+                padding: 8px;
+            }
+            
+            .song-list-item .song-thumbnail {
+                width: 35px;
+                height: 35px;
+                margin-right: 10px;
+            }
+            
+            .song-list-item-title {
+                font-size: 13px;
+            }
+            
+            .song-list-item-artist {
+                font-size: 11px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-width: 100%;
+            }
+            
+            .setting-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .setting-control {
+                width: 100%;
+            }
+        }
+        
+        /* Çok küçük ekranlar için */
+        @media (max-width: 480px) {
+            .results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            
+            #app-container {
+                padding-bottom: 90px;
+            }
+            
+            .player-footer {
+                height: 75px;
+            }
+            
+            .player-content {
+                padding: 8px 12px;
+                align-items: center;
+            }
+            
+            .song-info {
+                max-width: 45%;
+                flex: 0 0 45%;
+            }
+            
+            .song-thumbnail {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .song-title {
+                font-size: 11px;
+            }
+            
+            .song-artist {
+                font-size: 10px;
+            }
+            
+            .player-controls {
+                flex: 0 0 auto;
+                gap: 8px;
+                justify-content: flex-start;
+                margin-top: -15px;
+                padding-left: 10px;
+            }
+            
+            .control-btn {
+                font-size: 16px;
+                padding: 0;
+                min-width: 38px;
+                min-height: 38px;
+                background-color: transparent;
+                border-radius: 50%;
+                color: rgba(255, 255, 255, 0.7);
+                transition: all 0.2s ease;
+            }
+            
+            .control-btn:active {
+                transform: scale(0.95);
+                color: var(--primary-color);
+            }
+            
+            #play-pause-btn {
+                font-size: 24px;
+                min-width: 52px;
+                min-height: 52px;
+                background-color: var(--primary-color);
+                color: white;
+                border-radius: 50%;
+                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+            }
+            
+            #play-pause-btn:active {
+                transform: scale(0.95);
+                box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+            }
+            
+            #mode-btn {
+                display: none;
+            }
+            
+            .brand {
+                font-size: 24px;
+            }
+            
+            .login-title {
+                font-size: 28px;
+            }
+            
+            .playlist-header-logo {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .playlist-header-logo i {
+                font-size: 36px;
+            }
+            
+            .playlist-header-logo-text h1 {
+                font-size: 24px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <button id="menu-toggle-btn" class="menu-toggle-btn"><i class="fas fa-bars"></i></button>
+
+    <div id="app-container">
+        
+        <nav id="sidebar">
+            <div class="brand">H-Sound</div>
+            <ul>
+                <li><a href="#" id="home-link" class="active"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+                <li><a href="#" id="search-link"><i class="fas fa-search"></i> Ara</a></li>
+                <li><a href="#" id="playlists-link"><i class="fas fa-compact-disc"></i> Çalma Listeleri</a></li> 
+                <li><a href="#" id="recently-played-link"><i class="fas fa-history"></i> Son Dinlenenler</a></li>
+                <li><a href="#" id="settings-link"><i class="fas fa-cog"></i> Ayarlar</a></li>
+                <li id="admin-menu-item" style="display: none;">
+                    <a href="#" id="admin-link" style="background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); border-radius: 8px; margin-top: 10px;">
+                        <i class="fas fa-shield-alt"></i> Admin Panel
+                    </a>
+                </li>
+                <li id="superadmin-menu-item" style="display: none;">
+                    <a href="#" id="superadmin-link" style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); border-radius: 8px; margin-top: 10px; box-shadow: 0 0 15px rgba(231, 76, 60, 0.4);">
+                        <i class="fas fa-crown"></i>✨ Süper Admin Panel
+                    </a>
+                </li>
+            </ul>
+            <div class="developer-info">
+                <i class="fas fa-certificate"></i>
+                <span id="developer-name">Yapımcı: Hakan Yusuf Alparmaklı</span>
+            </div>
+        </nav>
+
+        <main id="main-content">
+            
+            <div id="search-container" class="search-container hidden">
+                <input type="text" id="search-bar" placeholder="Ne dinlemek istersin?" lang="tr" autocomplete="off" autocorrect="off" spellcheck="false">
+                <button id="search-btn" class="search-btn">Ara</button>
+            </div>
+            
+            <div id="content-area" class="content-area">
+                <div class="loading-spinner"></div>
+            </div>
+
+        </main>
+        
+    </div>
+    
+    <footer id="player-footer" class="player-footer hidden">
+        <div class="player-content">
+            <div class="song-info">
+                <img id="song-thumbnail" class="song-thumbnail" src="https://placehold.co/50x50/3498DB/ffffff?text=H" alt="Song Thumbnail">
+                <div class="text-info">
+                    <div id="song-title" class="song-title">Şarkı Başlığı</div>
+                    <div id="song-artist" class="song-artist">Sanatçı</div>
+                </div>
+            </div>
+            
+            <div class="player-controls">
+                <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
+                <button id="play-pause-btn" class="control-btn"><i class="fas fa-play"></i></button>
+                <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+                <button id="mode-btn" class="control-btn" title="Sıralı Çal" data-play-mode="normal"><i class="fas fa-list-ul"></i></button>
+            </div>
+            
+            <div class="progress-container">
+                <span id="current-time" class="progress-time">0:00</span>
+                <div id="progress-bar" class="progress-bar-bg">
+                    <div id="progress" class="progress-bar-fg"></div>
+                </div>
+                <span id="duration-time" class="progress-time">0:00</span>
+            </div>
+            
+            <div class="hidden">
+                 <div id="player-iframe"></div>
+            </div>
+        </div>
+    </footer>
+    
+    <div id="overlay" class="overlay hidden"></div>
+    <div id="video-modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+            <div id="modal-player">
+                </div>
+            <div class="modal-controls">
+                <button id="modal-prev-btn"><i class="fas fa-backward"></i></button>
+                <button id="modal-play-pause-btn"><i class="fas fa-play"></i></button>
+                <button id="modal-next-btn"><i class="fas fa-forward"></i></button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="add-to-playlist-modal" class="playlist-modal hidden">
+        <h3>Çalma Listesine Ekle</h3>
+        <ul id="playlist-modal-list" class="playlist-modal-list">
+            </ul>
+    </div>
+
+    <!-- Cordova Script (APK için) -->
+    <script src="cordova.js"></script>
+    
+    <!-- Cordova Müzik Kontrolü -->
+    <script src="cordova-music-controls.js"></script>
+    
+    <!-- Firebase SDK (Compat version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- Firebase Initialization (Global scope) -->
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE",
+            authDomain: "h-sound-b2391.firebaseapp.com",
+            projectId: "h-sound-b2391",
+            storageBucket: "h-sound-b2391.firebasestorage.app",
+            messagingSenderId: "2853371644",
+            appId: "1:2853371644:web:a2a6509e238c4f4a8aa179",
+            measurementId: "G-MZPSZN23QT"
+        };
+
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+
+        // Firebase servislerini global scope'a tanımla
+        window.auth = firebase.auth();
+        window.db = firebase.firestore();
+
+        console.log('🔥 Firebase başlatıldı ve hazır!');
+    </script>
+
+    <script type="module">
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // Firebase servislerine erişim
+        const auth = window.auth;
+        const db = window.db;
+        
+        // --- GLOBAL VARIABLES ---
+        
+        // Mobile navigation
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+
+        // Page elements
+        const homeLink = document.getElementById('home-link');
+        const searchLink = document.getElementById('search-link');
+        const playlistsLink = document.getElementById('playlists-link'); 
+        const recentlyPlayedLink = document.getElementById('recently-played-link'); 
+        const settingsLink = document.getElementById('settings-link'); 
+        const searchContainer = document.getElementById('search-container');
+        const contentArea = document.getElementById('content-area');
+        const searchBar = document.getElementById('search-bar');
+        const searchBtn = document.getElementById('search-btn');
+        const playerFooter = document.getElementById('player-footer');
+
+        // Player control elements
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const modeBtn = document.getElementById('mode-btn');          
+        const songTitle = document.getElementById('song-title');
+        const songArtist = document.getElementById('song-artist');
+        const progress = document.getElementById('progress');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationTimeEl = document.getElementById('duration-time');
+        const songThumbnail = document.getElementById('song-thumbnail');
+        const developerNameEl = document.getElementById('developer-name'); 
+
+        // Modal elements
+        const videoModal = document.getElementById('video-modal');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalPlayer = document.getElementById('modal-player');
+        const modalPlayPauseBtn = document.getElementById('modal-play-pause-btn');
+        
+        // Playlist Modal elements
+        const addToPlaylistModal = document.getElementById('add-to-playlist-modal');
+        const playlistModalList = document.getElementById('playlist-modal-list');
+        let songToAdd = null; // Çalma listesine eklenecek şarkı bilgisi
+
+        // YOUTUBE PLAYER VARIABLES (Global - Cordova için)
+        window.player = null;
+        let player = window.player;
+        let playlist = [];
+        let currentSongIndex = -1;
+        let isPlaying = false;
+        let playbackRate = 1;
+        let currentLanguage = 'tr';
+        let progressInterval = null; 
+
+        // OYNATMA MODU VE LİSTE DEĞİŞKENLERİ
+        let recentlyPlayed = []; 
+        const MAX_RECENTLY_PLAYED = 20; 
+        let isShuffling = false; 
+        let playMode = 'normal'; 
+        let userPlaylists = {}; // Çalma listelerini tutacak obje
+        // ------------------------------------
+        
+        const DEVELOPER_INFO = "Yapımcı: Hakan Yusuf Alparmaklı";
+
+
+        // API Configuration
+        const API_URL = window.location.origin; // Admin paneli için gerekli
+        
+        // Tüm harici API'ler kaldırıldı - Sadece Netlify Edge Function kullanılıyor
+        
+        // Fallback müzik listesi kaldırıldı - Sadece Netlify Edge Function kullanılıyor
+        const FALLBACK_MUSIC_REMOVED = [
+            { videoId: 'hLQl3WQQoQ0', title: 'Adele - Someone Like You', artist: 'Adele', thumbnail: 'https://i.ytimg.com/vi/hLQl3WQQoQ0/mqdefault.jpg', duration: 285 },
+            { videoId: 'kJQP7kiw5Fk', title: 'Despacito', artist: 'Luis Fonsi ft. Daddy Yankee', thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/mqdefault.jpg', duration: 229 },
+            { videoId: 'OPf0YbXqDm0', title: 'Uptown Funk', artist: 'Mark Ronson ft. Bruno Mars', thumbnail: 'https://i.ytimg.com/vi/OPf0YbXqDm0/mqdefault.jpg', duration: 270 },
+            { videoId: 'CevxZvSJLk8', title: 'Roar', artist: 'Katy Perry', thumbnail: 'https://i.ytimg.com/vi/CevxZvSJLk8/mqdefault.jpg', duration: 223 },
+            { videoId: 'RgKAFK5djSk', title: 'See You Again', artist: 'Wiz Khalifa ft. Charlie Puth', thumbnail: 'https://i.ytimg.com/vi/RgKAFK5djSk/mqdefault.jpg', duration: 229 },
+            { videoId: 'fRh_vgS2dFE', title: 'Sorry', artist: 'Justin Bieber', thumbnail: 'https://i.ytimg.com/vi/fRh_vgS2dFE/mqdefault.jpg', duration: 200 },
+            { videoId: '2Vv-BfVoq4g', title: 'Perfect', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/2Vv-BfVoq4g/mqdefault.jpg', duration: 263 },
+            { videoId: 'JGwWNGJdvx8', title: 'Shape of You', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/JGwWNGJdvx8/mqdefault.jpg', duration: 234 },
+            { videoId: 'nfWlot6h_JM', title: 'Shake It Off', artist: 'Taylor Swift', thumbnail: 'https://i.ytimg.com/vi/nfWlot6h_JM/mqdefault.jpg', duration: 242 },
+            { videoId: 'lp-EO5I60KA', title: 'Believer', artist: 'Imagine Dragons', thumbnail: 'https://i.ytimg.com/vi/lp-EO5I60KA/mqdefault.jpg', duration: 204 },
+            { videoId: '09R8_2nJtjg', title: 'Sugar', artist: 'Maroon 5', thumbnail: 'https://i.ytimg.com/vi/09R8_2nJtjg/mqdefault.jpg', duration: 235 },
+            { videoId: 'YQHsXMglC9A', title: 'Hello', artist: 'Adele', thumbnail: 'https://i.ytimg.com/vi/YQHsXMglC9A/mqdefault.jpg', duration: 295 },
+            { videoId: 'pIgZ7gMze7A', title: 'Counting Stars', artist: 'OneRepublic', thumbnail: 'https://i.ytimg.com/vi/pIgZ7gMze7A/mqdefault.jpg', duration: 257 },
+            { videoId: 'SlPhMPnQ58k', title: 'Wake Me Up', artist: 'Avicii', thumbnail: 'https://i.ytimg.com/vi/SlPhMPnQ58k/mqdefault.jpg', duration: 247 },
+            { videoId: 'ru0K8uYEZWw', title: 'Closer', artist: 'The Chainsmokers ft. Halsey', thumbnail: 'https://i.ytimg.com/vi/ru0K8uYEZWw/mqdefault.jpg', duration: 244 },
+            { videoId: 'fLexgOxsZu0', title: 'The Lazy Song', artist: 'Bruno Mars', thumbnail: 'https://i.ytimg.com/vi/fLexgOxsZu0/mqdefault.jpg', duration: 209 },
+            { videoId: 'QcIy9NiNbmo', title: 'Count On Me', artist: 'Bruno Mars', thumbnail: 'https://i.ytimg.com/vi/QcIy9NiNbmo/mqdefault.jpg', duration: 198 },
+            { videoId: 'nSDgHBxUbVQ', title: 'Let Her Go', artist: 'Passenger', thumbnail: 'https://i.ytimg.com/vi/nSDgHBxUbVQ/mqdefault.jpg', duration: 252 },
+            { videoId: 'e-ORhEE9VVg', title: 'Chandelier', artist: 'Sia', thumbnail: 'https://i.ytimg.com/vi/e-ORhEE9VVg/mqdefault.jpg', duration: 216 },
+            { videoId: 'hT_nvWreIhg', title: 'Apologize', artist: 'OneRepublic ft. Timbaland', thumbnail: 'https://i.ytimg.com/vi/hT_nvWreIhg/mqdefault.jpg', duration: 207 },
+            { videoId: 'ktvTqknDobU', title: 'Radioactive', artist: 'Imagine Dragons', thumbnail: 'https://i.ytimg.com/vi/ktvTqknDobU/mqdefault.jpg', duration: 186 },
+            { videoId: 'FM7MFYoylVs', title: 'Thinking Out Loud', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/FM7MFYoylVs/mqdefault.jpg', duration: 281 },
+            { videoId: 'CY8E6N5Nzec', title: 'Blank Space', artist: 'Taylor Swift', thumbnail: 'https://i.ytimg.com/vi/CY8E6N5Nzec/mqdefault.jpg', duration: 232 },
+            { videoId: '450p7goxZqg', title: 'All of Me', artist: 'John Legend', thumbnail: 'https://i.ytimg.com/vi/450p7goxZqg/mqdefault.jpg', duration: 269 },
+            { videoId: 'rYEDA3JcQqw', title: 'Rolling in the Deep', artist: 'Adele', thumbnail: 'https://i.ytimg.com/vi/rYEDA3JcQqw/mqdefault.jpg', duration: 228 },
+            { videoId: 'pB-5XG-DbAA', title: 'Stay With Me', artist: 'Sam Smith', thumbnail: 'https://i.ytimg.com/vi/pB-5XG-DbAA/mqdefault.jpg', duration: 172 },
+            { videoId: 'mWRsgZuwf_8', title: 'Demons', artist: 'Imagine Dragons', thumbnail: 'https://i.ytimg.com/vi/mWRsgZuwf_8/mqdefault.jpg', duration: 175 },
+            { videoId: 'lAIGb1lfpBw', title: 'Photograph', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/lAIGb1lfpBw/mqdefault.jpg', duration: 258 },
+            { videoId: 'oyEuk8j8imI', title: 'Love Yourself', artist: 'Justin Bieber', thumbnail: 'https://i.ytimg.com/vi/oyEuk8j8imI/mqdefault.jpg', duration: 233 },
+            { videoId: 'VbfpgGesL_k', title: 'Stitches', artist: 'Shawn Mendes', thumbnail: 'https://i.ytimg.com/vi/VbfpgGesL_k/mqdefault.jpg', duration: 207 },
+            { videoId: 'lY2yjAdbvdQ', title: 'Treat You Better', artist: 'Shawn Mendes', thumbnail: 'https://i.ytimg.com/vi/lY2yjAdbvdQ/mqdefault.jpg', duration: 188 },
+            { videoId: 'nYh-n7EOtma', title: 'Cheap Thrills', artist: 'Sia', thumbnail: 'https://i.ytimg.com/vi/nYh-n7EOtma/mqdefault.jpg', duration: 211 },
+            { videoId: 'DkeiKbqa02g', title: 'Can\'t Stop the Feeling', artist: 'Justin Timberlake', thumbnail: 'https://i.ytimg.com/vi/DkeiKbqa02g/mqdefault.jpg', duration: 236 },
+            { videoId: 'pXRviuL6vMY', title: 'Stressed Out', artist: 'Twenty One Pilots', thumbnail: 'https://i.ytimg.com/vi/pXRviuL6vMY/mqdefault.jpg', duration: 202 },
+            { videoId: 'Pw-0pbY9JeU', title: 'Ride', artist: 'Twenty One Pilots', thumbnail: 'https://i.ytimg.com/vi/Pw-0pbY9JeU/mqdefault.jpg', duration: 214 },
+            { videoId: 'UprcpdwuwCg', title: 'Heathens', artist: 'Twenty One Pilots', thumbnail: 'https://i.ytimg.com/vi/UprcpdwuwCg/mqdefault.jpg', duration: 195 },
+            { videoId: '60ItHLz5WEA', title: 'Faded', artist: 'Alan Walker', thumbnail: 'https://i.ytimg.com/vi/60ItHLz5WEA/mqdefault.jpg', duration: 212 },
+            { videoId: 'YqeW9_5kURI', title: 'Lean On', artist: 'Major Lazer & DJ Snake', thumbnail: 'https://i.ytimg.com/vi/YqeW9_5kURI/mqdefault.jpg', duration: 176 },
+            { videoId: 'kOkQ4T5WO9E', title: 'This Is What You Came For', artist: 'Calvin Harris ft. Rihanna', thumbnail: 'https://i.ytimg.com/vi/kOkQ4T5WO9E/mqdefault.jpg', duration: 239 },
+            { videoId: 'eIc4mqyN1Q8', title: 'One Dance', artist: 'Drake ft. Wizkid', thumbnail: 'https://i.ytimg.com/vi/eIc4mqyN1Q8/mqdefault.jpg', duration: 173 },
+            { videoId: 'HL1UzIK-flA', title: 'Work', artist: 'Rihanna ft. Drake', thumbnail: 'https://i.ytimg.com/vi/HL1UzIK-flA/mqdefault.jpg', duration: 219 },
+            { videoId: 'a59gmGkq_pw', title: 'Cold Water', artist: 'Major Lazer ft. Justin Bieber', thumbnail: 'https://i.ytimg.com/vi/a59gmGkq_pw/mqdefault.jpg', duration: 189 },
+            { videoId: 'Io0fBr1XBUA', title: 'Don\'t Let Me Down', artist: 'The Chainsmokers', thumbnail: 'https://i.ytimg.com/vi/Io0fBr1XBUA/mqdefault.jpg', duration: 208 },
+            { videoId: 'FyASdjZE0R0', title: 'Roses', artist: 'The Chainsmokers', thumbnail: 'https://i.ytimg.com/vi/FyASdjZE0R0/mqdefault.jpg', duration: 224 },
+            { videoId: 'FM7MFYoylVs', title: 'Something Just Like This', artist: 'The Chainsmokers & Coldplay', thumbnail: 'https://i.ytimg.com/vi/FM7MFYoylVs/mqdefault.jpg', duration: 247 },
+            { videoId: '34Na4j8AVgA', title: 'Starboy', artist: 'The Weeknd ft. Daft Punk', thumbnail: 'https://i.ytimg.com/vi/34Na4j8AVgA/mqdefault.jpg', duration: 230 },
+            { videoId: 'qFLhGq0060w', title: 'I Feel It Coming', artist: 'The Weeknd ft. Daft Punk', thumbnail: 'https://i.ytimg.com/vi/qFLhGq0060w/mqdefault.jpg', duration: 269 },
+            { videoId: 'papuvlVeZg8', title: 'Rockabye', artist: 'Clean Bandit ft. Sean Paul', thumbnail: 'https://i.ytimg.com/vi/papuvlVeZg8/mqdefault.jpg', duration: 251 },
+            { videoId: 'aatr_2MstrI', title: 'Symphony', artist: 'Clean Bandit ft. Zara Larsson', thumbnail: 'https://i.ytimg.com/vi/aatr_2MstrI/mqdefault.jpg', duration: 212 },
+            { videoId: 'K0ibBPhiaG0', title: 'Castle on the Hill', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/K0ibBPhiaG0/mqdefault.jpg', duration: 261 },
+            { videoId: '87gWaABqGYs', title: 'Galway Girl', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/87gWaABqGYs/mqdefault.jpg', duration: 170 },
+            // Türkçe Popüler Şarkılar
+            { videoId: 'qW1ew6E_h4Q', title: 'Lvbel C5 - Kime Ne', artist: 'Lvbel C5', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 180 },
+            { videoId: 'YBzEVKFhgKE', title: 'Lvbel C5 - Kara Sevda', artist: 'Lvbel C5', thumbnail: 'https://i.ytimg.com/vi/YBzEVKFhgKE/mqdefault.jpg', duration: 195 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Lvbel C5 - Hayat Kısa', artist: 'Lvbel C5', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 188 },
+            { videoId: 'qW1ew6E_h4Q', title: 'Poizi - Yalan', artist: 'Poizi', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 175 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Sefo - Yine Yeni Yeniden', artist: 'Sefo', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 210 },
+            { videoId: 'YBzEVKFhgKE', title: 'Ezhel - Geceler', artist: 'Ezhel', thumbnail: 'https://i.ytimg.com/vi/YBzEVKFhgKE/mqdefault.jpg', duration: 198 },
+            { videoId: 'qW1ew6E_h4Q', title: 'Ezhel - Şehrimin Tadı', artist: 'Ezhel', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 205 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Ceza - Holocaust', artist: 'Ceza', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 240 },
+            { videoId: 'YBzEVKFhgKE', title: 'Sagopa Kajmer - Bir Dizi İz', artist: 'Sagopa Kajmer', thumbnail: 'https://i.ytimg.com/vi/YBzEVKFhgKE/mqdefault.jpg', duration: 220 },
+            { videoId: 'qW1ew6E_h4Q', title: 'Norm Ender - Aura', artist: 'Norm Ender', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 192 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Khontkar - Ters', artist: 'Khontkar', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 185 },
+            { videoId: 'YBzEVKFhgKE', title: 'Motive - Kayıp', artist: 'Motive', thumbnail: 'https://i.ytimg.com/vi/YBzEVKFhgKE/mqdefault.jpg', duration: 178 },
+            { videoId: 'qW1ew6E_h4Q', title: 'Murda & Ezhel - Aya', artist: 'Murda & Ezhel', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 195 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Reynmen - Derdim Olsun', artist: 'Reynmen', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 182 },
+            { videoId: 'YBzEVKFhgKE', title: 'Semicenk - Geceler', artist: 'Semicenk', thumbnail: 'https://i.ytimg.com/vi/YBzEVKFhgKE/mqdefault.jpg', duration: 190 },
+            { videoId: 'qW1ew6E_h4Q', title: 'Uzi - Kan', artist: 'Uzi', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 175 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Ati242 - Gece Gölgenin Rahatına Bak', artist: 'Ati242', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 200 },
+            { videoId: 'YBzEVKFhgKE', title: 'Baneva - Yalan', artist: 'Baneva', thumbnail: 'https://i.ytimg.com/vi/YBzEVKFhgKE/mqdefault.jpg', duration: 188 },
+            { videoId: 'qW1ew6E_h4Q', title: 'Şehinşah - Karma', artist: 'Şehinşah', thumbnail: 'https://i.ytimg.com/vi/qW1ew6E_h4Q/mqdefault.jpg', duration: 210 },
+            { videoId: 'Uj3_0kRCeHE', title: 'Gazapizm - Heyecanı Yok', artist: 'Gazapizm', thumbnail: 'https://i.ytimg.com/vi/Uj3_0kRCeHE/mqdefault.jpg', duration: 195 }
+        ];
+        
+        let useServerAPI = false; // Netlify'de backend yok, direkt Invidious kullan
+        
+        console.log(`🎵 H-Sound v9.0 - YouTube Data API v3 Entegrasyonu`);
+        console.log(`🔑 4 API Key | Invidious Fallback | Sınırsız Arama`);
+        console.log(`💡 YouTube Data API v3 ile profesyonel müzik arama!`);
+        
+
+        
+        // Ana YouTube arama fonksiyonu (YouTube Data API v3)
+        async function searchYouTube(query) {
+            console.log(`🔍 YouTube Data API v3 ile arama başlatılıyor: "${query}"`);
+            
+            // YouTube Data API v3 Key'leri (Çoklu API Key Sistemi)
+            const API_KEYS = [
+                'AIzaSyARhRMSuwCZWljEAyVTek6WXiKMXcR-tSo', // Key 1
+                'AIzaSyDtjNMCzvp3WhA-OmJfUcsQtepF_W5tUdI', // Key 2
+                'AIzaSyCRbah2q8W7QkIyDaIJlMEirCI2mfPWMS0', // Key 3
+                'AIzaSyC0ODxZKmu_KvSLYk5l-J6plhH0NE--mjE', // Key 4
+            ];
+            
+            console.log(`📡 YouTube Data API v3 kullanılıyor (${API_KEYS.length} key mevcut)`);
+            
+            // Tüm key'leri dene
+            for (let i = 0; i < API_KEYS.length; i++) {
+                const currentKey = API_KEYS[i];
+                
+                try {
+                    const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=50&key=${currentKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(15000)
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.items && data.items.length > 0) {
+                            // Video detaylarını al (süre için)
+                            const videoIds = data.items.map(item => item.id.videoId).join(',');
+                            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${currentKey}`;
+                            
+                            const detailsResponse = await fetch(detailsUrl);
+                            const detailsData = await detailsResponse.json();
+                            
+                            const videos = data.items.map((item, index) => {
+                                const details = detailsData.items[index];
+                                const duration = details ? parseDurationISO(details.contentDetails.duration) : 0;
+                                
+                                return {
+                                    videoId: item.id.videoId,
+                                    title: item.snippet.title,
+                                    artist: item.snippet.channelTitle,
+                                    thumbnail: item.snippet.thumbnails.medium.url,
+                                    duration: duration
+                                };
+                            });
+                            
+                            console.log(`✅ YouTube API BAŞARILI (Key ${i + 1}): ${videos.length} video`);
+                            
+                            // Client-side filtreleme
+                            const filteredData = filterMusicOnly(videos);
+                            const uniqueData = removeDuplicateSongs(filteredData);
+                            const shuffled = uniqueData.sort(() => Math.random() - 0.5);
+                            console.log(`🎵 ${shuffled.length} benzersiz müzik hazır`);
+                            return shuffled;
+                        }
+                    } else if (response.status === 403) {
+                        console.log(`⚠️ Key ${i + 1} limiti doldu, sonraki key deneniyor...`);
+                        continue; // Sonraki key'i dene
+                    }
+                    
+                    console.log(`⚠️ Key ${i + 1} boş sonuç döndü`);
+                } catch (error) {
+                    console.log(`❌ Key ${i + 1} başarısız: ${error.message}`);
+                    continue; // Sonraki key'i dene
+                }
+            }
+            
+            // Tüm key'ler başarısız - Fallback olarak Invidious dene
+            console.log('🔄 Invidious API fallback deneniyor...');
+            return await searchYouTubeInvidious(query);
+        }
+        
+        // Invidious API Fallback (Yedek sistem)
+        async function searchYouTubeInvidious(query) {
+            console.log(`🔍 Invidious API fallback: "${query}"`);
+            
+            // Invidious sunucuları (Ücretsiz & Açık Kaynak)
+            const INVIDIOUS_INSTANCES = [
+                'https://invidious.io',
+                'https://invidious.kavin.rocks',
+                'https://invidious.snopyta.org',
+                'https://invidious.namazso.eu'
+            ];
+            
+            // Tüm sunucuları dene
+            for (let i = 0; i < INVIDIOUS_INSTANCES.length; i++) {
+                const instance = INVIDIOUS_INSTANCES[i];
+                
+                try {
+                    const apiUrl = `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance&duration=short,medium&features=hd`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(10000),
+                        headers: {
+                            'Accept': 'application/json',
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data && data.length > 0) {
+                            const videos = data.map(item => ({
+                                videoId: item.videoId,
+                                title: item.title,
+                                artist: item.author,
+                                thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
+                                duration: item.lengthSeconds || 0
+                            }));
+                            
+                            console.log(`✅ Invidious BAŞARILI (${instance}): ${videos.length} video`);
+                            
+                            // Client-side filtreleme
+                            const filteredData = filterMusicOnly(videos);
+                            const uniqueData = removeDuplicateSongs(filteredData);
+                            const shuffled = uniqueData.sort(() => Math.random() - 0.5);
+                            console.log(`🎵 ${shuffled.length} benzersiz müzik hazır`);
+                            return shuffled;
+                        }
+                    }
+                    
+                    console.log(`⚠️ Invidious sunucu ${i + 1} boş sonuç döndü`);
+                } catch (error) {
+                    console.log(`❌ Invidious sunucu ${i + 1} başarısız: ${error.message}`);
+                    continue; // Sonraki sunucuyu dene
+                }
+            }
+            
+            console.error('❌ Tüm API servisleri başarısız');
+            return [];
+        }
+        
+        // ISO 8601 süre formatını saniyeye çevir (PT4M13S -> 253)
+        function parseDurationISO(duration) {
+            const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            const hours = parseInt(match[1]) || 0;
+            const minutes = parseInt(match[2]) || 0;
+            const seconds = parseInt(match[3]) || 0;
+            return hours * 3600 + minutes * 60 + seconds;
+        }
+        
+        // Süre formatını saniyeye çevir
+        function parseDuration(durationStr) {
+            if (!durationStr) return 0;
+            
+            const parts = durationStr.split(':').map(p => parseInt(p) || 0);
+            
+            if (parts.length === 3) {
+                return parts[0] * 3600 + parts[1] * 60 + parts[2];
+            } else if (parts.length === 2) {
+                return parts[0] * 60 + parts[1];
+            } else {
+                return parts[0] || 0;
+            }
+        }
+        
+        // Şarkı başlığını normalize et (tekrar tespiti için) - GÜÇLENDİRİLMİŞ
+        function normalizeSongTitle(title) {
+            let normalized = title.toLowerCase();
+            
+            // Gereksiz kelimeleri kaldır (AGRESİF)
+            const removeWords = [
+                'official', 'music', 'video', 'audio', 'lyrics', 'lyric',
+                'official music video', 'official video', 'official audio',
+                'lyric video', 'music video', 'visualizer', 'visualiser',
+                'clip', 'klip', 'şarkı', 'müzik', 'resmi', 'sözleri',
+                'hd', '4k', '1080p', '720p', 'high quality', 'hq',
+                'remix', 'cover', 'acoustic', 'live', 'performance',
+                'ft.', 'feat.', 'featuring', 'prod.', 'produced',
+                'rap', 'trap', 'slowed', 'reverb', 'bass boosted',
+                'nightcore', 'sped up', 'türkçe', 'turkish',
+                'yeni', 'new', '2024', '2023', '2022', '2021', '2020',
+                'şarkısı', 'song', 'track', 'single', 'album'
+            ];
+            
+            // Tüm gereksiz kelimeleri kaldır
+            removeWords.forEach(word => {
+                normalized = normalized.replace(new RegExp('\\b' + word + '\\b', 'gi'), '');
+            });
+            
+            // Parantez ve köşeli parantezleri temizle
+            normalized = normalized.replace(/\([^)]*\)/g, ''); // (...)
+            normalized = normalized.replace(/\[[^\]]*\]/g, ''); // [...]
+            normalized = normalized.replace(/\{[^}]*\}/g, ''); // {...}
+            
+            // Özel karakterleri temizle (sadece harf, rakam, boşluk ve tire bırak)
+            normalized = normalized.replace(/[^\w\s-]/g, '');
+            
+            // Tire ve alt çizgileri boşluğa çevir
+            normalized = normalized.replace(/[-_]/g, ' ');
+            
+            // Fazla boşlukları temizle
+            normalized = normalized.replace(/\s+/g, ' ').trim();
+            
+            return normalized;
+        }
+        
+        // Şarkı kartına tıklayınca çal (basit versiyon)
+        function playThisSong(element) {
+            const parent = element.closest('.result-item');
+            const song = {
+                videoId: parent.dataset.videoid,
+                title: parent.dataset.title,
+                artist: parent.dataset.artist || 'Unknown Artist',
+                thumbnail: parent.dataset.thumbnail,
+                duration: parseInt(parent.dataset.duration) || 0
+            };
+            
+            console.log('🎵 Şarkı tıklandı:', song.title);
+            
+            // Playlist'i güncelle - hangi sayfadaysak o listeyi kullan
+            if (currentView === 'home' && popularMusicCache.length > 0) {
+                playlist = [...popularMusicCache];
+            } else if (currentView === 'search' && results.length > 0) {
+                playlist = [...results];
+            } else if (currentView === 'recently-played' && recentlyPlayed.length > 0) {
+                playlist = [...recentlyPlayed].reverse();
+            } else {
+                // Eğer liste yoksa sadece bu şarkıyı çal
+                playlist = [song];
+            }
+            
+            // Index'i bul
+            currentSongIndex = playlist.findIndex(s => s.videoId === song.videoId);
+            if (currentSongIndex === -1) {
+                // Şarkı listede yoksa başa ekle
+                playlist.unshift(song);
+                currentSongIndex = 0;
+            }
+            
+            console.log(`📋 Playlist güncellendi: ${playlist.length} şarkı, index: ${currentSongIndex}`);
+            
+            // Çal
+            playSong(song);
+        }
+        
+        // Tekrar eden şarkıları filtrele (GÜÇLENDİRİLMİŞ)
+        function removeDuplicateSongs(videos) {
+            console.log(`🔍 Tekrar kontrolü başlıyor: ${videos.length} video`);
+            const seen = new Map();
+            const unique = [];
+            
+            for (const video of videos) {
+                const normalizedTitle = normalizeSongTitle(video.title);
+                const normalizedArtist = video.artist.toLowerCase().trim().replace(/[^\w\s]/g, '');
+                
+                // Benzersiz anahtar: sanatçı + normalize edilmiş başlık
+                const key = `${normalizedArtist}|||${normalizedTitle}`;
+                
+                console.log(`📝 "${video.title}" → normalize: "${normalizedTitle}" → key: "${key}"`);
+                
+                // Benzerlik kontrolü - Eğer çok benzer bir şarkı varsa engelle
+                let isDuplicate = false;
+                for (const [existingKey, existingVideo] of seen.entries()) {
+                    // Aynı sanatçı ve çok benzer başlık kontrolü
+                    const [existingArtist, existingTitle] = existingKey.split('|||');
+                    
+                    if (existingArtist === normalizedArtist) {
+                        // Başlık benzerliği kontrolü (Levenshtein benzeri basit kontrol)
+                        const similarity = calculateSimilarity(normalizedTitle, existingTitle);
+                        if (similarity > 0.7) { // %70'den fazla benzer
+                            isDuplicate = true;
+                            console.log(`🔄 TEKRAR ENGELLENDI! (Benzerlik: ${(similarity * 100).toFixed(0)}%)`);
+                            break;
+                        }
+                    }
+                }
+                
+                if (!isDuplicate && !seen.has(key)) {
+                    seen.set(key, video);
+                    unique.push(video);
+                    console.log(`✅ Eklendi`);
+                } else if (!isDuplicate) {
+                    console.log(`🔄 TEKRAR ENGELLENDI! (Aynı key)`);
+                }
+            }
+            
+            console.log(`✨ Sonuç: ${unique.length} benzersiz şarkı (${videos.length - unique.length} tekrar kaldırıldı)`);
+            return unique;
+        }
+        
+        // Basit benzerlik hesaplama (0-1 arası, 1 = tamamen aynı)
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 1.0;
+            
+            // Ortak kelime sayısı
+            const words1 = str1.split(' ').filter(w => w.length > 2);
+            const words2 = str2.split(' ').filter(w => w.length > 2);
+            
+            let commonWords = 0;
+            words1.forEach(word => {
+                if (words2.includes(word)) commonWords++;
+            });
+            
+            const maxWords = Math.max(words1.length, words2.length);
+            if (maxWords === 0) return 0;
+            
+            return commonWords / maxWords;
+        }
+        
+        // Başlıktan hashtag ve emoji temizle
+        function cleanTitle(title) {
+            let cleaned = title;
+            
+            // 1. Hashtag'leri kaldır (#keşfet, #ati242 gibi)
+            cleaned = cleaned.replace(/#\w+/g, '');
+            
+            // 2. Emojileri kaldır
+            cleaned = cleaned.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+            
+            // 3. Fazla boşlukları temizle
+            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            
+            return cleaned;
+        }
+        
+        // Sadece müzik içeriklerini filtrele (client-side ek güvenlik - ULTRA AGRESİF)
+        function filterMusicOnly(videos) {
+            const excludeKeywords = [
+                'podcast', 'vlog', 'interview', 'röportaj', 'konuşma', 'talk',
+                'gameplay', 'oyun', 'tutorial', 'nasıl yapılır', 'review', 'inceleme',
+                'unboxing', 'reaction', 'tepki', 'prank', 'challenge', 'documentary',
+                'trailer', 'fragman', 'funny moments', 'komik', 'fails',
+                // Shorts ve kısa video filtreleri (ULTRA AGRESİF)
+                'shorts', 'short', 'kısa', 'kisa', '#shorts', '#short',
+                'youtube shorts', 'yt shorts', 'ytshorts',
+                'tiktok', 'reels', 'reel', 'instagram reels',
+                'viral', '#viral', 'trend', '#trend', 'trending',
+                'snippet', 'clip video', 'quick', 'hızlı', 'hizli',
+                // Hashtag filtreleri
+                '#keşfet', '#kesfet', '#öneçıkar', '#onecıkar', '#fyp', '#foryou',
+                '#ati242', '#ati', '#lvbelc5', '#lvbel', '#poizi', '#sefo',
+                '#ezhel', '#ceza', '#khontkar', '#motive', '#murda',
+                // Emoji ve özel karakterler (shorts işareti)
+                '😂', '🔥', '💯', '🎵', '🎶', '🎤', '🎧', '💥', '⚡', '✨',
+                // Diğer shorts belirtileri
+                'ediyor', 'ifşa', 'ifsa', 'yalan', 'sonbahar', 'artık yok',
+                'yükselişe geçen', 'son zamanlarda', 'popüler', 'keşfet'
+            ];
+            
+            return videos.filter(video => {
+                const titleLower = video.title.toLowerCase();
+                const artistLower = video.artist.toLowerCase();
+                const fullText = `${titleLower} ${artistLower}`;
+                
+                // 1. HASHTAG KONTROLÜ - Başlıkta # varsa direkt engelle
+                if (video.title.includes('#')) {
+                    console.log(`🚫 HASHTAG ENGELLENDI: ${video.title}`);
+                    return false;
+                }
+                
+                // 1.5. SHORTS KELİMESİ KONTROLÜ - "shorts" kelimesi varsa direkt engelle
+                if (titleLower.includes('shorts') || titleLower.includes('short')) {
+                    console.log(`🚫 SHORTS KELİMESİ ENGELLENDI: ${video.title}`);
+                    return false;
+                }
+                
+                // 2. EMOJI KONTROLÜ - Emoji varsa direkt engelle
+                const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+                if (emojiRegex.test(video.title)) {
+                    console.log(`🚫 EMOJI ENGELLENDI: ${video.title}`);
+                    return false;
+                }
+                
+                // 3. KEYWORD KONTROLÜ
+                const hasExcludeKeyword = excludeKeywords.some(keyword => 
+                    fullText.includes(keyword.toLowerCase())
+                );
+                
+                if (hasExcludeKeyword) {
+                    console.log(`🚫 KEYWORD ENGELLENDI: ${video.title}`);
+                    return false;
+                }
+                
+                // 4. SÜRE KONTROLÜ - 90 saniyeden (1.5 dakika) kısa = shorts (ULTRA AGRESİF)
+                if (video.duration < 90) {
+                    console.log(`🚫 SHORTS ENGELLENDI (${video.duration}s): ${video.title}`);
+                    return false;
+                }
+                
+                // 5. SÜRE KONTROLÜ - 20 dakikadan uzun = muhtemelen müzik değil
+                if (video.duration > 1200) {
+                    console.log(`🚫 ÇOK UZUN ENGELLENDI (${video.duration}s): ${video.title}`);
+                    return false;
+                }
+                
+                // 6. BAŞLIK UZUNLUĞU - Çok kısa başlıklar genelde shorts
+                if (video.title.length < 10) {
+                    console.log(`🚫 ÇOK KISA BAŞLIK ENGELLENDI: ${video.title}`);
+                    return false;
+                }
+                
+                // 7. BÜYÜK HARF KONTROLÜ - Tamamı büyük harf = spam/shorts
+                const upperCaseRatio = (video.title.match(/[A-Z]/g) || []).length / video.title.length;
+                if (upperCaseRatio > 0.5 && video.title.length > 20) {
+                    console.log(`🚫 BÜYÜK HARF SPAM ENGELLENDI: ${video.title}`);
+                    return false;
+                }
+                
+                console.log(`✅ GEÇTİ: ${video.title} (${video.duration}s)`);
+                return true;
+            });
+        }
+        
+        // Render sunucusu yok - Invidious API kullanılıyor
+
+        // Language Translations
+        const translations = {
+            tr: {
+                "home": "Ana Sayfa", "search": "Ara", "settings": "Ayarlar", "playlists": "Çalma Listeleri", 
+                "search_placeholder": "Ne dinlemek istersin?", "search_button": "Ara",
+                "popular_music": "Popüler Müzikler", "search_results": "Arama Sonuçları", 
+                "no_results_found": "Sonuç bulunamadı.",
+                "song_title_placeholder": "Şarkı Başlığı", "artist_placeholder": "Sanatçı", 
+                "playback_speed": "Oynatma Hızı", "normal_speed": "Normal", "language": "Dil", 
+                "recently_played": "Son Dinlenenler", 
+                "normal_mode": "Sıralı Çal",              
+                "shuffle_mode": "Karışık Çal",             
+                "repeat_all_mode": "Tümünü Tekrarla",      
+                "repeat_one_mode": "Tekrarla (Tek Şarkı)",
+                "developer_info": DEVELOPER_INFO,
+                "create_playlist": "Yeni Çalma Listesi Oluştur", 
+                "no_playlists": "Henüz bir çalma listeniz yok.", 
+                "playlist_name_prompt": "Çalma listenize bir isim verin:", 
+                "playlist_songs_count": "şarkı" 
+            },
+            en: {
+                "home": "Home", "search": "Search", "settings": "Settings", "playlists": "Playlists", 
+                "search_placeholder": "What do you want to listen to?", "search_button": "Search",
+                "popular_music": "Popular Music", "search_results": "Search Results", 
+                "no_results_found": "No results found.",
+                "song_title_placeholder": "Song Title", "artist_placeholder": "Artist", 
+                "playback_speed": "Playback Speed", "normal_speed": "Normal", "language": "Language", 
+                "recently_played": "Recently Played", 
+                "normal_mode": "Play Sequentially",       
+                "shuffle_mode": "Shuffle Play",            
+                "repeat_all_mode": "Repeat All",           
+                "repeat_one_mode": "Repeat One Song",
+                "developer_info": "Developer: Hakan Yusuf Alparmaklı",
+                "create_playlist": "Create New Playlist", 
+                "no_playlists": "You don't have any playlists yet.", 
+                "playlist_name_prompt": "Name your playlist:", 
+                "playlist_songs_count": "songs" 
+            }
+        };
+        
+        let currentView = 'home'; 
+
+        // --- UTILITY FUNCTIONS ---
+        function getTranslation(key) {
+            return translations[currentLanguage][key] || key;
+        }
+
+        function clearContentArea() {
+            contentArea.innerHTML = '';
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        function displayErrorMessage(message) {
+            clearContentArea();
+            console.error("Görüntülenen Hata:", message);
+            contentArea.innerHTML = `
+                <div class="error-message">
+                    <h2>⚠️ Bir Sorun Oluştu</h2>
+                    <p>${message}</p>
+                    <p style="margin-top: 20px; font-size: 14px; color: #888;">
+                        <strong>İpucu:</strong> İnternet bağlantınızı kontrol edin veya birkaç saniye sonra tekrar deneyin.
+                    </p>
+                </div>
+            `;
+        }
+        
+        // --- LOCAL STORAGE DATA MANAGEMENT ---
+        function loadPlaylists() {
+            try {
+                const storedPlaylists = localStorage.getItem('h_sound_playlists');
+                userPlaylists = storedPlaylists ? JSON.parse(storedPlaylists) : {};
+            } catch (e) {
+                console.error("Çalma listeleri yüklenirken hata:", e);
+                userPlaylists = {};
+            }
+        }
+
+        function savePlaylists() {
+            try {
+                localStorage.setItem('h_sound_playlists', JSON.stringify(userPlaylists));
+            } catch (e) {
+                console.error("Çalma listeleri kaydedilirken hata:", e);
+            }
+        }
+        
+        function createNewPlaylist(name) {
+            const key = name.trim();
+            if (key && !userPlaylists[key]) {
+                userPlaylists[key] = {
+                    name: name,
+                    songs: []
+                };
+                savePlaylists();
+                showPlaylistsPage(); 
+            } else {
+                 alert("Geçerli bir çalma listesi adı girin veya bu isimde bir liste zaten var.");
+            }
+        }
+
+        /**
+         * Verilen şarkıyı belirtilen çalma listesine ekler.
+         */
+        function addSongToPlaylist(playlistName, song) {
+            const playlist = userPlaylists[playlistName];
+            if (playlist) {
+                // Şarkı zaten listede mi kontrol et
+                const existing = playlist.songs.find(s => s.videoId === song.videoId);
+                if (!existing) {
+                    playlist.songs.push(song);
+                    savePlaylists();
+                    alert(`"${song.title}" adlı şarkı, "${playlistName}" çalma listesine eklendi.`);
+                } else {
+                     alert(`"${song.title}" adlı şarkı, zaten "${playlistName}" çalma listesinde bulunuyor.`);
+                }
+            }
+        }
+
+        /**
+         * Çalma listesinden şarkıyı siler.
+         */
+        function removeSongFromPlaylist(playlistName, videoId) {
+            const playlist = userPlaylists[playlistName];
+            if (playlist) {
+                const initialLength = playlist.songs.length;
+                playlist.songs = playlist.songs.filter(s => s.videoId !== videoId);
+                if (playlist.songs.length < initialLength) {
+                    savePlaylists();
+                    // Eğer aktif olarak görünen liste buysa, sayfayı yenile
+                    if (currentView === 'playlist-detail' && contentArea.querySelector('.content-header').textContent.includes(playlistName)) {
+                        showPlaylistDetail(playlistName);
+                    } else if (currentView === 'playlists') {
+                         showPlaylistsPage();
+                    }
+                }
+            }
+        }
+        
+        // --- API & DATA FETCHING ---
+        let popularMusicCache = [];
+        let isLoadingMore = false;
+        let popularSearchIndex = 0;
+        
+        // Popüler müzik arama terimleri - Güncellenmiş (Türkçe + İngilizce)
+        const POPULAR_SEARCH_TERMS = [
+            // 2024 Popüler Türkçe Şarkılar
+            'Lvbel C5 kime ne',
+            'Ati242 gece gölgenin rahatına bak',
+            'Sefo yine yeni yeniden',
+            'Poizi yalan',
+            'Reynmen derdim olsun',
+            'Ezhel geceler',
+            'Ezhel şehrimin tadı',
+            'Ceza holocaust',
+            'Sagopa kajmer bir dizi iz',
+            'Norm ender aura',
+            'Khontkar ters',
+            'Motive kayıp',
+            'Murda ezhel aya',
+            'Semicenk geceler',
+            'Uzi kan',
+            'Baneva yalan',
+            'Şehinşah karma',
+            'Gazapizm heyecanı yok',
+            
+            // 2024 Dünya Popüler Şarkıları
+            'Billie Eilish what was i made for',
+            'Taylor Swift anti hero',
+            'Harry Styles as it was',
+            'Dua Lipa levitating',
+            'The Weeknd blinding lights',
+            'Olivia Rodrigo drivers license',
+            'Ed Sheeran shape of you',
+            'Adele easy on me',
+            'Justin Bieber peaches',
+            'Ariana Grande positions',
+            
+            // Klasik Popüler Şarkılar
+            'despacito luis fonsi',
+            'shape of you ed sheeran',
+            'uptown funk bruno mars',
+            'see you again wiz khalifa',
+            'gangnam style psy',
+            'sorry justin bieber',
+            'hello adele',
+            'roar katy perry',
+            'counting stars onerepublic',
+            'someone like you adele',
+            
+            // Türkçe Klasikler
+            'müslüm gürses itirazım var',
+            'müslüm gürses affet',
+            'barış manço dönence',
+            'sezen aksu git',
+            'tarkan şımarık',
+            'ajda pekkan pet r oil',
+            'ferdi tayfur emmoğlu',
+            'ibrahim tatlıses haydi söyle',
+            
+            // Genel Arama Terimleri
+            'türkçe pop müzik',
+            'türkçe rap şarkıları',
+            'pop music 2024',
+            'hit songs 2024',
+            'top 40 hits',
+            'billboard hot 100',
+            'spotify top 50',
+            'viral songs tiktok'
+        ];
+        
+        async function fetchPopularMusic(append = false) {
+            if (!append) {
+                clearContentArea();
+                contentArea.innerHTML = `<h2 class="content-header">${getTranslation('popular_music')}</h2><div class="loading-spinner"></div>`;
+            } else if (isLoadingMore) {
+                return; // Zaten yükleniyor
+            }
+
+            try {
+                isLoadingMore = true;
+                
+                // Farklı arama terimleri kullanarak çeşitlilik sağla
+                const searchTerm = POPULAR_SEARCH_TERMS[popularSearchIndex % POPULAR_SEARCH_TERMS.length];
+                popularSearchIndex++; // Her yüklemede farklı terim kullan
+                
+                console.log('🎵 Popüler müzikler yükleniyor:', searchTerm, `(${popularSearchIndex}/${POPULAR_SEARCH_TERMS.length})`);
+                
+                // YouTube'dan popüler müzikler (doğrudan)
+                const data = await searchYouTube(searchTerm);
+                
+                if (!data || data.length === 0) {
+                    if (!append) {
+                        contentArea.innerHTML = `
+                            <h2 class="content-header">${getTranslation('popular_music')}</h2>
+                            <div class="error-message">
+                                <h2>⚠️ Müzik Yüklenemedi</h2>
+                                <p>YouTube API'lerine erişilemiyor. Lütfen aşağıdaki çözümleri deneyin:</p>
+                                <ul style="text-align: left; max-width: 600px; margin: 20px auto;">
+                                    <li>İnternet bağlantınızı kontrol edin</li>
+                                    <li>VPN kullanıyorsanız kapatmayı deneyin</li>
+                                    <li>Tarayıcı eklentilerinizi (AdBlock, Privacy Badger vb.) geçici olarak devre dışı bırakın</li>
+                                    <li>Farklı bir tarayıcı deneyin (Chrome, Firefox, Edge)</li>
+                                    <li><a href="test-api.html" target="_blank" style="color: #3498db;">API Test Sayfası</a>'nı açarak hangi servislerin çalıştığını kontrol edin</li>
+                                </ul>
+                                <p style="margin-top: 20px; font-size: 14px; color: #888;">
+                                    <strong>Teknik Detay:</strong> YouTube API'sine erişilemiyor. Lütfen internet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin.
+                                </p>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+
+                if (append) {
+                    // Yeni şarkıları ekle, ama tekrar edenleri filtrele
+                    const existingIds = new Set(popularMusicCache.map(s => s.videoId));
+                    const newSongs = data.filter(song => !existingIds.has(song.videoId));
+                    
+                    if (newSongs.length > 0) {
+                        popularMusicCache = [...popularMusicCache, ...newSongs];
+                        renderResults(popularMusicCache, getTranslation('popular_music'));
+                        
+                        // Eğer şu an ana sayfadan çalıyorsak, playlist'i güncelle
+                        if (currentView === 'home' && playlist.length > 0) {
+                            playlist = popularMusicCache;
+                        }
+                        
+                        console.log(`✅ ${newSongs.length} yeni şarkı eklendi. Toplam: ${popularMusicCache.length}`);
+                    } else {
+                        console.log('⚠️ Yeni şarkı bulunamadı. Tüm arama terimleri tükendi.');
+                        // Infinite scroll'u durdur
+                        const mainContent = document.getElementById('main-content');
+                        mainContent.removeEventListener('scroll', handleInfiniteScroll);
+                    }
+                } else {
+                    // Yenileme - cache'i temizle ve yeni listeyi yükle
+                    popularMusicCache = data;
+                    renderResults(data, getTranslation('popular_music'));
+                    
+                    // Playlist'i de güncelle
+                    if (currentView === 'home' && playlist.length > 0) {
+                        playlist = popularMusicCache;
+                    }
+                }
+                
+                // Infinite scroll için event listener ekle
+                setupInfiniteScroll();
+                
+                // Yenile butonunu ekle
+                addRefreshButton();
+
+            } catch (error) {
+                console.error('❌ Müzik yükleme hatası:', error);
+                displayErrorMessage('Müzikler yüklenirken bir hata oluştu. İnternet bağlantınızı kontrol edin.');
+            } finally {
+                isLoadingMore = false;
+            }
+        }
+        
+        function setupInfiniteScroll() {
+            const mainContent = document.getElementById('main-content');
+            
+            // Önceki listener'ı temizle
+            mainContent.removeEventListener('scroll', handleInfiniteScroll);
+            
+            // Yeni listener ekle
+            mainContent.addEventListener('scroll', handleInfiniteScroll);
+        }
+        
+        function handleInfiniteScroll() {
+            if (currentView !== 'home') return;
+            
+            const mainContent = document.getElementById('main-content');
+            const scrollPosition = mainContent.scrollTop + mainContent.clientHeight;
+            const scrollHeight = mainContent.scrollHeight;
+            
+            // Sayfa sonuna yaklaşıldığında yeni içerik yükle
+            if (scrollPosition >= scrollHeight - 200 && !isLoadingMore) {
+                console.log('Yeni şarkılar yükleniyor...');
+                
+                // Loading indicator ekle
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading-spinner';
+                loadingDiv.style.margin = '20px auto';
+                loadingDiv.id = 'infinite-scroll-loader';
+                contentArea.appendChild(loadingDiv);
+                
+                fetchPopularMusic(true).then(() => {
+                    // Loading indicator'ı kaldır
+                    const loader = document.getElementById('infinite-scroll-loader');
+                    if (loader) loader.remove();
+                });
+            }
+        }
+        
+        function addRefreshButton() {
+            // Eğer buton zaten varsa ekleme
+            if (document.getElementById('refresh-music-btn')) return;
+            
+            const header = document.querySelector('.content-header');
+            if (header) {
+                const refreshBtn = document.createElement('button');
+                refreshBtn.id = 'refresh-music-btn';
+                refreshBtn.className = 'create-playlist-btn';
+                refreshBtn.style.fontSize = '14px';
+                refreshBtn.style.padding = '8px 15px';
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Müzikleri Yenile';
+                
+                refreshBtn.addEventListener('click', () => {
+                    // Butonu döndür (animasyon)
+                    const icon = refreshBtn.querySelector('i');
+                    icon.style.animation = 'spin 1s linear infinite';
+                    refreshBtn.disabled = true;
+                    refreshBtn.style.opacity = '0.6';
+                    
+                    // Listeyi yenile
+                    popularMusicCache = [];
+                    
+                    // Scroll pozisyonunu sıfırla
+                    const mainContent = document.getElementById('main-content');
+                    mainContent.scrollTop = 0;
+                    
+                    fetchPopularMusic(false).then(() => {
+                        icon.style.animation = '';
+                        refreshBtn.disabled = false;
+                        refreshBtn.style.opacity = '1';
+                        console.log('Müzikler yenilendi!');
+                    }).catch(() => {
+                        icon.style.animation = '';
+                        refreshBtn.disabled = false;
+                        refreshBtn.style.opacity = '1';
+                    });
+                });
+                
+                header.appendChild(refreshBtn);
+            }
+        }
+
+        async function handleSearch(query) {
+            clearContentArea();
+            contentArea.innerHTML = `<h2 class="content-header">${getTranslation('search_results')}</h2><div class="loading-spinner"></div>`;
+
+            try {
+                console.log('🔍 Arama yapılıyor:', query);
+                
+                const data = await searchYouTube(query);
+
+                if (!data || data.length === 0) {
+                    contentArea.innerHTML = `
+                        <h2 class="content-header">${getTranslation('search_results')}</h2>
+                        <div class="error-message">
+                            <h2>⚠️ Arama Sonucu Bulunamadı</h2>
+                            <p>YouTube API'lerine erişilemiyor veya arama sonucu bulunamadı.</p>
+                            <p style="margin-top: 20px;">
+                                <a href="test-api.html" target="_blank" style="color: #3498db; text-decoration: underline;">
+                                    API Test Sayfası'nı açarak servislerin durumunu kontrol edin
+                                </a>
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                renderResults(data, getTranslation('search_results'));
+
+            } catch (error) {
+                console.error('❌ Arama hatası:', error);
+                displayErrorMessage('Arama yapılırken bir hata oluştu. API servisleri şu anda kullanılamıyor olabilir.');
+            }
+        }
+        
+        /**
+         * Sonuçları ekranda render eder.
+         */
+        function renderResults(results, headerTitle, songsSource = 'results') {
+            clearContentArea();
+            contentArea.innerHTML = `
+                <h2 class="content-header">${headerTitle}</h2>
+                <div class="results-grid">
+                    ${results.map(item => {
+                        const cleanedTitle = cleanTitle(item.title);
+                        return `
+                        <div class="result-item" 
+                            data-videoid="${item.videoId}" 
+                            data-title="${cleanedTitle.replace(/"/g, '&quot;')}" 
+                            data-thumbnail="${item.thumbnail}"
+                            data-artist="${item.artist}"
+                            data-duration="${item.duration}"
+                        >
+                            <div class="result-item-play-area" onclick="playThisSong(this)">
+                                <img src="${item.thumbnail}" alt="${cleanedTitle}" onerror="this.onerror=null;this.src='https://placehold.co/180x100/1C1C1C/ffffff?text=Video+Yok'">
+                            </div>
+                            <div class="item-title">${cleanedTitle}</div>
+                            <button class="add-to-playlist-btn" title="Çalma Listesine Ekle">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            // TIKLAMA İŞLEYİCİLERİ
+            document.querySelectorAll('.result-item-play-area').forEach(area => {
+                area.addEventListener('click', function() {
+                    const parent = this.closest('.result-item');
+                    const videoId = parent.dataset.videoid;
+                    
+                    if (songsSource === 'recently-played') {
+                         playlist = recentlyPlayed;
+                    } else {
+                         // Ana sayfadaysak cache'den al, yoksa results'tan
+                         playlist = (currentView === 'home' && popularMusicCache.length > 0) ? popularMusicCache : results;
+                    }
+
+                    currentSongIndex = playlist.findIndex(song => song.videoId === videoId);
+                    
+                    const songToPlay = playlist[currentSongIndex];
+                    
+                    playSong(songToPlay || { 
+                        videoId: videoId, 
+                        title: parent.dataset.title, 
+                        thumbnail: parent.dataset.thumbnail
+                    });
+                });
+            });
+            
+            // Çalma Listesine Ekle Butonları
+            document.querySelectorAll('.add-to-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Oynatma olayını engelle
+                    const parent = this.closest('.result-item');
+                    songToAdd = {
+                        videoId: parent.dataset.videoid,
+                        title: parent.dataset.title,
+                        thumbnail: parent.dataset.thumbnail
+                    };
+                    showAddToPlaylistModal();
+                });
+            });
+        }
+        
+        // --- NAVIGATION & VIEWS ---
+
+        function setActiveLink(linkElement) {
+            document.querySelectorAll('#sidebar a').forEach(a => a.classList.remove('active'));
+            linkElement.classList.add('active');
+        }
+        
+        function showHomePage() {
+            currentView = 'home';
+            setActiveLink(homeLink);
+            searchContainer.classList.add('hidden');
+            fetchPopularMusic(); 
+        }
+
+        function showSearchPage() {
+            currentView = 'search';
+            setActiveLink(searchLink);
+            clearContentArea();
+            searchContainer.classList.remove('hidden');
+            contentArea.innerHTML = `<h2 class="content-header">${getTranslation('search_results')}</h2><p class="no-content-message">${getTranslation('no_results_found')}</p>`;
+            searchBar.focus();
+        }
+        
+        /**
+         * Çalma Listeleri ana sayfasını gösterir.
+         */
+        function showPlaylistsPage() {
+            currentView = 'playlists';
+            setActiveLink(playlistsLink);
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+
+            const playlistKeys = Object.keys(userPlaylists);
+            
+            // En çok dinlenen şarkıları hesapla
+            const songPlayCounts = {};
+            recentlyPlayed.forEach(song => {
+                if (songPlayCounts[song.videoId]) {
+                    songPlayCounts[song.videoId].count++;
+                } else {
+                    songPlayCounts[song.videoId] = { ...song, count: 1 };
+                }
+            });
+            
+            const mostPlayedSongs = Object.values(songPlayCounts)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 20);
+            
+            const logo = `
+                <div class="playlist-header-logo">
+                    <i class="fas fa-list-music"></i>
+                    <div class="playlist-header-logo-text">
+                        <h1>${getTranslation('playlists')}</h1>
+                        <p>${playlistKeys.length + (mostPlayedSongs.length > 0 ? 1 : 0)} çalma listesi</p>
+                    </div>
+                </div>
+            `;
+            
+            const header = `
+                <h2 class="content-header">
+                    ${getTranslation('playlists')}
+                    <button id="create-playlist-btn" class="create-playlist-btn">
+                        <i class="fas fa-plus"></i> ${getTranslation('create_playlist')}
+                    </button>
+                </h2>
+            `;
+            
+            // En Çok Dinlenenler kartı
+            const mostPlayedCard = mostPlayedSongs.length > 0 ? `
+                <div class="playlist-card" data-playlist-name="__most_played__" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #667eea;">
+                    <div>
+                        <div class="playlist-title"><i class="fas fa-fire" style="color: #FFD700;"></i> En Çok Dinlenenler</div>
+                        <div class="playlist-stats">${mostPlayedSongs.length} şarkı</div>
+                    </div>
+                    <div class="playlist-controls">
+                        <button class="play-playlist-btn" title="Çalma Listesini Oynat" style="background-color: rgba(255,255,255,0.2);"><i class="fas fa-play"></i></button>
+                    </div>
+                </div>
+            ` : '';
+            
+            if (playlistKeys.length === 0 && mostPlayedSongs.length === 0) {
+                 contentArea.innerHTML = `${logo}${header}<p class="no-content-message">${getTranslation('no_playlists')}</p>`;
+            } else {
+                const gridHtml = playlistKeys.map(key => {
+                    const playlist = userPlaylists[key];
+                    const count = playlist.songs.length;
+                    return `
+                        <div class="playlist-card" data-playlist-name="${key}">
+                            <div>
+                                <div class="playlist-title">${playlist.name}</div>
+                                <div class="playlist-stats">${count} ${getTranslation('playlist_songs_count')}</div>
+                            </div>
+                            <div class="playlist-controls">
+                                <button class="delete-playlist-btn" title="Çalma Listesini Sil"><i class="fas fa-trash"></i></button>
+                                <button class="play-playlist-btn" title="Çalma Listesini Oynat"><i class="fas fa-play"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                contentArea.innerHTML = `${logo}${header}<div class="results-grid">${mostPlayedCard}${gridHtml}</div>`;
+                
+                // Event Listeners
+                document.querySelectorAll('.playlist-title, .playlist-card').forEach(el => {
+                    if (el.classList.contains('playlist-title')) {
+                        el.addEventListener('click', function() {
+                           const name = this.closest('.playlist-card').dataset.playlistName;
+                           if (name === '__most_played__') {
+                               showMostPlayedDetail(mostPlayedSongs);
+                           } else {
+                               showPlaylistDetail(name);
+                           }
+                        });
+                    } else if (el.classList.contains('playlist-card')) {
+                         el.querySelector('.play-playlist-btn').addEventListener('click', function(e) {
+                           e.stopPropagation();
+                           const name = this.closest('.playlist-card').dataset.playlistName;
+                           if (name === '__most_played__') {
+                               playlist = mostPlayedSongs;
+                               currentSongIndex = 0;
+                               playSong(playlist[0]);
+                           } else {
+                               playFullPlaylist(name);
+                           }
+                        });
+                        const deleteBtn = el.querySelector('.delete-playlist-btn');
+                        if (deleteBtn) {
+                            deleteBtn.addEventListener('click', function(e) {
+                               e.stopPropagation();
+                               const name = this.closest('.playlist-card').dataset.playlistName;
+                               if(confirm(`"${name}" çalma listesini silmek istediğinize emin misiniz?`)) {
+                                    delete userPlaylists[name];
+                                    savePlaylists();
+                                    showPlaylistsPage();
+                               }
+                            });
+                        }
+                    }
+                });
+            }
+            
+            document.getElementById('create-playlist-btn').addEventListener('click', () => {
+                const name = prompt(getTranslation('playlist_name_prompt'));
+                if (name) {
+                    createNewPlaylist(name);
+                }
+            });
+        }
+        
+        /**
+         * Belirli bir çalma listesinin içeriğini gösterir.
+         */
+        function showPlaylistDetail(playlistName) {
+            currentView = 'playlist-detail';
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+            
+            const playlist = userPlaylists[playlistName];
+            if (!playlist) {
+                showPlaylistsPage();
+                return;
+            }
+            
+            const songs = playlist.songs;
+            
+            const header = `
+                <h2 class="content-header">
+                    <i class="fas fa-arrow-left" id="back-to-playlists" style="cursor:pointer; margin-right: 10px;"></i> 
+                    ${playlist.name} 
+                    <button class="create-playlist-btn" id="play-all-btn" style="margin-left: auto;">
+                        <i class="fas fa-play"></i> Hepsini Oynat
+                    </button>
+                </h2>
+            `;
+            
+            if (songs.length === 0) {
+                 contentArea.innerHTML = `${header}<p class="no-content-message">Bu çalma listesi henüz boş.</p>`;
+            } else {
+                const listHtml = songs.map((song, index) => `
+                    <div class="song-list-item" data-videoid="${song.videoId}" data-playlist-name="${playlistName}" data-index="${index}" draggable="true">
+                        <i class="fas fa-grip-vertical" style="color: #666; margin-right: 10px; cursor: grab;"></i>
+                        <img class="song-thumbnail" src="${song.thumbnail}" alt="${song.title}">
+                        <div class="song-list-item-info">
+                            <div class="song-list-item-title">${song.title}</div>
+                            <div class="song-list-item-artist">${song.title.includes(' - ') ? song.title.split(' - ')[0] : 'Bilinmiyor'}</div>
+                        </div>
+                        <button class="play-song-btn" title="Şarkıyı Oynat"><i class="fas fa-play"></i></button>
+                        <button class="delete-song-btn" title="Şarkıyı Listeden Sil"><i class="fas fa-times"></i></button>
+                    </div>
+                `).join('');
+                
+                contentArea.innerHTML = `${header}<div class="song-list">${listHtml}</div>`;
+                
+                // Drag & Drop Olayları (Desktop + Mobile)
+                const songItems = document.querySelectorAll('.song-list-item');
+                let draggedItem = null;
+                let touchStartY = 0;
+                
+                songItems.forEach(item => {
+                    // Desktop Drag Events
+                    item.addEventListener('dragstart', function(e) {
+                        draggedItem = this;
+                        this.style.opacity = '0.5';
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+                    
+                    item.addEventListener('dragend', function() {
+                        this.style.opacity = '1';
+                        draggedItem = null;
+                    });
+                    
+                    item.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        
+                        if (draggedItem && draggedItem !== this) {
+                            const rect = this.getBoundingClientRect();
+                            const midpoint = rect.top + rect.height / 2;
+                            
+                            if (e.clientY < midpoint) {
+                                this.parentNode.insertBefore(draggedItem, this);
+                            } else {
+                                this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                            }
+                        }
+                    });
+                    
+                    item.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        savePlaylistOrder();
+                    });
+                    
+                    // Mobile Touch Events
+                    const gripIcon = item.querySelector('.fa-grip-vertical');
+                    if (gripIcon) {
+                        gripIcon.addEventListener('touchstart', function(e) {
+                            e.preventDefault();
+                            draggedItem = item;
+                            touchStartY = e.touches[0].clientY;
+                            item.style.opacity = '0.5';
+                            item.style.zIndex = '1000';
+                        });
+                        
+                        gripIcon.addEventListener('touchmove', function(e) {
+                            e.preventDefault();
+                            if (!draggedItem) return;
+                            
+                            const touch = e.touches[0];
+                            const currentY = touch.clientY;
+                            
+                            // Sürüklenen öğeyi hareket ettir
+                            draggedItem.style.transform = `translateY(${currentY - touchStartY}px)`;
+                            
+                            // Hangi öğenin üzerinde olduğunu bul
+                            const afterElement = getDragAfterElement(draggedItem.parentNode, currentY);
+                            if (afterElement == null) {
+                                draggedItem.parentNode.appendChild(draggedItem);
+                            } else {
+                                draggedItem.parentNode.insertBefore(draggedItem, afterElement);
+                            }
+                        });
+                        
+                        gripIcon.addEventListener('touchend', function(e) {
+                            e.preventDefault();
+                            if (draggedItem) {
+                                draggedItem.style.opacity = '1';
+                                draggedItem.style.transform = '';
+                                draggedItem.style.zIndex = '';
+                                savePlaylistOrder();
+                                draggedItem = null;
+                            }
+                        });
+                    }
+                });
+                
+                function getDragAfterElement(container, y) {
+                    const draggableElements = [...container.querySelectorAll('.song-list-item:not([style*="opacity: 0.5"])')];
+                    
+                    return draggableElements.reduce((closest, child) => {
+                        const box = child.getBoundingClientRect();
+                        const offset = y - box.top - box.height / 2;
+                        
+                        if (offset < 0 && offset > closest.offset) {
+                            return { offset: offset, element: child };
+                        } else {
+                            return closest;
+                        }
+                    }, { offset: Number.NEGATIVE_INFINITY }).element;
+                }
+                
+                function savePlaylistOrder() {
+                    const newOrder = Array.from(document.querySelectorAll('.song-list-item')).map(el => el.dataset.videoid);
+                    const reorderedSongs = newOrder.map(videoId => songs.find(s => s.videoId === videoId));
+                    userPlaylists[playlistName].songs = reorderedSongs;
+                    savePlaylists();
+                }
+                
+                // Dinleme Olayları - Play Butonları
+                document.querySelectorAll('.song-list-item .play-song-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const item = this.closest('.song-list-item');
+                        const videoId = item.dataset.videoid;
+                        
+                        console.log('🎵 Play butonu tıklandı! VideoID:', videoId);
+                        
+                        // Detay sayfasındaki listeden oynatılacaksa, playlist ve index ayarlanır
+                        playlist = [...songs];
+                        currentSongIndex = playlist.findIndex(song => song.videoId === videoId);
+                        
+                        if (currentSongIndex !== -1) {
+                            console.log(`✅ Şarkı bulundu! Index: ${currentSongIndex + 1}/${playlist.length}`);
+                            console.log(`🎵 Çalınacak şarkı:`, playlist[currentSongIndex]);
+                            playSong(playlist[currentSongIndex]);
+                        } else {
+                            console.error('❌ Şarkı playlist\'te bulunamadı!');
+                        }
+                    });
+                });
+                
+                // Şarkı kartına tıklayınca da çal
+                document.querySelectorAll('.song-list-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        // Eğer buton tıklanmadıysa
+                        if (!e.target.closest('button') && !e.target.closest('.fa-grip-vertical')) {
+                            const videoId = this.dataset.videoid;
+                            
+                            playlist = [...songs];
+                            currentSongIndex = playlist.findIndex(song => song.videoId === videoId);
+                            
+                            if (currentSongIndex !== -1) {
+                                console.log(`🎵 Şarkı kartından çalınıyor: ${currentSongIndex + 1}/${playlist.length}`);
+                                playSong(playlist[currentSongIndex]);
+                            }
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.song-list-item .delete-song-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const item = this.closest('.song-list-item');
+                        const videoId = item.dataset.videoid;
+                        const pName = item.dataset.playlistName;
+                        
+                        console.log('🗑️ Delete butonu tıklandı! VideoID:', videoId);
+                        removeSongFromPlaylist(pName, videoId);
+                    });
+                });
+                
+                document.getElementById('play-all-btn').addEventListener('click', () => {
+                     playFullPlaylist(playlistName);
+                });
+            }
+            
+            document.getElementById('back-to-playlists').addEventListener('click', showPlaylistsPage);
+        }
+
+        function showMostPlayedDetail(songs) {
+            currentView = 'most-played-detail';
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+            
+            const header = `
+                <h2 class="content-header">
+                    <i class="fas fa-arrow-left" id="back-to-playlists" style="cursor:pointer; margin-right: 10px;"></i> 
+                    <i class="fas fa-fire" style="color: #FFD700;"></i> En Çok Dinlenenler
+                    <button class="create-playlist-btn" id="play-all-btn" style="margin-left: auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-play"></i> Hepsini Oynat
+                    </button>
+                </h2>
+            `;
+            
+            if (songs.length === 0) {
+                contentArea.innerHTML = `${header}<p class="no-content-message">Henüz dinlenen şarkı yok.</p>`;
+            } else {
+                const listHtml = songs.map((song, index) => `
+                    <div class="song-list-item" data-videoid="${song.videoId}" data-index="${index}">
+                        <span style="color: #667eea; font-weight: bold; margin-right: 10px; min-width: 25px;">#${index + 1}</span>
+                        <img class="song-thumbnail" src="${song.thumbnail}" alt="${song.title}">
+                        <div class="song-list-item-info">
+                            <div class="song-list-item-title">${song.title}</div>
+                            <div class="song-list-item-artist">${song.count} kez dinlendi</div>
+                        </div>
+                        <button class="play-song-btn" title="Şarkıyı Oynat"><i class="fas fa-play"></i></button>
+                    </div>
+                `).join('');
+                
+                contentArea.innerHTML = `${header}<div class="song-list">${listHtml}</div>`;
+                
+                document.querySelectorAll('.song-list-item .play-song-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const item = this.closest('.song-list-item');
+                        const videoId = item.dataset.videoid;
+                        
+                        console.log('🔥 En Çok Dinlenenler - Play butonu tıklandı! VideoID:', videoId);
+                        
+                        playlist = [...songs];
+                        currentSongIndex = playlist.findIndex(song => song.videoId === videoId);
+                        
+                        if (currentSongIndex !== -1) {
+                            console.log(`✅ Şarkı bulundu! Index: ${currentSongIndex + 1}/${playlist.length}`);
+                            playSong(playlist[currentSongIndex]);
+                        }
+                    });
+                });
+                
+                // Şarkı kartına tıklayınca da çal
+                document.querySelectorAll('.song-list-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        if (!e.target.closest('button')) {
+                            const videoId = this.dataset.videoid;
+                            
+                            playlist = [...songs];
+                            currentSongIndex = playlist.findIndex(song => song.videoId === videoId);
+                            
+                            if (currentSongIndex !== -1) {
+                                console.log(`🔥 En çok dinlenenlerden çalınıyor: ${currentSongIndex + 1}/${playlist.length}`);
+                                playSong(playlist[currentSongIndex]);
+                            }
+                        }
+                    });
+                });
+                
+                document.getElementById('play-all-btn').addEventListener('click', () => {
+                    playlist = songs;
+                    currentSongIndex = 0;
+                    playSong(playlist[0]);
+                });
+            }
+            
+            document.getElementById('back-to-playlists').addEventListener('click', showPlaylistsPage);
+        }
+
+        function showRecentlyPlayedPage() {
+            currentView = 'recently-played';
+            setActiveLink(recentlyPlayedLink);
+            searchContainer.classList.add('hidden');
+            
+            if (recentlyPlayed.length === 0) {
+                 clearContentArea();
+                 contentArea.innerHTML = `<h2 class="content-header">${getTranslation('recently_played')}</h2><p class="no-content-message">${getTranslation('no_results_found')}</p>`;
+                 return;
+            }
+            const reversedRecentlyPlayed = [...recentlyPlayed].reverse();
+            renderResults(reversedRecentlyPlayed, getTranslation('recently_played'), 'recently-played');
+        }
+
+        async function showSettingsPage() {
+             currentView = 'settings';
+            setActiveLink(settingsLink);
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+            const username = localStorage.getItem('h_sound_username') || 'Kullanıcı';
+            const email = localStorage.getItem('h_sound_email') || '';
+            
+            // Kullanıcı rolünü al
+            let userRole = 'user';
+            let isAdmin = false;
+            let roleBadge = '';
+            let roleText = '';
+            let roleColor = '#3498DB';
+            
+            try {
+                // Firebase'den rol kontrolü
+                const uid = localStorage.getItem('h_sound_uid');
+                if (!uid) {
+                    console.log('⚠️ UID bulunamadı, varsayılan rol kullanılıyor');
+                } else {
+                    const userDoc = await db.collection('users').doc(uid).get();
+                    
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        userRole = userData?.role || 'user';
+                        isAdmin = userRole === 'admin' || userRole === 'superadmin';
+                        console.log('✅ Firebase rol bilgisi alındı:', userRole);
+                    }
+                }
+                
+                // Rol badge'i oluştur
+                switch(userRole) {
+                    case 'superadmin':
+                        roleBadge = '<span style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px; box-shadow: 0 0 15px rgba(231, 76, 60, 0.6); animation: glow 2s ease-in-out infinite;"><i class="fas fa-crown"></i>✨ Süper Admin</span>';
+                        roleText = 'Süper Yönetici (Tüm Yetkiler)';
+                        roleColor = '#E74C3C';
+                        break;
+                    case 'admin':
+                        roleBadge = '<span style="background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;"><i class="fas fa-crown"></i> Admin</span>';
+                        roleText = 'Yönetici (Tam Yetki)';
+                        roleColor = '#9B59B6';
+                        break;
+                    case 'premium':
+                        roleBadge = '<span style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;"><i class="fas fa-star"></i> Premium</span>';
+                        roleText = 'Premium Üye';
+                        roleColor = '#F39C12';
+                        break;
+                    case 'vip':
+                        roleBadge = '<span style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);"><i class="fas fa-gem"></i> VIP</span>';
+                        roleText = 'VIP Üye';
+                        roleColor = '#FFD700';
+                        break;
+                    default:
+                        roleBadge = '<span style="background: #27AE60; color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;"><i class="fas fa-user"></i> Kullanıcı</span>';
+                        roleText = 'Standart Kullanıcı';
+                        roleColor = '#27AE60';
+                }
+            } catch (error) {
+                console.error('Rol kontrolü başarısız:', error);
+            }
+            
+            contentArea.innerHTML = `
+                <h2 class="content-header">${getTranslation('settings')}</h2>
+                <div class="settings-container">
+                    <div class="setting-item" style="border: 2px solid ${roleColor}; background-color: rgba(${roleColor === '#E74C3C' ? '231, 76, 60' : roleColor === '#9B59B6' ? '155, 89, 182' : roleColor === '#F39C12' ? '243, 156, 18' : roleColor === '#FFD700' ? '255, 215, 0' : '52, 152, 219'}, 0.1);">
+                        <label style="color: ${roleColor}; font-weight: 600;">
+                            <i class="fas fa-user-circle"></i> Kullanıcı Bilgileri ${roleBadge}
+                        </label>
+                        <div style="color: #ffffff; padding: 10px 0;">
+                            <div style="margin-bottom: 8px;">
+                                <strong>Kullanıcı Adı:</strong> ${username}
+                            </div>
+                            <div style="font-size: 13px; color: #A9A9A9; margin-bottom: 8px;">
+                                <strong>E-posta:</strong> ${email}
+                            </div>
+                            <div style="font-size: 13px; color: ${roleColor};">
+                                <strong>Rol:</strong> ${roleText}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="playback-speed">${getTranslation('playback_speed')}:</label>
+                        <select id="playback-speed" class="setting-control">
+                            <option value="0.5">0.5x</option>
+                            <option value="1" selected>${getTranslation('normal_speed')}</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="language">${getTranslation('language')}:</label>
+                        <select id="language" class="setting-control">
+                            <option value="tr">Türkçe</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    
+                    
+                    <div class="setting-item" style="border: 2px solid #E74C3C; background-color: rgba(231, 76, 60, 0.1);">
+                        <label style="color: #E74C3C; font-weight: 600;">
+                            <i class="fas fa-sign-out-alt"></i> Hesaptan Çıkış
+                        </label>
+                        <button id="logout-btn" class="setting-control" style="background-color: #E74C3C; color: white; cursor: pointer; border: none; font-weight: 600;">
+                            Çıkış Yap
+                        </button>
+                    </div>
+
+                    <!-- Hesabı Sil (Sadece normal kullanıcılar için) -->
+                    <div id="delete-account-section" class="setting-item" style="border: 2px solid #C0392B; background-color: rgba(192, 57, 43, 0.1); display: none;">
+                        <label style="color: #C0392B; font-weight: 600;">
+                            <i class="fas fa-trash-alt"></i> Hesabı Kalıcı Olarak Sil
+                        </label>
+                        <button id="delete-account-btn" class="setting-control" style="background-color: #C0392B; color: white; cursor: pointer; border: none; font-weight: 600;">
+                            Hesabı Sil
+                        </button>
+                    </div>
+                    
+                    <div class="setting-developer-info">
+                        <div class="developer-info">
+                            <i class="fas fa-certificate"></i>
+                            <span>${getTranslation('developer_info')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Load and set current settings
+            const langSelect = document.getElementById('language');
+            langSelect.value = currentLanguage;
+            
+            const speedSelect = document.getElementById('playback-speed');
+            speedSelect.value = playbackRate;
+
+            // Add listeners for settings changes
+            speedSelect.addEventListener('change', (e) => {
+                playbackRate = parseFloat(e.target.value);
+                if (player) {
+                    player.setPlaybackRate(playbackRate);
+                }
+            });
+            
+            langSelect.addEventListener('change', (e) => {
+                currentLanguage = e.target.value;
+                loadLanguage(currentLanguage).then(() => {
+                    showSettingsPage(); // Ayarları tekrar yükle
+                });
+            });
+            
+            // Çıkış yap butonu
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
+                        // LocalStorage'ı temizle
+                        localStorage.removeItem('h_sound_username');
+                        localStorage.removeItem('h_sound_email');
+                        localStorage.removeItem('h_sound_logged_in');
+                        localStorage.removeItem('h_sound_login_time');
+                        
+                        // Giriş sayfasına yönlendir
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            // Hesabı sil bölümünü sadece normal kullanıcılar için göster
+            const deleteAccountSection = document.getElementById('delete-account-section');
+            if (deleteAccountSection && userRole === 'user') {
+                deleteAccountSection.style.display = 'flex';
+            }
+            
+            // Hesabı sil butonu
+            const deleteAccountBtn = document.getElementById('delete-account-btn');
+            if (deleteAccountBtn) {
+                deleteAccountBtn.addEventListener('click', async () => {
+                    const username = localStorage.getItem('h_sound_username');
+                    const password = prompt('⚠️ UYARI: Bu işlem geri alınamaz!\n\nHesabınızı kalıcı olarak silmek için şifrenizi girin:');
+                    
+                    if (!password) return;
+                    
+                    const confirmDelete = confirm(
+                        '🚨 SON UYARI 🚨\n\n' +
+                        'Hesabınız kalıcı olarak silinecek!\n\n' +
+                        '• Tüm çalma listeleriniz silinecek\n' +
+                        '• Tüm verileriniz kaybolacak\n' +
+                        '• Bu işlem GERİ ALINAMAZ\n\n' +
+                        'Devam etmek istediğinize emin misiniz?'
+                    );
+                    
+                    if (!confirmDelete) return;
+                    
+                    try {
+                        // Firebase Authentication'dan kullanıcıyı sil
+                        const user = auth.currentUser;
+                        if (user) {
+                            // Firestore'dan kullanıcı verisini sil
+                            await db.collection('users').doc(user.uid).delete();
+                            
+                            // Firebase Authentication'dan hesabı sil
+                            await user.delete();
+                            
+                            alert('✅ Hesabınız başarıyla silindi.\n\nH-Sound\'u kullandığınız için teşekkürler.');
+                            
+                            // LocalStorage'ı temizle
+                            localStorage.clear();
+                            
+                            // Ana sayfaya yönlendir
+                            window.location.href = 'index.html';
+                        } else {
+                            alert('❌ Kullanıcı oturumu bulunamadı.');
+                        }
+                    } catch (error) {
+                        console.error('❌ Hesap silme hatası:', error);
+                        alert('❌ Hesap silinirken hata oluştu: ' + error.message);
+                    }
+                });
+            }
+        }
+        
+        function addToRecentlyPlayed(song) {
+            const existingIndex = recentlyPlayed.findIndex(s => s.videoId === song.videoId);
+            if (existingIndex > -1) {
+                recentlyPlayed.splice(existingIndex, 1);
+            }
+
+            recentlyPlayed.unshift(song);
+
+            if (recentlyPlayed.length > MAX_RECENTLY_PLAYED) {
+                recentlyPlayed.pop();
+            }
+            
+            console.log("Son Dinlenenler Güncellendi. Sayı:", recentlyPlayed.length);
+        }
+        
+        // --- PLAYLIST MODAL FUNCTIONS ---
+        function showAddToPlaylistModal() {
+            playlistModalList.innerHTML = '';
+            
+            const keys = Object.keys(userPlaylists);
+            if (keys.length === 0) {
+                 playlistModalList.innerHTML = `<li>${getTranslation('no_playlists')}</li>`;
+            } else {
+                keys.forEach(key => {
+                    const li = document.createElement('li');
+                    li.textContent = userPlaylists[key].name;
+                    li.dataset.playlistName = key;
+                    li.addEventListener('click', () => {
+                        addSongToPlaylist(key, songToAdd);
+                        hideAddToPlaylistModal();
+                    });
+                    playlistModalList.appendChild(li);
+                });
+            }
+            
+            addToPlaylistModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+
+        function hideAddToPlaylistModal() {
+            addToPlaylistModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+            songToAdd = null;
+        }
+
+        // --- YOUTUBE PLAYER CONTROLS ---
+        
+        function updateProgress() {
+            if (!player || !player.getCurrentTime || !player.getDuration) return;
+
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            
+            if (duration > 0) {
+                const percentage = (currentTime / duration) * 100;
+                progress.style.width = `${percentage}%`;
+                currentTimeEl.textContent = formatTime(currentTime);
+                durationTimeEl.textContent = formatTime(duration);
+            }
+        }
+
+        function onPlayerReady(event) {
+            if (progressInterval) clearInterval(progressInterval);
+            progressInterval = setInterval(updateProgress, 1000);
+            
+            if (event.target.getPlayerState() === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            }
+        }
+        
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                modalPlayPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
+                
+                // CORDOVA - Bildirim güncelle (çalıyor)
+                if (window.updateMusicControls && playlist[currentSongIndex]) {
+                    window.updateMusicControls(playlist[currentSongIndex], true);
+                }
+            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.BUFFERING) {
+                isPlaying = false;
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                modalPlayPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'paused';
+                }
+                
+                // CORDOVA - Bildirim güncelle (duraklatıldı)
+                if (window.updateMusicControls && playlist[currentSongIndex]) {
+                    window.updateMusicControls(playlist[currentSongIndex], false);
+                }
+            } else if (event.data == YT.PlayerState.ENDED) {
+                console.log('🏁 Şarkı bitti - playMode:', playMode);
+                
+                // Tek şarkı tekrar modu
+                if (playMode === 'repeat-one') {
+                    console.log('🔂 Tek şarkı tekrar - yeniden başlatılıyor');
+                    player.seekTo(0); 
+                    player.playVideo(); 
+                } else {
+                    // Diğer modlarda sonraki şarkıya geç
+                    console.log('▶️ Sonraki şarkıya geçiliyor');
+                    playNext(); 
+                }
+            }
+        }
+        
+        function playSong(song) {
+            playerFooter.classList.remove('hidden');
+            
+            addToRecentlyPlayed(song);
+            
+            songTitle.textContent = song.title;
+            songArtist.textContent = (song.title.includes(' - ') ? song.title.split(' - ')[0] : 'Bilinmiyor');
+            songThumbnail.src = song.thumbnail;
+            
+            // Media Session API for background playback controls
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: song.title,
+                    artist: songArtist.textContent,
+                    album: 'H-Sound',
+                    artwork: [
+                        { src: song.thumbnail, sizes: '96x96', type: 'image/jpeg' },
+                        { src: song.thumbnail, sizes: '128x128', type: 'image/jpeg' },
+                        { src: song.thumbnail, sizes: '192x192', type: 'image/jpeg' },
+                        { src: song.thumbnail, sizes: '256x256', type: 'image/jpeg' },
+                        { src: song.thumbnail, sizes: '384x384', type: 'image/jpeg' },
+                        { src: song.thumbnail, sizes: '512x512', type: 'image/jpeg' }
+                    ]
+                });
+                
+                navigator.mediaSession.setActionHandler('play', () => {
+                    if (player) player.play();
+                });
+                
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    if (player) player.pause();
+                });
+                
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    playPrevious();
+                });
+                
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    playNext();
+                });
+                
+                navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                    if (player) {
+                        const currentTime = player.getCurrentTime();
+                        player.seekTo(Math.max(0, currentTime - (details.seekOffset || 10)));
+                    }
+                });
+                
+                navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                    if (player) {
+                        const currentTime = player.getCurrentTime();
+                        const duration = player.getDuration();
+                        player.seekTo(Math.min(duration, currentTime + (details.seekOffset || 10)));
+                    }
+                });
+            }
+
+            if (player) {
+                player.loadVideoById(song.videoId);
+                player.setPlaybackRate(playbackRate);
+            } else {
+                player = new YT.Player('player-iframe', {
+                    videoId: song.videoId,
+                    playerVars: {
+                        'autoplay': 1,
+                        'controls': 0, 
+                        'disablekb': 1,
+                        'modestbranding': 1,
+                        'rel': 0,
+                        'showinfo': 0,
+                        'fs': 0,
+                    },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            }
+            
+            // CORDOVA MÜZİK KONTROLÜ - Bildirim güncelle
+            if (window.updateMusicControls) {
+                window.updateMusicControls(song, true);
+            }
+        }
+        
+        /**
+         * Verilen çalma listesini oynatır ve oynatma listesini (playlist) ayarlar.
+         */
+        function playFullPlaylist(playlistName) {
+            const list = userPlaylists[playlistName];
+            if (list && list.songs.length > 0) {
+                playlist = list.songs;
+                currentSongIndex = 0;
+                playSong(playlist[currentSongIndex]);
+            } else {
+                 alert("Çalma listesi boş.");
+            }
+        }
+        
+        function togglePlayPause() {
+            if (!player) return;
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+        
+        function togglePlayMode() {
+            if (playMode === 'normal') {
+                playMode = 'repeat-all';
+                modeBtn.innerHTML = '<i class="fas fa-redo"></i>';
+                modeBtn.title = 'Tümünü Tekrarla';
+            } else if (playMode === 'repeat-all') {
+                playMode = 'repeat-one';
+                modeBtn.innerHTML = '<i class="fas fa-redo-alt"></i>'; 
+                modeBtn.title = 'Tek Şarkı Tekrar';
+            } else if (playMode === 'repeat-one') {
+                playMode = 'shuffle';
+                modeBtn.innerHTML = '<i class="fas fa-random"></i>';
+                modeBtn.title = 'Karışık Çal';
+            } else { 
+                playMode = 'normal';
+                modeBtn.innerHTML = '<i class="fas fa-list-ul"></i>';
+                modeBtn.title = 'Sıralı Çal';
+            }
+            
+            modeBtn.dataset.playMode = playMode;
+            updateModeButtonTitle();
+            console.log("🔄 Çalma Modu:", playMode);
+            
+            isShuffling = playMode === 'shuffle';
+            
+            // Kullanıcıya bildirim göster
+            showModeNotification();
+        }
+        
+        // Mod değişikliği bildirimi
+        function showModeNotification() {
+            const messages = {
+                'normal': '▶️ Sıralı Çalma',
+                'repeat-all': '🔁 Tümünü Tekrarla',
+                'repeat-one': '🔂 Tek Şarkı Tekrar',
+                'shuffle': '🔀 Karışık Çalma'
+            };
+            
+            // Bildirim elementi oluştur
+            const notification = document.createElement('div');
+            notification.textContent = messages[playMode];
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(52, 152, 219, 0.95);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideDown 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 2 saniye sonra kaldır
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+        
+        function updateModeButtonTitle() {
+            let titleKey;
+            switch (playMode) {
+                case 'shuffle':
+                    titleKey = 'shuffle_mode';
+                    break;
+                case 'repeat-all':
+                    titleKey = 'repeat_all_mode';
+                    break;
+                case 'repeat-one':
+                    titleKey = 'repeat_one_mode';
+                    break;
+                case 'normal':
+                default:
+                    titleKey = 'normal_mode';
+                    break;
+            }
+            modeBtn.title = getTranslation(titleKey);
+        }
+
+        
+        // Global yapıldı - Cordova'dan erişilebilir
+        window.playNext = async function playNext() {
+            if (playlist.length === 0 || currentSongIndex === -1) {
+                console.log('⚠️ Playlist boş veya index geçersiz');
+                return;
+            }
+            
+            // Tek şarkı tekrar modu - aynı şarkıyı baştan çal
+            if (playMode === 'repeat-one') {
+                console.log('🔂 Tek şarkı tekrar - başa sarılıyor');
+                player.seekTo(0);
+                player.playVideo();
+                return;
+            }
+
+            let nextIndex;
+            
+            // Karışık çalma modu
+            if (playMode === 'shuffle') {
+                console.log('🔀 Karışık mod - rastgele şarkı seçiliyor');
+                do {
+                    nextIndex = Math.floor(Math.random() * playlist.length);
+                } while (playlist.length > 1 && nextIndex === currentSongIndex); 
+            } else {
+                // Normal veya tümünü tekrarla modu
+                nextIndex = currentSongIndex + 1;
+            }
+
+            // Liste sonuna gelindi
+            if (nextIndex >= playlist.length) {
+                console.log('📋 Liste sonu - playMode:', playMode);
+                
+                // Tümünü tekrarla veya karışık modda başa dön
+                if (playMode === 'repeat-all' || playMode === 'shuffle') {
+                    console.log('🔁 Liste başa sarılıyor');
+                    nextIndex = 0;
+                } else {
+                    // Normal modda - ana sayfadaysak yeni şarkılar yükle
+                    if (currentView === 'home' && !isLoadingMore) {
+                        console.log('🏠 Ana sayfa - yeni şarkılar yükleniyor...');
+                        await fetchPopularMusic(true);
+                        
+                        // Yeni şarkılar yüklendiyse devam et
+                        if (playlist.length > currentSongIndex + 1) {
+                            nextIndex = currentSongIndex + 1;
+                            console.log('✅ Yeni şarkılar yüklendi, devam ediliyor');
+                        } else {
+                            console.log('⏸️ Liste bitti, duruluyor');
+                            player.pauseVideo();
+                            currentSongIndex = playlist.length - 1; 
+                            return;
+                        }
+                    } else {
+                        // Diğer sayfalarda liste bitince dur
+                        console.log('⏸️ Liste bitti, duruluyor');
+                        player.pauseVideo();
+                        currentSongIndex = playlist.length - 1; 
+                        return;
+                    }
+                }
+            }
+            
+            currentSongIndex = nextIndex;
+            console.log(`▶️ Sonraki şarkı: ${currentSongIndex + 1}/${playlist.length}`);
+            playSong(playlist[currentSongIndex]);
+        }
+        
+        // Global yapıldı - Cordova'dan erişilebilir
+        window.playPrevious = function playPrev() {
+            if (playlist.length === 0 || currentSongIndex === -1) {
+                console.log('⚠️ Playlist boş veya index geçersiz');
+                return;
+            }
+            
+            // Şarkı 3 saniyeden fazla çalıyorsa başa sar
+            if (player && player.getCurrentTime() > 3) {
+                console.log('⏮️ Şarkı başa sarılıyor');
+                player.seekTo(0, true);
+                return;
+            }
+            
+            // Önceki şarkıya geç
+            let prevIndex;
+            
+            if (playMode === 'shuffle') {
+                // Karışık modda rastgele önceki şarkı
+                do {
+                    prevIndex = Math.floor(Math.random() * playlist.length);
+                } while (playlist.length > 1 && prevIndex === currentSongIndex);
+            } else {
+                // Normal modda önceki şarkı
+                prevIndex = currentSongIndex - 1;
+                
+                // Liste başındaysak sona git (döngüsel)
+                if (prevIndex < 0) {
+                    prevIndex = playlist.length - 1;
+                }
+            }
+            
+            currentSongIndex = prevIndex;
+            console.log(`⏮️ Önceki şarkı: ${currentSongIndex + 1}/${playlist.length}`);
+            playSong(playlist[currentSongIndex]);
+        }
+
+
+        // Progress Bar Seek functionality
+        progressBar.addEventListener('click', (e) => {
+            if (!player || !player.getDuration) return;
+
+            const rect = progressBar.getBoundingClientRect();
+            const clickPosition = e.clientX - rect.left;
+            const percentage = clickPosition / rect.width;
+            const duration = player.getDuration();
+            const newTime = duration * percentage;
+
+            player.seekTo(newTime, true);
+        });
+
+        // --- EVENT LISTENERS ---
+
+        // Navigation
+        homeLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showHomePage(); });
+        searchLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showSearchPage(); });
+        playlistsLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showPlaylistsPage(); }); 
+        recentlyPlayedLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showRecentlyPlayedPage(); }); 
+        settingsLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showSettingsPage(); }); 
+        
+        menuToggleBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('hidden'); });
+        overlay.addEventListener('click', () => { 
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open'); 
+                overlay.classList.add('hidden'); 
+            }
+            if (!addToPlaylistModal.classList.contains('hidden')) {
+                hideAddToPlaylistModal();
+            }
+        });
+        
+        // Swipe gesture support for mobile sidebar
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const swipeDistance = touchEndX - touchStartX;
+            
+            // Swipe right to open sidebar (from left edge)
+            if (swipeDistance > swipeThreshold && touchStartX < 50 && !sidebar.classList.contains('open')) {
+                sidebar.classList.add('open');
+                overlay.classList.remove('hidden');
+            }
+            
+            // Swipe left to close sidebar
+            if (swipeDistance < -swipeThreshold && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // Search
+        searchBtn.addEventListener('click', () => {
+            const query = searchBar.value.trim();
+            if (query) {
+                handleSearch(query);
+            }
+        });
+        
+        searchBar.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchBtn.click();
+            }
+        });
+
+        // Player Controls
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        modalPlayPauseBtn.addEventListener('click', togglePlayPause);
+        prevBtn.addEventListener('click', window.playPrevious);
+        document.getElementById('modal-prev-btn').addEventListener('click', window.playPrevious);
+        nextBtn.addEventListener('click', window.playNext);
+        document.getElementById('modal-next-btn').addEventListener('click', window.playNext);
+        
+        modeBtn.addEventListener('click', togglePlayMode); 
+        
+        // --- ADMIN ACCESS CHECK ---
+        async function checkAdminAccess() {
+            const username = localStorage.getItem('h_sound_username');
+            const isLoggedIn = localStorage.getItem('h_sound_logged_in');
+            const uid = localStorage.getItem('h_sound_uid');
+            
+            console.log('🔍 Admin kontrolü başlatıldı:', { username, isLoggedIn, uid });
+            
+            if (!username || isLoggedIn !== 'true' || !uid) {
+                console.log('❌ Kullanıcı giriş yapmamış');
+                return;
+            }
+            
+            // Firebase'den kullanıcı rolünü kontrol et
+            try {
+                const userDoc = await db.collection('users').doc(uid).get();
+                
+                if (!userDoc.exists) {
+                    console.log('❌ Kullanıcı belgesi bulunamadı');
+                    return;
+                }
+                
+                const userData = userDoc.data();
+                let userRole = userData.role || 'user';
+                
+                // "Hakan" kullanıcısını otomatik olarak superadmin yap
+                if (username.toLowerCase() === 'hakan' && userRole !== 'superadmin') {
+                    console.log('👑 Hakan kullanıcısı superadmin yapılıyor...');
+                    await db.collection('users').doc(uid).update({
+                        role: 'superadmin'
+                    });
+                    userRole = 'superadmin';
+                    localStorage.setItem('h_sound_role', 'superadmin');
+                    console.log('✅ Hakan superadmin oldu!');
+                }
+                
+                const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+                
+                console.log('📡 Firebase rol kontrolü:', { userRole, isAdmin });
+                
+                if (isAdmin) {
+                    // Admin menüsünü göster (superadmin değilse)
+                    const adminMenuItem = document.getElementById('admin-menu-item');
+                    if (adminMenuItem && userRole !== 'superadmin') {
+                        adminMenuItem.style.display = 'block';
+                        console.log('✅ Admin menüsü gösterildi!');
+                        
+                        // Admin link'e event listener ekle
+                        const adminLink = document.getElementById('admin-link');
+                        if (adminLink) {
+                            adminLink.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                // Direkt admin paneline git
+                                localStorage.setItem('h_sound_admin_session', uid);
+                                window.location.href = 'admin.html';
+                            });
+                        }
+                    }
+                    
+                    // Superadmin menüsünü göster (sadece superadmin için)
+                    if (userRole === 'superadmin') {
+                        const superadminMenuItem = document.getElementById('superadmin-menu-item');
+                        if (superadminMenuItem) {
+                            superadminMenuItem.style.display = 'block';
+                            console.log('✅ Süper Admin menüsü gösterildi!');
+                            
+                            // Superadmin link'e event listener ekle
+                            const superadminLink = document.getElementById('superadmin-link');
+                            if (superadminLink) {
+                                superadminLink.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    // Direkt superadmin paneline git
+                                    localStorage.setItem('h_sound_admin_session', uid);
+                                    window.location.href = 'superadmin.html';
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    console.log('ℹ️ Kullanıcı admin değil');
+                }
+            } catch (error) {
+                console.error('❌ Admin kontrolü başarısız:', error);
+            }
+        }
+        
+        // --- LANGUAGE & INITIALIZATION ---
+        function loadLanguage(lang) {
+            return new Promise(resolve => {
+                const t = translations[lang];
+                if (t) {
+                    // Sidebar ve Yapımcı adını güncelle
+                    document.querySelector('#home-link').innerHTML = `<i class="fas fa-home"></i> ${t.home}`;
+                    document.querySelector('#search-link').innerHTML = `<i class="fas fa-search"></i> ${t.search}`;
+                    document.querySelector('#playlists-link').innerHTML = `<i class="fas fa-compact-disc"></i> ${t.playlists}`; 
+                    document.querySelector('#recently-played-link').innerHTML = `<i class="fas fa-history"></i> ${t.recently_played}`; 
+                    document.querySelector('#settings-link').innerHTML = `<i class="fas fa-cog"></i> ${t.settings}`; 
+                    developerNameEl.textContent = t.developer_info; 
+                    
+
+                    document.getElementById('search-bar').placeholder = t.search_placeholder;
+                    document.getElementById('search-btn').textContent = t.search_button;
+                    
+                    // Çalma Modu Başlıklarını güncelle
+                    updateModeButtonTitle();
+                }
+                resolve();
+            });
+        }
+
+        // --- Initial Page Load ---
+        
+        // 0. Uygulamayı başlat
+        showHomePage();
+        
+        // YouTube IFrame Player API'yi yükle
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // YouTube API yüklendikten sonra global olarak çağrılacak fonksiyon
+        window.onYouTubeIframeAPIReady = function() {
+            // Verileri yükle
+            loadPlaylists(); 
+
+            // Dil ayarlarını yükle
+            currentLanguage = 'tr'; 
+            loadLanguage(currentLanguage).then(() => {
+                updateModeButtonTitle();
+                
+                // GİRİŞ KONTROLÜ - Giriş yapılmamışsa index.html'e yönlendir
+                const isLoggedIn = localStorage.getItem('h_sound_logged_in');
+                const username = localStorage.getItem('h_sound_username');
+                
+                if (isLoggedIn !== 'true' || !username) {
+                    console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                console.log('✅ Kullanıcı giriş yapmış:', username);
+                showHomePage();
+                
+                // Hakan kullanıcısını otomatik oluştur (ilk çalıştırmada)
+                createHakanUserIfNotExists();
+                
+                // Admin kontrolü
+                checkAdminAccess();
+            });
+        };
+        
+        // Hakan kullanıcısını otomatik oluştur
+        async function createHakanUserIfNotExists() {
+            try {
+                // Hakan kullanıcısı var mı kontrol et
+                const usersSnapshot = await db.collection('users')
+                    .where('username', '==', 'Hakan')
+                    .get();
+                
+                if (usersSnapshot.empty) {
+                    console.log('👑 Hakan kullanıcısı bulunamadı, oluşturuluyor...');
+                    
+                    // Hakan kullanıcısını oluştur
+                    const hakanEmail = 'alparmaklih@gmail.com';
+                    const hakanPassword = 'Hakan5225522541';
+                    
+                    // Önce Firebase Authentication'da hesap oluştur
+                    try {
+                        const userCredential = await auth.createUserWithEmailAndPassword(hakanEmail, hakanPassword);
+                        const user = userCredential.user;
+                        
+                        // Firestore'a kullanıcı bilgilerini kaydet
+                        await db.collection('users').doc(user.uid).set({
+                            username: 'Hakan',
+                            email: hakanEmail,
+                            password: hakanPassword,
+                            role: 'superadmin',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            banned: false
+                        });
+                        
+                        console.log('✅ Hakan kullanıcısı oluşturuldu! UID:', user.uid);
+                        console.log('📧 Email: alparmaklih@gmail.com');
+                        console.log('🔑 Şifre: Hakan5225522541');
+                        console.log('👑 Rol: superadmin');
+                    } catch (authError) {
+                        // Eğer hesap zaten varsa, sadece Firestore'u güncelle
+                        if (authError.code === 'auth/email-already-in-use') {
+                            console.log('⚠️ Email zaten kullanımda, Firestore güncelleniyor...');
+                            
+                            // Email ile kullanıcıyı bul
+                            const usersSnapshot = await db.collection('users')
+                                .where('email', '==', hakanEmail)
+                                .get();
+                            
+                            if (!usersSnapshot.empty) {
+                                const userDoc = usersSnapshot.docs[0];
+                                await db.collection('users').doc(userDoc.id).update({
+                                    username: 'Hakan',
+                                    password: hakanPassword,
+                                    role: 'superadmin',
+                                    banned: false
+                                });
+                                console.log('✅ Hakan kullanıcısı güncellendi!');
+                            }
+                        } else {
+                            throw authError;
+                        }
+                    }
+                } else {
+                    console.log('✅ Hakan kullanıcısı zaten mevcut');
+                }
+            } catch (error) {
+                console.error('❌ Hakan kullanıcısı oluşturulamadı:', error);
+            }
+        }
+
+    </script>
+
+    <!-- Service Worker Registration - PWA & Background Support -->
+    <script>
+        // Service Worker kaydı
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker kayıtlı:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('❌ Service Worker hatası:', error);
+                    });
+            });
+        }
+
+        // Wake Lock - Ekran kapansa bile müzik çalsın
+        let wakeLock = null;
+        
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('🔒 Wake Lock aktif - Ekran açık kalacak');
+                    
+                    wakeLock.addEventListener('release', () => {
+                        console.log('🔓 Wake Lock serbest bırakıldı');
+                    });
+                }
+            } catch (err) {
+                console.error('❌ Wake Lock hatası:', err);
+            }
+        }
+
+        // Müzik çalmaya başladığında Wake Lock aktif et
+        document.addEventListener('play', requestWakeLock, true);
+        
+        // Sayfa görünür olduğunda Wake Lock'u yeniden aktif et
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        // Install prompt - PWA yükleme
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('📱 PWA yüklenebilir!');
+            
+            // Kullanıcıya yükleme önerisi göster (opsiyonel)
+            // showInstallPromotion();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA yüklendi!');
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>
