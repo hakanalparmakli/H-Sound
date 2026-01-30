@@ -43,8 +43,24 @@
             border-radius: 10px;
             backface-visibility: hidden;
         }
-        .card-back { transform: rotateY(180deg); }
-        .checkbox:checked ~ .card-3d-wrap .card-3d-wrapper { transform: rotateY(180deg); }
+        .card-back { 
+            transform: rotateY(180deg); 
+        }
+        .checkbox:checked ~ .card-3d-wrap .card-3d-wrapper { 
+            transform: rotateY(180deg); 
+        }
+        .checkbox:checked ~ .card-3d-wrap .card-back {
+            z-index: 100 !important;
+        }
+        .checkbox:not(:checked) ~ .card-3d-wrap .card-front {
+            z-index: 100 !important;
+        }
+        .checkbox:checked ~ .card-3d-wrap .card-front {
+            z-index: 1;
+        }
+        .checkbox:not(:checked) ~ .card-3d-wrap .card-back {
+            z-index: 1;
+        }
         [type="checkbox"]:checked, [type="checkbox"]:not(:checked) { position: absolute; left: -9999px; }
         .checkbox:checked + label, .checkbox:not(:checked) + label {
             position: relative;
@@ -92,24 +108,48 @@
             background-color: #1f2029;
             border: none;
             outline: none;
+            position: relative;
+            z-index: 1000 !important;
+            pointer-events: auto !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            user-select: text !important;
+        }
+        .form-style:focus {
+            background-color: #2a2b35 !important;
+            color: #ffffff !important;
+            border: 1px solid #3498DB !important;
+            z-index: 1001 !important;
         }
         .input-icon {
             position: absolute;
             top: 0;
             left: 18px;
             height: 48px;
-            font-size: 24px;
+            font-size: 20px;
             line-height: 48px;
-            color: #ffeba7;
+            color: #3498DB;
+            z-index: 1002;
+            transition: color 0.3s ease;
+        }
+        .form-group:hover .input-icon {
+            color: #5DADE2;
         }
         .toggle-password {
             position: absolute;
             top: 0;
             right: 18px;
             height: 48px;
-            font-size: 20px;
+            font-size: 18px;
             line-height: 48px;
             color: #c4c3ca;
+            cursor: pointer;
+            z-index: 1002;
+            transition: color 0.3s ease;
+        }
+        .toggle-password:hover {
+            color: #3498DB;
+        }
             cursor: pointer;
         }
         .btn {
@@ -156,13 +196,13 @@
                                         <div class="section text-center">
                                             <h4 class="mb-4">Giriş Yap</h4>
                                             <div class="form-group">
-                                                <i class="input-icon uil uil-user"></i>
+                                                <i class="input-icon fas fa-user"></i>
                                                 <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="logusername">
                                             </div>
                                             <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-lock-alt"></i>
+                                                <i class="input-icon fas fa-lock"></i>
                                                 <input type="password" class="form-style" placeholder="Şifre" id="logpass">
-                                                <i class="toggle-password uil uil-eye-slash" onclick="togglePassword('logpass', this)"></i>
+                                                <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('logpass', this)"></i>
                                             </div>
                                             <button class="btn mt-4" onclick="handleLogin()">Giriş Yap</button>
                                         </div>
@@ -205,6 +245,43 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Test için input alanlarının çalışıp çalışmadığını kontrol et
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tüm input alanlarına event listener ekle
+            const inputs = document.querySelectorAll('.form-style');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    console.log('Input focused:', this.id);
+                    this.style.backgroundColor = '#2a2b35';
+                    this.style.border = '1px solid #3498DB';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.style.backgroundColor = '#1f2029';
+                    this.style.border = 'none';
+                });
+                
+                input.addEventListener('input', function() {
+                    console.log('Input changed:', this.id, this.value);
+                });
+            });
+            
+            // Checkbox değişimini kontrol et
+            const checkbox = document.getElementById('reg-log');
+            checkbox.addEventListener('change', function() {
+                console.log('Checkbox changed:', this.checked);
+                setTimeout(() => {
+                    // Form geçişinden sonra input alanlarını yeniden aktif et
+                    const activeInputs = document.querySelectorAll('.form-style');
+                    activeInputs.forEach(input => {
+                        input.style.pointerEvents = 'auto';
+                        input.style.zIndex = '100';
+                    });
+                }, 700); // Animasyon süresinden sonra
+            });
+        });
     
     <script>
         const firebaseConfig = {

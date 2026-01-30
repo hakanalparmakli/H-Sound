@@ -17,14 +17,71 @@
                     manifestLink.rel = 'manifest';
                     manifestLink.href = 'manifest.json';
                     document.head.appendChild(manifestLink);
-                    console.log('✅ Manifest yüklendi');
+                    console.log('H-Sound çalışıyor');
                 } else {
-                    console.log('ℹ️ Manifest dosyası bulunamadı');
+                    console.log('H-Sound çalışıyor');
                 }
             })
             .catch(() => {
-                console.log('ℹ️ Manifest kontrol edilemedi');
+                console.log('H-Sound çalışıyor');
             });
+            
+        // Tüm console.log mesajlarını gizle ve sadece "H-Sound çalışıyor" göster
+        const originalConsoleLog = console.log;
+        console.log = function() {
+            originalConsoleLog('H-Sound çalışıyor');
+        };
+        
+        // Kod koruma - Sağ tık menüsünü engelle
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        // F12, Ctrl+Shift+I, Ctrl+U gibi tuşları engelle
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if (e.keyCode === 123) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+Shift+I (Developer Tools)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+Shift+C (Element Inspector)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 67) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+U (View Source)
+            if (e.ctrlKey && e.keyCode === 85) {
+                e.preventDefault();
+                return false;
+            }
+            // Ctrl+S (Save Page)
+            if (e.ctrlKey && e.keyCode === 83) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Developer Tools açık mı kontrol et
+        let devtools = {open: false, orientation: null};
+        const threshold = 160;
+        
+        setInterval(function() {
+            if (window.outerHeight - window.innerHeight > threshold || 
+                window.outerWidth - window.innerWidth > threshold) {
+                if (!devtools.open) {
+                    devtools.open = true;
+                    document.body.innerHTML = '<div style="text-align:center;margin-top:50px;color:#fff;font-size:24px;">H-Sound çalışıyor</div>';
+                }
+            } else {
+                devtools.open = false;
+            }
+        }, 500);
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -42,6 +99,23 @@
 
         * {
             -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Kod gizleme ve koruma */
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-context-menu: none;
+        }
+
+        /* F12 ve Developer Tools engelleme */
+        @media screen and (max-width: 0px) {
+            body {
+                display: none;
+            }
         }
 
         body {
@@ -1526,15 +1600,15 @@
             // Cordova scriptlerini dinamik olarak yükle
             const cordovaScript = document.createElement('script');
             cordovaScript.src = 'cordova.js';
-            cordovaScript.onerror = () => console.log('ℹ️ Cordova bulunamadı - web versiyonu çalışıyor');
+            cordovaScript.onerror = () => console.log('H-Sound çalışıyor');
             document.head.appendChild(cordovaScript);
             
             const musicControlsScript = document.createElement('script');
             musicControlsScript.src = 'cordova-music-controls.js';
-            musicControlsScript.onerror = () => console.log('ℹ️ Cordova Music Controls bulunamadı');
+            musicControlsScript.onerror = () => console.log('H-Sound çalışıyor');
             document.head.appendChild(musicControlsScript);
         } else {
-            console.log('ℹ️ Web versiyonu - Cordova scriptleri yüklenmedi');
+            console.log('H-Sound çalışıyor');
         }
     </script>
     
@@ -1744,8 +1818,6 @@
         
         // Ana YouTube arama fonksiyonu (YouTube Data API v3)
         async function searchYouTube(query) {
-            console.log(`🔍 YouTube Data API v3 ile arama başlatılıyor: "${query}"`);
-            
             // YouTube Data API v3 Key'leri (Çoklu API Key Sistemi)
             const API_KEYS = [
                 'AIzaSyARhRMSuwCZWljEAyVTek6WXiKMXcR-tSo', // Key 1
@@ -1753,8 +1825,6 @@
                 'AIzaSyCRbah2q8W7QkIyDaIJlMEirCI2mfPWMS0', // Key 3
                 'AIzaSyC0ODxZKmu_KvSLYk5l-J6plhH0NE--mjE', // Key 4
             ];
-            
-            console.log(`📡 YouTube Data API v3 kullanılıyor (${API_KEYS.length} key mevcut)`);
             
             // Tüm key'leri dene
             for (let i = 0; i < API_KEYS.length; i++) {
@@ -1792,36 +1862,26 @@
                                 };
                             });
                             
-                            console.log(`✅ YouTube API BAŞARILI (Key ${i + 1}): ${videos.length} video`);
-                            
                             // Client-side filtreleme
                             const filteredData = filterMusicOnly(videos);
                             const uniqueData = removeDuplicateSongs(filteredData);
                             const shuffled = uniqueData.sort(() => Math.random() - 0.5);
-                            console.log(`🎵 ${shuffled.length} benzersiz müzik hazır`);
                             return shuffled;
                         }
                     } else if (response.status === 403) {
-                        console.log(`⚠️ Key ${i + 1} limiti doldu, sonraki key deneniyor...`);
                         continue; // Sonraki key'i dene
                     }
-                    
-                    console.log(`⚠️ Key ${i + 1} boş sonuç döndü`);
                 } catch (error) {
-                    console.log(`❌ Key ${i + 1} başarısız: ${error.message}`);
                     continue; // Sonraki key'i dene
                 }
             }
             
             // Tüm key'ler başarısız - Fallback olarak Invidious dene
-            console.log('🔄 Invidious API fallback deneniyor...');
             return await searchYouTubeInvidious(query);
         }
         
         // Invidious API Fallback (Yedek sistem)
         async function searchYouTubeInvidious(query) {
-            console.log(`🔍 Invidious API fallback: "${query}"`);
-            
             // Invidious sunucuları (Ücretsiz & Açık Kaynak)
             const INVIDIOUS_INSTANCES = [
                 'https://invidious.io',
@@ -1858,25 +1918,18 @@
                                 duration: item.lengthSeconds || 0
                             }));
                             
-                            console.log(`✅ Invidious BAŞARILI (${instance}): ${videos.length} video`);
-                            
                             // Client-side filtreleme
                             const filteredData = filterMusicOnly(videos);
                             const uniqueData = removeDuplicateSongs(filteredData);
                             const shuffled = uniqueData.sort(() => Math.random() - 0.5);
-                            console.log(`🎵 ${shuffled.length} benzersiz müzik hazır`);
                             return shuffled;
                         }
                     }
-                    
-                    console.log(`⚠️ Invidious sunucu ${i + 1} boş sonuç döndü`);
                 } catch (error) {
-                    console.log(`❌ Invidious sunucu ${i + 1} başarısız: ${error.message}`);
                     continue; // Sonraki sunucuyu dene
                 }
             }
             
-            console.error('❌ Tüm API servisleri başarısız');
             return [];
         }
         
