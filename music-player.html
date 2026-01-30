@@ -1457,6 +1457,30 @@
             }
         }
 
+        /* PWA Install Button Animasyonları */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+            }
+            50% {
+                box-shadow: 0 6px 25px rgba(52, 152, 219, 0.7);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -1706,6 +1730,141 @@
         window.player = null;
         let player = window.player;
         let playlist = [];
+        
+        // PWA Install Özelliği
+        let deferredPrompt;
+        let installButton = null;
+        
+        // PWA install prompt'unu yakala
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('H-Sound çalışıyor');
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallButton();
+        });
+        
+        // PWA install butonunu göster
+        function showInstallButton() {
+            if (!installButton) {
+                installButton = document.createElement('button');
+                installButton.innerHTML = '<i class="fas fa-download"></i> Ana Ekrana Ekle';
+                installButton.style.cssText = `
+                    position: fixed;
+                    bottom: 100px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+                    color: white;
+                    border: none;
+                    padding: 12px 20px;
+                    border-radius: 25px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    z-index: 1000;
+                    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                `;
+                
+                installButton.addEventListener('mouseenter', () => {
+                    installButton.style.transform = 'translateY(-2px)';
+                    installButton.style.boxShadow = '0 6px 20px rgba(52, 152, 219, 0.6)';
+                });
+                
+                installButton.addEventListener('mouseleave', () => {
+                    installButton.style.transform = 'translateY(0)';
+                    installButton.style.boxShadow = '0 4px 15px rgba(52, 152, 219, 0.4)';
+                });
+                
+                installButton.addEventListener('click', installPWA);
+                document.body.appendChild(installButton);
+            }
+        }
+        
+        // PWA'yı yükle
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('H-Sound çalışıyor');
+                deferredPrompt = null;
+                hideInstallButton();
+            }
+        }
+        
+        // Install butonunu gizle
+        function hideInstallButton() {
+            if (installButton) {
+                installButton.remove();
+                installButton = null;
+            }
+        }
+        
+        // PWA yüklendikten sonra butonu gizle
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('H-Sound çalışıyor');
+            hideInstallButton();
+        });
+        
+        // Mobil cihazlarda iOS için özel kontrol
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+        
+        function isInStandaloneMode() {
+            return (window.matchMedia('(display-mode: standalone)').matches) || (window.navigator.standalone) || document.referrer.includes('android-app://');
+        }
+        
+        // iOS için özel install mesajı
+        if (isIOS() && !isInStandaloneMode()) {
+            setTimeout(() => {
+                const iosInstallButton = document.createElement('div');
+                iosInstallButton.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        bottom: 100px;
+                        left: 20px;
+                        right: 20px;
+                        background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+                        color: white;
+                        padding: 15px;
+                        border-radius: 12px;
+                        font-size: 14px;
+                        text-align: center;
+                        z-index: 1000;
+                        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+                        animation: slideUp 0.5s ease;
+                    ">
+                        <div style="font-weight: 600; margin-bottom: 8px;">
+                            <i class="fas fa-mobile-alt"></i> Ana Ekrana Ekle
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.9;">
+                            Safari'de <i class="fas fa-share"></i> paylaş butonuna tıklayın ve "Ana Ekrana Ekle" seçin
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" style="
+                            position: absolute;
+                            top: 5px;
+                            right: 10px;
+                            background: none;
+                            border: none;
+                            color: white;
+                            font-size: 16px;
+                            cursor: pointer;
+                        ">×</button>
+                    </div>
+                `;
+                document.body.appendChild(iosInstallButton);
+                
+                // 10 saniye sonra otomatik gizle
+                setTimeout(() => {
+                    if (iosInstallButton.parentElement) {
+                        iosInstallButton.remove();
+                    }
+                }, 10000);
+            }, 3000);
+        }
         let currentSongIndex = -1;
         let isPlaying = false;
         let playbackRate = 1;
