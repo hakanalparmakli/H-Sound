@@ -7,24 +7,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>H-Sound Müzik Çalar</title>
-    <!-- Manifest sadece dosya varsa yüklenir -->
+    <!-- PWA Manifest - Direkt yükle -->
+    <link rel="manifest" href="manifest.json">
     <script>
-        // Manifest dosyasının varlığını kontrol et
-        fetch('manifest.json', { method: 'HEAD' })
-            .then(response => {
-                if (response.ok) {
-                    const manifestLink = document.createElement('link');
-                    manifestLink.rel = 'manifest';
-                    manifestLink.href = 'manifest.json';
-                    document.head.appendChild(manifestLink);
-                    console.log('H-Sound çalışıyor');
-                } else {
-                    console.log('H-Sound çalışıyor');
-                }
-            })
-            .catch(() => {
-                console.log('H-Sound çalışıyor');
-            });
+        console.log('H-Sound çalışıyor');
             
         // Tüm console.log mesajlarını gizle ve sadece "H-Sound çalışıyor" göster
         const originalConsoleLog = console.log;
@@ -1700,23 +1686,10 @@
         </div>
     </div>
 
-    <!-- Cordova Script (APK için) - Koşullu yükleme -->
+    <!-- PWA için gerekli scriptler -->
     <script>
-        // Cordova kontrolü - sadece mobil uygulamada yükle
-        if (window.cordova || (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1)) {
-            // Cordova scriptlerini dinamik olarak yükle
-            const cordovaScript = document.createElement('script');
-            cordovaScript.src = 'cordova.js';
-            cordovaScript.onerror = () => console.log('H-Sound çalışıyor');
-            document.head.appendChild(cordovaScript);
-            
-            const musicControlsScript = document.createElement('script');
-            musicControlsScript.src = 'cordova-music-controls.js';
-            musicControlsScript.onerror = () => console.log('H-Sound çalışıyor');
-            document.head.appendChild(musicControlsScript);
-        } else {
-            console.log('H-Sound çalışıyor');
-        }
+        // PWA kontrolü - sadece web'de çalışır
+        console.log('H-Sound çalışıyor');
     </script>
     
     <!-- Firebase SDK (Compat version) -->
@@ -1819,7 +1792,7 @@
         let messageListener = null;
         let songToShare = null;
 
-        // YOUTUBE PLAYER VARIABLES (Global - Cordova için)
+        // YOUTUBE PLAYER VARIABLES (Global - PWA için)
         window.player = null;
         let player = window.player;
         let playlist = [];
@@ -4157,8 +4130,15 @@
             setActiveLink(settingsLink);
             searchContainer.classList.add('hidden');
             clearContentArea();
-            const username = localStorage.getItem('h_sound_username') || 'Kullanıcı';
+            let username = localStorage.getItem('h_sound_username') || 'Kullanıcı';
             const email = localStorage.getItem('h_sound_email') || '';
+            
+            // Tüm kullanıcıların adını düzelt (ilk harf büyük)
+            const correctedUsername = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+            if (username !== correctedUsername) {
+                username = correctedUsername;
+                localStorage.setItem('h_sound_username', correctedUsername);
+            }
             
             // Kullanıcı rolünü al
             let userRole = 'user';
@@ -4309,7 +4289,7 @@
                         localStorage.removeItem('h_sound_login_time');
                         
                         // Giriş sayfasına yönlendir
-                        window.location.href = 'index.html';
+                        window.location.href = 'login.html';
                     }
                 });
             }
@@ -4356,7 +4336,7 @@
                             localStorage.clear();
                             
                             // Ana sayfaya yönlendir
-                            window.location.href = 'index.html';
+                            window.location.href = 'login.html';
                         } else {
                             alert('❌ Kullanıcı oturumu bulunamadı.');
                         }
@@ -4453,9 +4433,9 @@
                     navigator.mediaSession.playbackState = 'playing';
                 }
                 
-                // CORDOVA - Bildirim güncelle (çalıyor)
+                // PWA - Bildirim güncelle (çalıyor)
                 if (window.updateMusicControls && playlist[currentSongIndex]) {
-                    window.updateMusicControls(playlist[currentSongIndex], true);
+                    console.log('H-Sound çalışıyor');
                 }
             } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.BUFFERING) {
                 isPlaying = false;
@@ -4466,9 +4446,9 @@
                     navigator.mediaSession.playbackState = 'paused';
                 }
                 
-                // CORDOVA - Bildirim güncelle (duraklatıldı)
+                // PWA - Bildirim güncelle (duraklatıldı)
                 if (window.updateMusicControls && playlist[currentSongIndex]) {
-                    window.updateMusicControls(playlist[currentSongIndex], false);
+                    console.log('H-Sound çalışıyor');
                 }
             } else if (event.data == YT.PlayerState.ENDED) {
                 console.log('🏁 Şarkı bitti - playMode:', playMode);
@@ -4582,9 +4562,9 @@
                 }
             }
             
-            // CORDOVA MÜZİK KONTROLÜ - Bildirim güncelle
+            // PWA MÜZİK KONTROLÜ - Bildirim güncelle
             if (window.updateMusicControls) {
-                window.updateMusicControls(song, true);
+                console.log('H-Sound çalışıyor');
             }
         }
         
@@ -4698,7 +4678,7 @@
         }
 
         
-        // Global yapıldı - Cordova'dan erişilebilir
+        // Global yapıldı - PWA'dan erişilebilir
         window.playNext = async function playNext() {
             if (playlist.length === 0 || currentSongIndex === -1) {
                 console.log('⚠️ Playlist boş veya index geçersiz');
@@ -4765,7 +4745,7 @@
             playSong(playlist[currentSongIndex]);
         }
         
-        // Global yapıldı - Cordova'dan erişilebilir
+        // Global yapıldı - PWA'dan erişilebilir
         window.playPrevious = function playPrev() {
             if (playlist.length === 0 || currentSongIndex === -1) {
                 console.log('⚠️ Playlist boş veya index geçersiz');
@@ -4918,17 +4898,25 @@
         
         modeBtn.addEventListener('click', togglePlayMode); 
         
-        // --- ADMIN ACCESS CHECK ---
-        async function checkAdminAccess() {
-            const username = localStorage.getItem('h_sound_username');
+        // --- USER DATA CHECK ---
+        async function checkUserData() {
+            let username = localStorage.getItem('h_sound_username');
             const isLoggedIn = localStorage.getItem('h_sound_logged_in');
             const uid = localStorage.getItem('h_sound_uid');
             
-            console.log('🔍 Admin kontrolü başlatıldı:', { username, isLoggedIn, uid });
+            console.log('🔍 Kullanıcı kontrolü başlatıldı:', { username, isLoggedIn, uid });
             
             if (!username || isLoggedIn !== 'true' || !uid) {
                 console.log('❌ Kullanıcı giriş yapmamış');
                 return;
+            }
+            
+            // Tüm kullanıcıların adını düzelt (ilk harf büyük)
+            const correctedUsername = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+            if (username !== correctedUsername) {
+                username = correctedUsername;
+                localStorage.setItem('h_sound_username', correctedUsername);
+                console.log('✅ Kullanıcı adı düzeltildi:', correctedUsername);
             }
             
             // Firebase'den kullanıcı rolünü kontrol et
@@ -4942,16 +4930,40 @@
                 
                 const userData = userDoc.data();
                 let userRole = userData.role || 'user';
+                let needsUpdate = false;
+                const updateData = {};
+                
+                // Tüm kullanıcıların Firebase'deki kullanıcı adını düzelt
+                if (userData.username !== correctedUsername) {
+                    console.log('✅ Firebase\'de kullanıcı adı düzeltiliyor:', correctedUsername);
+                    updateData.username = correctedUsername;
+                    needsUpdate = true;
+                }
                 
                 // "Hakan" kullanıcısını otomatik olarak superadmin yap
-                if (username.toLowerCase() === 'hakan' && userRole !== 'superadmin') {
-                    console.log('👑 Hakan kullanıcısı superadmin yapılıyor...');
-                    await db.collection('users').doc(uid).update({
-                        role: 'superadmin'
-                    });
-                    userRole = 'superadmin';
-                    localStorage.setItem('h_sound_role', 'superadmin');
-                    console.log('✅ Hakan superadmin oldu!');
+                if (username.toLowerCase() === 'hakan') {
+                    // Rol kontrolü
+                    if (userRole !== 'superadmin') {
+                        console.log('👑 Hakan kullanıcısı superadmin yapılıyor...');
+                        updateData.role = 'superadmin';
+                        userRole = 'superadmin';
+                        localStorage.setItem('h_sound_role', 'superadmin');
+                        needsUpdate = true;
+                    }
+                    
+                    // E-posta kontrolü (Firebase'de)
+                    if (userData.email !== 'alparmaklih@gmail.com') {
+                        console.log('📧 Firebase\'de e-posta düzeltiliyor: alparmaklih@gmail.com');
+                        updateData.email = 'alparmaklih@gmail.com';
+                        localStorage.setItem('h_sound_email', 'alparmaklih@gmail.com');
+                        needsUpdate = true;
+                    }
+                }
+                
+                // Güncelleme gerekiyorsa Firebase'i güncelle
+                if (needsUpdate) {
+                    await db.collection('users').doc(uid).update(updateData);
+                    console.log('✅ Kullanıcı bilgileri güncellendi!');
                 }
                 
                 const isAdmin = userRole === 'superadmin';
@@ -5032,13 +5044,13 @@
             loadLanguage(currentLanguage).then(() => {
                 updateModeButtonTitle();
                 
-                // GİRİŞ KONTROLÜ - Giriş yapılmamışsa index.html'e yönlendir
+                // GİRİŞ KONTROLÜ - Giriş yapılmamışsa login.html'e yönlendir
                 const isLoggedIn = localStorage.getItem('h_sound_logged_in');
                 const username = localStorage.getItem('h_sound_username');
                 
                 if (isLoggedIn !== 'true' || !username) {
                     console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
-                    window.location.href = 'index.html';
+                    window.location.href = 'login.html';
                     return;
                 }
                 
@@ -5048,8 +5060,8 @@
                 // Hakan kullanıcısını otomatik oluştur (ilk çalıştırmada)
                 createHakanUserIfNotExists();
                 
-                // Admin kontrolü
-                checkAdminAccess();
+                // Kullanıcı verilerini kontrol et
+                checkUserData();
             });
         };
         
@@ -5065,7 +5077,7 @@
                     console.log('👑 Hakan kullanıcısı bulunamadı, oluşturuluyor...');
                     
                     // Hakan kullanıcısını oluştur
-                    const hakanEmail = 'Alparmaklijsh@gmail.com';
+                    const hakanEmail = 'alparmaklih@gmail.com';
                     const hakanPassword = 'Hakan5225522541';
                     
                     // Önce Firebase Authentication'da hesap oluştur
@@ -5084,7 +5096,7 @@
                         });
                         
                         console.log('✅ Hakan kullanıcısı oluşturuldu! UID:', user.uid);
-                        console.log('📧 Email: Alparmaklijsh@gmail.com');
+                        console.log('📧 Email: alparmaklih@gmail.com');
                         console.log('�  Rol: superadmin');
                     } catch (authError) {
                         // Eğer hesap zaten varsa, sadece Firestore'u güncelle
@@ -5186,7 +5198,6 @@
         });
 
         // Install prompt - PWA yükleme
-        let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;

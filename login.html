@@ -354,9 +354,9 @@
             }
 
             try {
-                // Özel "hakan" kullanıcısı kontrolü
+                // Özel "Hakan" kullanıcısı kontrolü
                 if (username.toLowerCase() === 'hakan') {
-                    const hakanEmail = 'Alparmaklijsh@gmail.com';
+                    const hakanEmail = 'alparmaklih@gmail.com';
                     const hakanPassword = 'Hakan5225522541';
                     
                     if (password === hakanPassword) {
@@ -373,7 +373,7 @@
                             if (!userDoc.exists) {
                                 // Kullanıcı Firestore'da yoksa oluştur
                                 await userDocRef.set({
-                                    username: 'hakan',
+                                    username: 'Hakan',
                                     email: hakanEmail,
                                     role: 'superadmin',
                                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -387,7 +387,7 @@
                             }
                             
                             // LocalStorage'a kaydet
-                            localStorage.setItem('h_sound_username', 'hakan');
+                            localStorage.setItem('h_sound_username', 'Hakan');
                             localStorage.setItem('h_sound_email', hakanEmail);
                             localStorage.setItem('h_sound_uid', userCredential.user.uid);
                             localStorage.setItem('h_sound_role', 'superadmin');
@@ -406,7 +406,7 @@
                                 
                                 // Firestore'da kullanıcı bilgilerini kaydet
                                 await db.collection('users').doc(userCredential.user.uid).set({
-                                    username: 'hakan',
+                                    username: 'Hakan',
                                     email: hakanEmail,
                                     role: 'superadmin',
                                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -414,7 +414,7 @@
                                 });
                                 
                                 // LocalStorage'a kaydet
-                                localStorage.setItem('h_sound_username', 'hakan');
+                                localStorage.setItem('h_sound_username', 'Hakan');
                                 localStorage.setItem('h_sound_email', hakanEmail);
                                 localStorage.setItem('h_sound_uid', userCredential.user.uid);
                                 localStorage.setItem('h_sound_role', 'superadmin');
