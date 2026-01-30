@@ -7,22 +7,30 @@
     <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css'>
     <link rel='stylesheet' href='https://unicons.iconscout.com/release/v2.1.9/css/unicons.css'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
-
         body {
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #1A1A1A 0%, #0D0D0D 100%);
             color: #ffffff;
             min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            overflow-x: hidden;
         }
-
-        .section { width: 100%; display: block; }
-        .full-height { min-height: 100vh; }
-
+        .section { 
+            width: 100%; 
+            display: block; 
+        }
+        .full-height { 
+            min-height: 100vh; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 0 20px;
+        }
         .card-3d-wrap {
             position: relative;
             width: 440px;
@@ -30,9 +38,8 @@
             height: 500px;
             transform-style: preserve-3d;
             perspective: 800px;
-            margin: 60px auto 0;
+            margin: 0 auto;
         }
-
         .card-3d-wrapper {
             width: 100%;
             height: 100%;
@@ -40,585 +47,148 @@
             transform-style: preserve-3d;
             transition: all 600ms ease-out;
         }
-
         .card-front, .card-back {
             width: 100%;
             height: 100%;
-            background-color: #1f1f1f;
-            background-image: linear-gradient(145deg, #252525, #1a1a1a);
+            background-color: rgba(255, 255, 255, 0.05);
             position: absolute;
             border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 40px;
-            box-sizing: border-box;
-        }
-
-        .card-back {
-            transform: rotateY(180deg);
-        }
-
-        .form-style {
-            background: rgba(255,255,255,0.05);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            padding: 14px 18px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .form-style:focus {
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 2px rgba(100,200,255,0.3);
-            outline: none;
-        }
-
-        .btn {
-            background: linear-gradient(90deg, #00c6ff, #0072ff);
-            border: none;
-            border-radius: 50px;
-            padding: 12px 30px;
-            color: white;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 114, 255, 0.4);
-        }
-
-        .toggle-password {
-            cursor: pointer;
-            color: #aaa;
-            background: transparent !important;
-            border: none !important;
-        }
-
-        .toggle-password:hover {
-            color: #fff;
-        }
-
-        .card-3d-wrap:hover .card-3d-wrapper {
-            transform: rotateY(10deg);
-        }
-
-        h4 {
-            font-weight: 700;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .link {
-            color: #00c6ff;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .link:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-
-<div class="section full-height">
-
-    <div class="card-3d-wrap mx-auto">
-        <div class="card-3d-wrapper" id="card-wrapper">
-
-            <!-- Giriş Ekranı (ön yüz) -->
-            <div class="card-front">
-                <h4>Giriş Yap</h4>
-                <form id="login-form">
-                    <div class="form-group">
-                        <input type="email" class="form-style" placeholder="E-posta" id="login-email" autocomplete="off" required>
-                    </div>
-                    <div class="form-group mt-2">
-                        <div class="input-group">
-                            <input type="password" class="form-style password-input" placeholder="Şifre" id="login-password" autocomplete="off" required>
-                            <div class="input-group-append">
-                                <span class="input-group-text toggle-password">
-                                    <i class="far fa-eye"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" id="login-btn">Giriş Yap</button>
-                </form>
-
-                <p class="text-center mt-4">
-                    Hesabın yok mu? <span class="link" id="to-signup">Kayıt Ol</span>
-                </p>
-            </div>
-
-            <!-- Kayıt Ekranı (arka yüz) -->
-            <div class="card-back">
-                <h4>Kayıt Ol</h4>
-                <form id="signup-form">
-                    <div class="form-group">
-                        <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="signup-name" autocomplete="off" required>
-                    </div>
-                    <div class="form-group mt-2">
-                        <input type="email" class="form-style" placeholder="E-posta" id="signup-email" autocomplete="off" required>
-                    </div>
-                    <div class="form-group mt-2">
-                        <div class="input-group">
-                            <input type="password" class="form-style password-input" placeholder="Şifre" id="signup-password" autocomplete="off" required>
-                            <div class="input-group-append">
-                                <span class="input-group-text toggle-password">
-                                    <i class="far fa-eye"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" id="signup-btn">Kayıt Ol</button>
-                </form>
-
-                <p class="text-center mt-4">
-                    Zaten hesabın var mı? <span class="link" id="to-login">Giriş Yap</span>
-                </p>
-            </div>
-
-        </div>
-    </div>
-
-</div>
-
-<script>
-    // Kart çevirme
-    const wrapper = document.getElementById('card-wrapper');
-    const toSignup = document.getElementById('to-signup');
-    const toLogin  = document.getElementById('to-login');
-
-    toSignup.addEventListener('click', () => {
-        wrapper.style.transform = 'rotateY(180deg)';
-    });
-
-    toLogin.addEventListener('click', () => {
-        wrapper.style.transform = 'rotateY(0deg)';
-    });
-
-    // Şifre göster/gizle (hem login hem signup için)
-    document.querySelectorAll('.toggle-password').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const input = this.closest('.input-group').querySelector('.password-input');
-            const icon = this.querySelector('i');
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
-    });
-
-    // Giriş formu
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value.trim();
-        const pass  = document.getElementById('login-password').value;
-
-        if (!email || !pass) {
-            alert('Lütfen tüm alanları doldurun.');
-            return;
-        }
-
-        // Buraya gerçek API çağrısı gelecek
-        console.log('Giriş deneniyor →', { email });
-        alert('Giriş yapılıyor... (test modu)');
-        // window.location.href = "/anasayfa.html";   // başarılıysa yönlendirme
-    });
-
-    // Kayıt formu
-    document.getElementById('signup-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const name  = document.getElementById('signup-name').value.trim();
-        const email = document.getElementById('signup-email').value.trim();
-        const pass  = document.getElementById('signup-password').value;
-
-        if (!name || !email || !pass) {
-            alert('Lütfen tüm alanları doldurun.');
-            return;
-        }
-
-        // Buraya gerçek kayıt API çağrısı gelecek
-        console.log('Kayıt deneniyor →', { name, email });
-        alert('Kayıt yapılıyor... (test modu)');
-        // window.location.href = "/giris-yap.html";   // başarılıysa yönlendirme
-    });
-</script>
-
-</body>
-</html>            width: 100%;
-            height: 100%;
-            position: absolute;
-            transform-style: preserve-3d;
-            transition: all 600ms ease-out;
-        }
-
-        .card-front, .card-back {
-            width: 100%;
-            height: 100%;
-            background-color: #1f1f1f;
-            background-image: linear-gradient(145deg, #252525, #1a1a1a);
-            position: absolute;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.08);
-            padding: 40px;
-            box-sizing: border-box;
-        }
-
-        .card-back {
-            transform: rotateY(180deg);
-        }
-
-        .form-style {
-            background: rgba(255,255,255,0.05);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            padding: 14px 18px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        .form-style:focus {
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 0 0 2px rgba(100,200,255,0.3);
-            outline: none;
-        }
-
-        .btn {
-            background: linear-gradient(90deg, #00c6ff, #0072ff);
-            border: none;
-            border-radius: 50px;
-            padding: 12px 30px;
-            color: white;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 114, 255, 0.4);
-        }
-
-        .toggle-password {
-            cursor: pointer;
-            color: #aaa;
-            background: transparent !important;
-            border: none !important;
-        }
-
-        .toggle-password:hover {
-            color: #fff;
-        }
-
-        .card-3d-wrap:hover .card-3d-wrapper {
-            transform: rotateY(10deg);
-        }
-
-        h4 {
-            font-weight: 700;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .link {
-            color: #00c6ff;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .link:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-
-<div class="section full-height">
-
-    <div class="card-3d-wrap mx-auto">
-        <div class="card-3d-wrapper" id="card-wrapper">
-
-            <!-- Giriş Ekranı (ön yüz) -->
-            <div class="card-front">
-                <h4>Giriş Yap</h4>
-                <form id="login-form">
-                    <div class="form-group">
-                        <input type="email" class="form-style" placeholder="E-posta" id="login-email" autocomplete="off" required>
-                    </div>
-                    <div class="form-group mt-2">
-                        <div class="input-group">
-                            <input type="password" class="form-style password-input" placeholder="Şifre" id="login-password" autocomplete="off" required>
-                            <div class="input-group-append">
-                                <span class="input-group-text toggle-password">
-                                    <i class="far fa-eye"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" id="login-btn">Giriş Yap</button>
-                </form>
-
-                <p class="text-center mt-4">
-                    Hesabın yok mu? <span class="link" id="to-signup">Kayıt Ol</span>
-                </p>
-            </div>
-
-            <!-- Kayıt Ekranı (arka yüz) -->
-            <div class="card-back">
-                <h4>Kayıt Ol</h4>
-                <form id="signup-form">
-                    <div class="form-group">
-                        <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="signup-name" autocomplete="off" required>
-                    </div>
-                    <div class="form-group mt-2">
-                        <input type="email" class="form-style" placeholder="E-posta" id="signup-email" autocomplete="off" required>
-                    </div>
-                    <div class="form-group mt-2">
-                        <div class="input-group">
-                            <input type="password" class="form-style password-input" placeholder="Şifre" id="signup-password" autocomplete="off" required>
-                            <div class="input-group-append">
-                                <span class="input-group-text toggle-password">
-                                    <i class="far fa-eye"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" id="signup-btn">Kayıt Ol</button>
-                </form>
-
-                <p class="text-center mt-4">
-                    Zaten hesabın var mı? <span class="link" id="to-login">Giriş Yap</span>
-                </p>
-            </div>
-
-        </div>
-    </div>
-
-</div>
-
-<script>
-    // Kart çevirme
-    const wrapper = document.getElementById('card-wrapper');
-    const toSignup = document.getElementById('to-signup');
-    const toLogin  = document.getElementById('to-login');
-
-    toSignup.addEventListener('click', () => {
-        wrapper.style.transform = 'rotateY(180deg)';
-    });
-
-    toLogin.addEventListener('click', () => {
-        wrapper.style.transform = 'rotateY(0deg)';
-    });
-
-    // Şifre göster/gizle (hem login hem signup için)
-    document.querySelectorAll('.toggle-password').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const input = this.closest('.input-group').querySelector('.password-input');
-            const icon = this.querySelector('i');
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
-    });
-
-    // Giriş formu
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value.trim();
-        const pass  = document.getElementById('login-password').value;
-
-        if (!email || !pass) {
-            alert('Lütfen tüm alanları doldurun.');
-            return;
-        }
-
-        // Buraya gerçek API çağrısı gelecek
-        console.log('Giriş deneniyor →', { email });
-        alert('Giriş yapılıyor... (test modu)');
-        // window.location.href = "/anasayfa.html";   // başarılıysa yönlendirme
-    });
-
-    // Kayıt formu
-    document.getElementById('signup-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const name  = document.getElementById('signup-name').value.trim();
-        const email = document.getElementById('signup-email').value.trim();
-        const pass  = document.getElementById('signup-password').value;
-
-        if (!name || !email || !pass) {
-            alert('Lütfen tüm alanları doldurun.');
-            return;
-        }
-
-        // Buraya gerçek kayıt API çağrısı gelecek
-        console.log('Kayıt deneniyor →', { name, email });
-        alert('Kayıt yapılıyor... (test modu)');
-        // window.location.href = "/giris-yap.html";   // başarılıysa yönlendirme
-    });
-</script>
-
-</body>
-</html>            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1C1C1C 0%, #2C2C2C 100%);
-            border: 1px solid #3498DB;
-            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
-            position: absolute;
-            border-radius: 10px;
             backface-visibility: hidden;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .card-back { 
-            transform: rotateY(180deg); 
+        .card-front {
+            transform: rotateY(0deg);
         }
-        .checkbox:checked ~ .card-3d-wrap .card-3d-wrapper { 
-            transform: rotateY(180deg); 
+        .card-back {
+            transform: rotateY(180deg);
         }
-        .checkbox:checked ~ .card-3d-wrap .card-back {
-            z-index: 100 !important;
-        }
-        .checkbox:not(:checked) ~ .card-3d-wrap .card-front {
-            z-index: 100 !important;
-        }
-        .checkbox:checked ~ .card-3d-wrap .card-front {
-            z-index: 1;
-        }
-        .checkbox:not(:checked) ~ .card-3d-wrap .card-back {
-            z-index: 1;
-        }
-        [type="checkbox"]:checked, [type="checkbox"]:not(:checked) { position: absolute; left: -9999px; }
-        .checkbox:checked + label, .checkbox:not(:checked) + label {
-            position: relative;
-            display: block;
-            text-align: center;
-            width: 60px;
-            height: 16px;
-            border-radius: 8px;
-            margin: 10px auto;
-            cursor: pointer;
-            background-color: #3498DB;
-        }
-        .checkbox:checked + label:before, .checkbox:not(:checked) + label:before {
-            position: absolute;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            color: #3498DB;
-            background-color: #1A1A1A;
-            font-family: 'unicons';
-            content: '\eb4f';
-            top: -10px;
-            left: -10px;
-            line-height: 36px;
-            text-align: center;
-            font-size: 24px;
-            transition: all 0.5s ease;
-            border: 2px solid #3498DB;
-        }
-        .checkbox:checked + label:before { transform: translateX(44px) rotate(-270deg); }
         .center-wrap {
-            position: absolute;
+            display: flex;
+            flex-direction: column;
             width: 100%;
-            padding: 0 35px;
-            top: 50%;
-            transform: translate3d(0, -50%, 35px);
         }
-        .form-group { position: relative; margin: 0; padding: 0; }
-        .form-style {
-            padding: 13px 20px 13px 55px;
-            height: 48px;
-            width: 100%;
-            border-radius: 4px;
-            color: #c4c3ca;
-            background-color: #1f2029;
-            border: none;
-            outline: none;
+        .form-group {
             position: relative;
-            z-index: 1000 !important;
-            pointer-events: auto !important;
-            -webkit-user-select: text !important;
-            -moz-user-select: text !important;
-            user-select: text !important;
+            margin-bottom: 25px;
         }
-        .form-style:focus {
-            background-color: #2a2b35 !important;
-            color: #ffffff !important;
-            border: 1px solid #3498DB !important;
-            z-index: 1001 !important;
+        .form-style {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            height: 50px;
+            padding: 10px 15px 10px 45px;
+            width: 100%;
+            font-weight: 500;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #fff;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        .form-style:focus, .form-style:active {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 150, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
         }
         .input-icon {
             position: absolute;
-            top: 0;
-            left: 18px;
-            height: 48px;
-            font-size: 20px;
-            line-height: 48px;
-            color: #3498DB;
-            z-index: 1002;
-            transition: color 0.3s ease;
-        }
-        .form-group:hover .input-icon {
-            color: #5DADE2;
-        }
-        .toggle-password {
-            position: absolute;
-            top: 0;
-            right: 18px;
-            height: 48px;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5);
             font-size: 18px;
-            line-height: 48px;
-            color: #c4c3ca;
-            cursor: pointer;
-            z-index: 1002;
-            transition: color 0.3s ease;
         }
-        .toggle-password:hover {
-            color: #3498DB;
-        }
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 18px;
             cursor: pointer;
+            transition: color 0.3s;
+        }
+        .password-toggle:hover {
+            color: #fff;
         }
         .btn {
-            border-radius: 6px;
-            height: 44px;
-            padding: 0 30px;
-            border: none;
-            background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
-            color: #ffffff;
+            border-radius: 10px;
+            height: 50px;
+            font-size: 16px;
             font-weight: 600;
-            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            transition: all 0.3s ease;
             cursor: pointer;
         }
-        .btn:hover {
-            background: linear-gradient(135deg, #5DADE2 0%, #3498DB 100%);
-            transform: translateY(-2px);
+        .btn-login {
+            background: linear-gradient(135deg, #0066FF 0%, #00CCFF 100%);
+            color: white;
+            margin-top: 10px;
         }
-        h6 span {
-            padding: 0 20px;
-            text-transform: uppercase;
+        .btn-login:hover {
+            background: linear-gradient(135deg, #0052CC 0%, #00B3E6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 102, 255, 0.4);
+        }
+        .link {
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .link a {
+            color: #00CCFF;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .link a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            font-weight: 900;
+            font-size: 36px;
+            background: linear-gradient(135deg, #00CCFF 0%, #0066FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        .logo p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
+        }
+        .form-title {
+            font-size: 24px;
             font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .is-open .card-3d-wrapper {
+            transform: rotateY(180deg);
+        }
+        @media (max-width: 480px) {
+            .card-3d-wrap {
+                width: 100%;
+                height: 450px;
+            }
+            .card-front, .card-back {
+                padding: 30px 20px;
+            }
         }
     </style>
 </head>
@@ -626,232 +196,191 @@
     <div class="section">
         <div class="container">
             <div class="row full-height justify-content-center">
-                <div class="col-12 text-center align-self-center py-5">
-                    <div class="section pb-5 pt-5 text-center">
-                        <div style="margin-bottom: 30px;">
-                            <h1 style="color: #3498DB; font-size: 48px; font-weight: 700;">
-                                <i class="fas fa-music"></i> H-Sound
-                            </h1>
-                            <p style="color: #A9A9A9;">Modern Müzik Çalar</p>
-                        </div>
-                        <h6 class="mb-0 pb-3"><span>Giriş Yap </span><span>Kayıt Ol</span></h6>
-                        <input class="checkbox" type="checkbox" id="reg-log" />
-                        <label for="reg-log"></label>
-                        <div class="card-3d-wrap mx-auto">
-                            <div class="card-3d-wrapper">
-                                <div class="card-front">
-                                    <div class="center-wrap">
-                                        <div class="section text-center">
-                                            <h4 class="mb-4">Giriş Yap</h4>
-                                            <div class="form-group">
-                                                <i class="input-icon fas fa-user"></i>
-                                                <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="logusername">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon fas fa-lock"></i>
-                                                <input type="password" class="form-style" placeholder="Şifre" id="logpass">
-                                                <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('logpass', this)"></i>
-                                            </div>
-                                            <button class="btn mt-4" onclick="handleLogin()">Giriş Yap</button>
-                                        </div>
+                <div class="col-12 text-center align-self-center">
+                    <div class="logo">
+                        <h1>H-SOUND</h1>
+                        <p>PREMIUM SES DENEYİMİ</p>
+                    </div>
+                    
+                    <div class="card-3d-wrap">
+                        <div class="card-3d-wrapper">
+                            <!-- Giriş Formu (Ön Yüz) -->
+                            <div class="card-front">
+                                <div class="center-wrap">
+                                    <h3 class="form-title">Giriş Yap</h3>
+                                    
+                                    <div class="form-group">
+                                        <i class="input-icon uil uil-envelope-alt"></i>
+                                        <input type="email" class="form-style" placeholder="E-posta Adresiniz" id="login-email" autocomplete="off">
                                     </div>
+                                    
+                                    <div class="form-group">
+                                        <i class="input-icon uil uil-lock-alt"></i>
+                                        <input type="password" class="form-style" placeholder="Şifreniz" id="login-password" autocomplete="off">
+                                        <i class="password-toggle uil uil-eye" id="login-toggle-password"></i>
+                                    </div>
+                                    
+                                    <button class="btn btn-login" id="login-button">
+                                        <span>GİRİŞ YAP</span>
+                                    </button>
+                                    
+                                    <p class="link">
+                                        Hesabınız yok mu? <a id="signup-link">Kayıt Ol</a>
+                                    </p>
+                                    
+                                    <p class="link">
+                                        <a href="#" style="font-size: 12px;">Şifremi Unuttum</a>
+                                    </p>
                                 </div>
-                                <div class="card-back">
-                                    <div class="center-wrap">
-                                        <div class="section text-center">
-                                            <h4 class="mb-4">Kayıt Ol</h4>
-                                            <div class="form-group">
-                                                <i class="input-icon uil uil-user"></i>
-                                                <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="regusername">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-at"></i>
-                                                <input type="email" class="form-style" placeholder="E-posta" id="regemail">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-lock-alt"></i>
-                                                <input type="password" class="form-style" placeholder="Şifre" id="regpass">
-                                                <i class="toggle-password uil uil-eye-slash" onclick="togglePassword('regpass', this)"></i>
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-lock-access"></i>
-                                                <input type="password" class="form-style" placeholder="Şifre Tekrar" id="regpassconfirm">
-                                                <i class="toggle-password uil uil-eye-slash" onclick="togglePassword('regpassconfirm', this)"></i>
-                                            </div>
-                                            <button class="btn mt-4" onclick="handleRegister()">Kayıt Ol</button>
-                                        </div>
+                            </div>
+                            
+                            <!-- Kayıt Formu (Arka Yüz) -->
+                            <div class="card-back">
+                                <div class="center-wrap">
+                                    <h3 class="form-title">Kayıt Ol</h3>
+                                    
+                                    <div class="form-group">
+                                        <i class="input-icon uil uil-user"></i>
+                                        <input type="text" class="form-style" placeholder="Adınız Soyadınız" id="signup-name" autocomplete="off">
                                     </div>
+                                    
+                                    <div class="form-group">
+                                        <i class="input-icon uil uil-envelope-alt"></i>
+                                        <input type="email" class="form-style" placeholder="E-posta Adresiniz" id="signup-email" autocomplete="off">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <i class="input-icon uil uil-lock-alt"></i>
+                                        <input type="password" class="form-style" placeholder="Şifreniz" id="signup-password" autocomplete="off">
+                                        <i class="password-toggle uil uil-eye" id="signup-toggle-password"></i>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <i class="input-icon uil uil-lock-access"></i>
+                                        <input type="password" class="form-style" placeholder="Şifrenizi Tekrar Girin" id="signup-password-confirm" autocomplete="off">
+                                        <i class="password-toggle uil uil-eye" id="signup-toggle-password-confirm"></i>
+                                    </div>
+                                    
+                                    <button class="btn btn-login" id="signup-button">
+                                        <span>KAYIT OL</span>
+                                    </button>
+                                    
+                                    <p class="link">
+                                        Zaten hesabınız var mı? <a id="login-link">Giriş Yap</a>
+                                    </p>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p style="color: rgba(255, 255, 255, 0.5); font-size: 12px;">
+                            © 2023 H-Sound. Tüm hakları saklıdır.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
     <script>
-        // Test için input alanlarının çalışıp çalışmadığını kontrol et
         document.addEventListener('DOMContentLoaded', function() {
-            // Tüm input alanlarına event listener ekle
-            const inputs = document.querySelectorAll('.form-style');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    console.log('Input focused:', this.id);
-                    this.style.backgroundColor = '#2a2b35';
-                    this.style.border = '1px solid #3498DB';
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.style.backgroundColor = '#1f2029';
-                    this.style.border = 'none';
-                });
-                
-                input.addEventListener('input', function() {
-                    console.log('Input changed:', this.id, this.value);
-                });
+            const cardWrap = document.querySelector('.card-3d-wrap');
+            const signupLink = document.getElementById('signup-link');
+            const loginLink = document.getElementById('login-link');
+            
+            // Kayıt ol linkine tıklanınca kartı döndür (arka yüzü göster)
+            signupLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                cardWrap.classList.add('is-open');
             });
             
-            // Checkbox değişimini kontrol et
-            const checkbox = document.getElementById('reg-log');
-            checkbox.addEventListener('change', function() {
-                console.log('Checkbox changed:', this.checked);
-                setTimeout(() => {
-                    // Form geçişinden sonra input alanlarını yeniden aktif et
-                    const activeInputs = document.querySelectorAll('.form-style');
-                    activeInputs.forEach(input => {
-                        input.style.pointerEvents = 'auto';
-                        input.style.zIndex = '100';
-                    });
-                }, 700); // Animasyon süresinden sonra
+            // Giriş yap linkine tıklanınca kartı döndür (ön yüzü göster)
+            loginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                cardWrap.classList.remove('is-open');
             });
-        });
-    
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE",
-            authDomain: "h-sound-b2391.firebaseapp.com",
-            projectId: "h-sound-b2391",
-            storageBucket: "h-sound-b2391.firebasestorage.app",
-            messagingSenderId: "2853371644",
-            appId: "1:2853371644:web:a2a6509e238c4f4a8aa179"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        function togglePassword(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('uil-eye-slash', 'uil-eye');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('uil-eye', 'uil-eye-slash');
-            }
-        }
-
-        async function handleLogin() {
-            const username = document.getElementById('logusername').value;
-            const password = document.getElementById('logpass').value;
-
-            if (!username || !password) {
-                alert('Lütfen kullanıcı adı ve şifrenizi girin.');
-                return;
-            }
-
-            try {
-                const usersSnapshot = await db.collection('users').where('username', '==', username).limit(1).get();
+            
+            // Şifre göster/gizle işlevselliği
+            function setupPasswordToggle(toggleId, passwordId) {
+                const toggle = document.getElementById(toggleId);
+                const passwordInput = document.getElementById(passwordId);
                 
-                if (usersSnapshot.empty) {
-                    alert('Kullanıcı bulunamadı!');
-                    return;
-                }
-
-                const userData = usersSnapshot.docs[0].data();
-                const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
-                const userDocRef = await db.collection('users').doc(userCredential.user.uid).get();
-                const userRole = userDocRef.exists ? userDocRef.data().role : 'user';
-
-                localStorage.setItem('h_sound_username', username);
-                localStorage.setItem('h_sound_email', userData.email);
-                localStorage.setItem('h_sound_uid', userCredential.user.uid);
-                localStorage.setItem('h_sound_role', userRole);
-                localStorage.setItem('h_sound_logged_in', 'true');
-
-                alert('Giriş başarılı!');
-                window.location.href = 'music-player.html';
-            } catch (error) {
-                alert('Kullanıcı adı veya şifre hatalı!');
-            }
-        }
-
-        async function handleRegister() {
-            const username = document.getElementById('regusername').value;
-            const email = document.getElementById('regemail').value;
-            const password = document.getElementById('regpass').value;
-            const confirmPassword = document.getElementById('regpassconfirm').value;
-
-            if (!username || !email || !password || !confirmPassword) {
-                alert('Lütfen tüm alanları doldurun.');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                alert('Şifreler eşleşmiyor!');
-                return;
-            }
-
-            if (password.length < 6) {
-                alert('Şifre en az 6 karakter olmalıdır.');
-                return;
-            }
-
-            try {
-                const usernameCheck = await db.collection('users').where('username', '==', username).limit(1).get();
-                if (!usernameCheck.empty) {
-                    alert('Bu kullanıcı adı zaten kullanılıyor!');
-                    return;
-                }
-
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                await db.collection('users').doc(userCredential.user.uid).set({
-                    username: username,
-                    email: email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    role: 'user'
+                toggle.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // İkon değiştir
+                    this.classList.toggle('uil-eye');
+                    this.classList.toggle('uil-eye-slash');
                 });
-
-                localStorage.setItem('h_sound_username', username);
-                localStorage.setItem('h_sound_email', email);
-                localStorage.setItem('h_sound_uid', userCredential.user.uid);
-                localStorage.setItem('h_sound_role', 'user');
-                localStorage.setItem('h_sound_logged_in', 'true');
-
-                alert('Kayıt başarılı!');
-                window.location.href = 'music-player.html';
-            } catch (error) {
-                alert('Kayıt hatası: ' + error.message);
             }
-        }
-
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const active = document.activeElement;
-                if (active.id === 'logusername' || active.id === 'logpass') {
-                    handleLogin();
-                } else if (active.id.startsWith('reg')) {
-                    handleRegister();
+            
+            // Tüm şifre alanları için göster/gizle işlevselliğini kur
+            setupPasswordToggle('login-toggle-password', 'login-password');
+            setupPasswordToggle('signup-toggle-password', 'signup-password');
+            setupPasswordToggle('signup-toggle-password-confirm', 'signup-password-confirm');
+            
+            // Giriş yap butonu
+            document.getElementById('login-button').addEventListener('click', function() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                if (!email || !password) {
+                    alert('Lütfen e-posta adresinizi ve şifrenizi girin.');
+                    return;
                 }
-            }
+                
+                // Burada normalde giriş işlemi yapılır
+                alert(`Giriş yapılıyor...\nE-posta: ${email}\nŞifre: ${password}`);
+                
+                // Burada giriş başarılı olduktan sonra yönlendirme yapılabilir
+                // window.location.href = 'dashboard.html';
+            });
+            
+            // Kayıt ol butonu
+            document.getElementById('signup-button').addEventListener('click', function() {
+                const name = document.getElementById('signup-name').value;
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const passwordConfirm = document.getElementById('signup-password-confirm').value;
+                
+                if (!name || !email || !password || !passwordConfirm) {
+                    alert('Lütfen tüm alanları doldurun.');
+                    return;
+                }
+                
+                if (password !== passwordConfirm) {
+                    alert('Şifreler eşleşmiyor.');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    alert('Şifre en az 6 karakter olmalıdır.');
+                    return;
+                }
+                
+                // Burada normalde kayıt işlemi yapılır
+                alert(`Kayıt olunuyor...\nAd Soyad: ${name}\nE-posta: ${email}\nŞifre: ${password}`);
+                
+                // Burada kayıt başarılı olduktan sonra kartı giriş sayfasına döndürebiliriz
+                cardWrap.classList.remove('is-open');
+                alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+            });
+            
+            // Enter tuşu ile giriş/kayıt yapma
+            document.querySelectorAll('.form-style').forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        if (cardWrap.classList.contains('is-open')) {
+                            document.getElementById('signup-button').click();
+                        } else {
+                            document.getElementById('login-button').click();
+                        }
+                    }
+                });
+            });
         });
     </script>
 </body>
 </html>
-
-
