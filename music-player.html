@@ -512,6 +512,239 @@
             color: var(--primary-color);
         }
         
+        /* --- ARKADAŞ VE MESAJ STİLLERİ --- */
+        .message-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .message-modal-content {
+            background-color: #1C1C1C;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            height: 70vh;
+            max-height: 600px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .message-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #1C1C1C 0%, #2C2C2C 100%);
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .message-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+        
+        .message-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .message-list {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: calc(70vh - 140px);
+        }
+        
+        .message-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .message-item.sent {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover-color) 100%);
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .message-item.received {
+            background-color: #2C2C2C;
+            color: var(--text-color);
+            margin-right: auto;
+        }
+        
+        .message-sender {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+        
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .message-input-container {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            background-color: #1A1A1A;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .message-input-container input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            background-color: #2C2C2C;
+            color: var(--text-color);
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .message-input-container input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .message-input-container button {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover-color) 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .message-input-container button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+        
+        .friend-card {
+            background-color: #1C1C1C;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        
+        .friend-card:hover {
+            background-color: #2C2C2C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .friend-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .friend-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .friend-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover-color) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .friend-name {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        .friend-status {
+            font-size: 12px;
+            color: var(--secondary-text-color);
+        }
+        
+        .friend-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .friend-action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .message-btn {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover-color) 100%);
+            color: white;
+        }
+        
+        .remove-btn {
+            background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+            color: white;
+        }
+        
+        .friend-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .friend-request-card {
+            background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+            border: none;
+            color: white;
+        }
+        
+        .accept-btn {
+            background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+            color: white;
+        }
+        
+        .decline-btn {
+            background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+            color: white;
+        }
+        
         /* --- Loading & Error Messages --- */
         .loading-spinner {
             border: 4px solid #f3f3f3;
@@ -1146,6 +1379,8 @@
                 <li><a href="#" id="home-link" class="active"><i class="fas fa-home"></i> Ana Sayfa</a></li>
                 <li><a href="#" id="search-link"><i class="fas fa-search"></i> Ara</a></li>
                 <li><a href="#" id="playlists-link"><i class="fas fa-compact-disc"></i> Çalma Listeleri</a></li> 
+                <li><a href="#" id="friends-link"><i class="fas fa-users"></i> Arkadaşlar</a></li>
+                <li><a href="#" id="messages-link"><i class="fas fa-comments"></i> Mesajlar</a></li>
                 <li><a href="#" id="recently-played-link"><i class="fas fa-history"></i> Son Dinlenenler</a></li>
                 <li><a href="#" id="settings-link"><i class="fas fa-cog"></i> Ayarlar</a></li>
                 <li id="admin-menu-item" style="display: none;">
@@ -1229,6 +1464,41 @@
         <h3>Çalma Listesine Ekle</h3>
         <ul id="playlist-modal-list" class="playlist-modal-list">
             </ul>
+    </div>
+
+    <!-- ARKADAŞ EKLEME MODALI -->
+    <div id="add-friend-modal" class="playlist-modal hidden">
+        <h3><i class="fas fa-user-plus"></i> Arkadaş Ekle</h3>
+        <div style="margin: 15px 0;">
+            <input type="text" id="friend-username-input" placeholder="Kullanıcı adını girin..." style="width: 100%; padding: 10px; border: 1px solid #2C2C2C; border-radius: 4px; background-color: #1f2029; color: #ffffff; outline: none;">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button id="send-friend-request-btn" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-paper-plane"></i> Gönder
+            </button>
+            <button id="cancel-friend-request-btn" style="flex: 1; padding: 10px; background: #E74C3C; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-times"></i> İptal
+            </button>
+        </div>
+    </div>
+
+    <!-- MESAJ MODALI -->
+    <div id="message-modal" class="message-modal hidden">
+        <div class="message-modal-content">
+            <div class="message-header">
+                <h3 id="message-header-title"><i class="fas fa-comments"></i> Mesajlar</h3>
+                <button id="close-message-modal" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="message-body">
+                <div id="message-list" class="message-list">
+                    <!-- Mesajlar buraya gelecek -->
+                </div>
+                <div class="message-input-container">
+                    <input type="text" id="message-input" placeholder="Mesajınızı yazın..." maxlength="500">
+                    <button id="send-message-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Cordova Script (APK için) -->
@@ -1316,6 +1586,22 @@
         const addToPlaylistModal = document.getElementById('add-to-playlist-modal');
         const playlistModalList = document.getElementById('playlist-modal-list');
         let songToAdd = null; // Çalma listesine eklenecek şarkı bilgisi
+
+        // Friend and Message Modal elements
+        const addFriendModal = document.getElementById('add-friend-modal');
+        const messageModal = document.getElementById('message-modal');
+        const friendUsernameInput = document.getElementById('friend-username-input');
+        const sendFriendRequestBtn = document.getElementById('send-friend-request-btn');
+        const cancelFriendRequestBtn = document.getElementById('cancel-friend-request-btn');
+        const closeMessageModalBtn = document.getElementById('close-message-modal');
+        const messageList = document.getElementById('message-list');
+        const messageInput = document.getElementById('message-input');
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        const messageHeaderTitle = document.getElementById('message-header-title');
+        
+        // Friend system variables
+        let currentChatUser = null;
+        let messageListener = null;
 
         // YOUTUBE PLAYER VARIABLES (Global - Cordova için)
         window.player = null;
@@ -1883,6 +2169,581 @@
         };
         
         let currentView = 'home'; 
+
+        // --- ARKADAŞ SİSTEMİ FONKSİYONLARI ---
+        
+        // Arkadaş ekleme sayfasını göster
+        function showFriendsPage() {
+            currentView = 'friends';
+            setActiveLink(document.getElementById('friends-link'));
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+            
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <span>👥 Arkadaşlar</span>
+                    <button onclick="showAddFriendModal()" class="create-playlist-btn">
+                        <i class="fas fa-user-plus"></i> Arkadaş Ekle
+                    </button>
+                </div>
+                <div class="loading-spinner"></div>
+            `;
+            
+            loadFriends();
+        }
+        
+        // Mesajlar sayfasını göster
+        function showMessagesPage() {
+            currentView = 'messages';
+            setActiveLink(document.getElementById('messages-link'));
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+            
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <span>💬 Mesajlar</span>
+                </div>
+                <div class="loading-spinner"></div>
+            `;
+            
+            loadMessagesList();
+        }
+        
+        // Arkadaş ekleme modalını göster
+        function showAddFriendModal() {
+            addFriendModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            friendUsernameInput.focus();
+        }
+        
+        // Arkadaş ekleme modalını gizle
+        function hideAddFriendModal() {
+            addFriendModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+            friendUsernameInput.value = '';
+        }
+        
+        // Arkadaş isteği gönder
+        async function sendFriendRequest() {
+            const targetUsername = friendUsernameInput.value.trim();
+            const currentUsername = localStorage.getItem('h_sound_username');
+            const currentUid = localStorage.getItem('h_sound_uid');
+            
+            if (!targetUsername) {
+                alert('Lütfen bir kullanıcı adı girin.');
+                return;
+            }
+            
+            if (targetUsername === currentUsername) {
+                alert('Kendinizi arkadaş olarak ekleyemezsiniz.');
+                return;
+            }
+            
+            try {
+                // Hedef kullanıcıyı bul
+                const targetUserQuery = await db.collection('users')
+                    .where('username', '==', targetUsername)
+                    .get();
+                
+                if (targetUserQuery.empty) {
+                    alert('Bu kullanıcı adıyla bir kullanıcı bulunamadı.');
+                    return;
+                }
+                
+                const targetUser = targetUserQuery.docs[0];
+                const targetUid = targetUser.id;
+                
+                // Zaten arkadaş mı kontrol et
+                const existingFriendship = await db.collection('friendships')
+                    .where('users', 'array-contains', currentUid)
+                    .get();
+                
+                const alreadyFriends = existingFriendship.docs.some(doc => {
+                    const users = doc.data().users;
+                    return users.includes(targetUid);
+                });
+                
+                if (alreadyFriends) {
+                    alert('Bu kullanıcı zaten arkadaşınız veya bekleyen bir isteğiniz var.');
+                    return;
+                }
+                
+                // Arkadaş isteği gönder
+                await db.collection('friendships').add({
+                    users: [currentUid, targetUid],
+                    usernames: [currentUsername, targetUsername],
+                    status: 'pending',
+                    requester: currentUid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert(`${targetUsername} kullanıcısına arkadaş isteği gönderildi!`);
+                hideAddFriendModal();
+                
+                // Arkadaşlar sayfasını yenile
+                if (currentView === 'friends') {
+                    loadFriends();
+                }
+                
+            } catch (error) {
+                console.error('Arkadaş isteği gönderme hatası:', error);
+                alert('Arkadaş isteği gönderilirken bir hata oluştu.');
+            }
+        }
+        
+        // Arkadaşları yükle
+        async function loadFriends() {
+            const currentUid = localStorage.getItem('h_sound_uid');
+            
+            try {
+                // Arkadaşlıkları getir
+                const friendshipsQuery = await db.collection('friendships')
+                    .where('users', 'array-contains', currentUid)
+                    .get();
+                
+                const friends = [];
+                const pendingRequests = [];
+                const sentRequests = [];
+                
+                friendshipsQuery.docs.forEach(doc => {
+                    const data = doc.data();
+                    const otherUserIndex = data.users[0] === currentUid ? 1 : 0;
+                    const otherUsername = data.usernames[otherUserIndex];
+                    const otherUid = data.users[otherUserIndex];
+                    
+                    const friendData = {
+                        id: doc.id,
+                        username: otherUsername,
+                        uid: otherUid,
+                        status: data.status,
+                        isRequester: data.requester === currentUid
+                    };
+                    
+                    if (data.status === 'accepted') {
+                        friends.push(friendData);
+                    } else if (data.status === 'pending') {
+                        if (data.requester === currentUid) {
+                            sentRequests.push(friendData);
+                        } else {
+                            pendingRequests.push(friendData);
+                        }
+                    }
+                });
+                
+                renderFriends(friends, pendingRequests, sentRequests);
+                
+            } catch (error) {
+                console.error('Arkadaşlar yüklenirken hata:', error);
+                contentArea.innerHTML = `
+                    <div class="content-header">
+                        <span>👥 Arkadaşlar</span>
+                        <button onclick="showAddFriendModal()" class="create-playlist-btn">
+                            <i class="fas fa-user-plus"></i> Arkadaş Ekle
+                        </button>
+                    </div>
+                    <div class="error-message">
+                        <h2>⚠️ Arkadaşlar Yüklenemedi</h2>
+                        <p>Arkadaş listesi yüklenirken bir hata oluştu.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Arkadaşları render et
+        function renderFriends(friends, pendingRequests, sentRequests) {
+            let html = `
+                <div class="content-header">
+                    <span>👥 Arkadaşlar</span>
+                    <button onclick="showAddFriendModal()" class="create-playlist-btn">
+                        <i class="fas fa-user-plus"></i> Arkadaş Ekle
+                    </button>
+                </div>
+            `;
+            
+            // Bekleyen istekler
+            if (pendingRequests.length > 0) {
+                html += `<h3 style="color: #F39C12; margin: 20px 0 10px 0;"><i class="fas fa-clock"></i> Bekleyen İstekler (${pendingRequests.length})</h3>`;
+                pendingRequests.forEach(request => {
+                    html += `
+                        <div class="friend-card friend-request-card">
+                            <div class="friend-info">
+                                <div class="friend-details">
+                                    <div class="friend-avatar">${request.username.charAt(0).toUpperCase()}</div>
+                                    <div>
+                                        <div class="friend-name">${request.username}</div>
+                                        <div class="friend-status">Arkadaş isteği gönderdi</div>
+                                    </div>
+                                </div>
+                                <div class="friend-actions">
+                                    <button class="friend-action-btn accept-btn" onclick="acceptFriendRequest('${request.id}')">
+                                        <i class="fas fa-check"></i> Kabul Et
+                                    </button>
+                                    <button class="friend-action-btn decline-btn" onclick="declineFriendRequest('${request.id}')">
+                                        <i class="fas fa-times"></i> Reddet
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Gönderilen istekler
+            if (sentRequests.length > 0) {
+                html += `<h3 style="color: #3498DB; margin: 20px 0 10px 0;"><i class="fas fa-paper-plane"></i> Gönderilen İstekler (${sentRequests.length})</h3>`;
+                sentRequests.forEach(request => {
+                    html += `
+                        <div class="friend-card">
+                            <div class="friend-info">
+                                <div class="friend-details">
+                                    <div class="friend-avatar">${request.username.charAt(0).toUpperCase()}</div>
+                                    <div>
+                                        <div class="friend-name">${request.username}</div>
+                                        <div class="friend-status">İstek gönderildi - Bekliyor</div>
+                                    </div>
+                                </div>
+                                <div class="friend-actions">
+                                    <button class="friend-action-btn remove-btn" onclick="cancelFriendRequest('${request.id}')">
+                                        <i class="fas fa-times"></i> İptal Et
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Arkadaşlar
+            if (friends.length > 0) {
+                html += `<h3 style="color: #27AE60; margin: 20px 0 10px 0;"><i class="fas fa-users"></i> Arkadaşlarım (${friends.length})</h3>`;
+                friends.forEach(friend => {
+                    html += `
+                        <div class="friend-card">
+                            <div class="friend-info">
+                                <div class="friend-details">
+                                    <div class="friend-avatar">${friend.username.charAt(0).toUpperCase()}</div>
+                                    <div>
+                                        <div class="friend-name">${friend.username}</div>
+                                        <div class="friend-status">Arkadaş</div>
+                                    </div>
+                                </div>
+                                <div class="friend-actions">
+                                    <button class="friend-action-btn message-btn" onclick="openChat('${friend.uid}', '${friend.username}')">
+                                        <i class="fas fa-comments"></i> Mesaj
+                                    </button>
+                                    <button class="friend-action-btn remove-btn" onclick="removeFriend('${friend.id}')">
+                                        <i class="fas fa-user-times"></i> Kaldır
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Hiç arkadaş yoksa
+            if (friends.length === 0 && pendingRequests.length === 0 && sentRequests.length === 0) {
+                html += `
+                    <div style="text-align: center; margin-top: 50px; color: #A9A9A9;">
+                        <i class="fas fa-users" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                        <h3>Henüz arkadaşınız yok</h3>
+                        <p>Arkadaş ekleyerek müzik deneyiminizi paylaşmaya başlayın!</p>
+                    </div>
+                `;
+            }
+            
+            contentArea.innerHTML = html;
+        }
+        
+        // Arkadaş isteğini kabul et
+        async function acceptFriendRequest(friendshipId) {
+            try {
+                await db.collection('friendships').doc(friendshipId).update({
+                    status: 'accepted',
+                    acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert('Arkadaş isteği kabul edildi!');
+                loadFriends();
+                
+            } catch (error) {
+                console.error('Arkadaş isteği kabul etme hatası:', error);
+                alert('Arkadaş isteği kabul edilirken bir hata oluştu.');
+            }
+        }
+        
+        // Arkadaş isteğini reddet
+        async function declineFriendRequest(friendshipId) {
+            try {
+                await db.collection('friendships').doc(friendshipId).delete();
+                
+                alert('Arkadaş isteği reddedildi.');
+                loadFriends();
+                
+            } catch (error) {
+                console.error('Arkadaş isteği reddetme hatası:', error);
+                alert('Arkadaş isteği reddedilirken bir hata oluştu.');
+            }
+        }
+        
+        // Arkadaş isteğini iptal et
+        async function cancelFriendRequest(friendshipId) {
+            if (confirm('Arkadaş isteğini iptal etmek istediğinizden emin misiniz?')) {
+                try {
+                    await db.collection('friendships').doc(friendshipId).delete();
+                    
+                    alert('Arkadaş isteği iptal edildi.');
+                    loadFriends();
+                    
+                } catch (error) {
+                    console.error('Arkadaş isteği iptal etme hatası:', error);
+                    alert('Arkadaş isteği iptal edilirken bir hata oluştu.');
+                }
+            }
+        }
+        
+        // Arkadaşı kaldır
+        async function removeFriend(friendshipId) {
+            if (confirm('Bu arkadaşı kaldırmak istediğinizden emin misiniz?')) {
+                try {
+                    await db.collection('friendships').doc(friendshipId).delete();
+                    
+                    alert('Arkadaş kaldırıldı.');
+                    loadFriends();
+                    
+                } catch (error) {
+                    console.error('Arkadaş kaldırma hatası:', error);
+                    alert('Arkadaş kaldırılırken bir hata oluştu.');
+                }
+            }
+        }
+
+        }
+        
+        // --- MESAJLAŞMA SİSTEMİ FONKSİYONLARI ---
+        
+        // Sohbet açma
+        function openChat(friendUid, friendUsername) {
+            currentChatUser = { uid: friendUid, username: friendUsername };
+            messageHeaderTitle.innerHTML = `<i class="fas fa-comments"></i> ${friendUsername}`;
+            messageModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            
+            loadMessages();
+            messageInput.focus();
+        }
+        
+        // Mesaj modalını kapat
+        function closeMessageModal() {
+            messageModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+            currentChatUser = null;
+            
+            // Mesaj dinleyicisini kapat
+            if (messageListener) {
+                messageListener();
+                messageListener = null;
+            }
+        }
+        
+        // Mesajları yükle
+        function loadMessages() {
+            if (!currentChatUser) return;
+            
+            const currentUid = localStorage.getItem('h_sound_uid');
+            const chatId = [currentUid, currentChatUser.uid].sort().join('_');
+            
+            // Gerçek zamanlı mesaj dinleyicisi
+            messageListener = db.collection('messages')
+                .doc(chatId)
+                .collection('chat')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot((snapshot) => {
+                    const messages = [];
+                    snapshot.forEach(doc => {
+                        messages.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    renderMessages(messages);
+                    scrollToBottom();
+                });
+        }
+        
+        // Mesajları render et
+        function renderMessages(messages) {
+            const currentUid = localStorage.getItem('h_sound_uid');
+            
+            if (messages.length === 0) {
+                messageList.innerHTML = `
+                    <div style="text-align: center; color: #A9A9A9; margin-top: 50px;">
+                        <i class="fas fa-comments" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px;"></i>
+                        <p>Henüz mesaj yok. İlk mesajı gönderin!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            messages.forEach(message => {
+                const isSent = message.senderId === currentUid;
+                const messageClass = isSent ? 'sent' : 'received';
+                const time = message.timestamp ? new Date(message.timestamp.toDate()).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+                
+                html += `
+                    <div class="message-item ${messageClass}">
+                        ${!isSent ? `<div class="message-sender">${message.senderName}</div>` : ''}
+                        <div class="message-text">${escapeHtml(message.text)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            });
+            
+            messageList.innerHTML = html;
+        }
+        
+        // Mesaj gönder
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (!messageText || !currentChatUser) return;
+            
+            const currentUid = localStorage.getItem('h_sound_uid');
+            const currentUsername = localStorage.getItem('h_sound_username');
+            const chatId = [currentUid, currentChatUser.uid].sort().join('_');
+            
+            try {
+                // Mesajı gönder
+                await db.collection('messages')
+                    .doc(chatId)
+                    .collection('chat')
+                    .add({
+                        text: messageText,
+                        senderId: currentUid,
+                        senderName: currentUsername,
+                        receiverId: currentChatUser.uid,
+                        receiverName: currentChatUser.username,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                
+                // Sohbet meta bilgisini güncelle
+                await db.collection('messages').doc(chatId).set({
+                    participants: [currentUid, currentChatUser.uid],
+                    participantNames: [currentUsername, currentChatUser.username],
+                    lastMessage: messageText,
+                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessageSender: currentUid
+                }, { merge: true });
+                
+                messageInput.value = '';
+                
+            } catch (error) {
+                console.error('Mesaj gönderme hatası:', error);
+                alert('Mesaj gönderilirken bir hata oluştu.');
+            }
+        }
+        
+        // Mesaj listesini yükle
+        async function loadMessagesList() {
+            const currentUid = localStorage.getItem('h_sound_uid');
+            
+            try {
+                const chatsQuery = await db.collection('messages')
+                    .where('participants', 'array-contains', currentUid)
+                    .orderBy('lastMessageTime', 'desc')
+                    .get();
+                
+                const chats = [];
+                chatsQuery.docs.forEach(doc => {
+                    const data = doc.data();
+                    const otherUserIndex = data.participants[0] === currentUid ? 1 : 0;
+                    const otherUsername = data.participantNames[otherUserIndex];
+                    const otherUid = data.participants[otherUserIndex];
+                    
+                    chats.push({
+                        id: doc.id,
+                        username: otherUsername,
+                        uid: otherUid,
+                        lastMessage: data.lastMessage,
+                        lastMessageTime: data.lastMessageTime,
+                        isLastMessageMine: data.lastMessageSender === currentUid
+                    });
+                });
+                
+                renderMessagesList(chats);
+                
+            } catch (error) {
+                console.error('Mesaj listesi yüklenirken hata:', error);
+                contentArea.innerHTML = `
+                    <div class="content-header">
+                        <span>💬 Mesajlar</span>
+                    </div>
+                    <div class="error-message">
+                        <h2>⚠️ Mesajlar Yüklenemedi</h2>
+                        <p>Mesaj listesi yüklenirken bir hata oluştu.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Mesaj listesini render et
+        function renderMessagesList(chats) {
+            let html = `
+                <div class="content-header">
+                    <span>💬 Mesajlar</span>
+                </div>
+            `;
+            
+            if (chats.length === 0) {
+                html += `
+                    <div style="text-align: center; margin-top: 50px; color: #A9A9A9;">
+                        <i class="fas fa-comments" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+                        <h3>Henüz mesajınız yok</h3>
+                        <p>Arkadaşlarınızla sohbet etmeye başlayın!</p>
+                        <button onclick="showFriendsPage()" style="margin-top: 20px; padding: 12px 24px; background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-users"></i> Arkadaşlarım
+                        </button>
+                    </div>
+                `;
+            } else {
+                chats.forEach(chat => {
+                    const time = chat.lastMessageTime ? new Date(chat.lastMessageTime.toDate()).toLocaleDateString('tr-TR') : '';
+                    const lastMessagePreview = chat.lastMessage.length > 50 ? chat.lastMessage.substring(0, 50) + '...' : chat.lastMessage;
+                    const messagePrefix = chat.isLastMessageMine ? 'Sen: ' : '';
+                    
+                    html += `
+                        <div class="friend-card" onclick="openChat('${chat.uid}', '${chat.username}')" style="cursor: pointer;">
+                            <div class="friend-info">
+                                <div class="friend-details">
+                                    <div class="friend-avatar">${chat.username.charAt(0).toUpperCase()}</div>
+                                    <div style="flex: 1;">
+                                        <div class="friend-name">${chat.username}</div>
+                                        <div class="friend-status">${messagePrefix}${lastMessagePreview}</div>
+                                    </div>
+                                </div>
+                                <div style="color: #A9A9A9; font-size: 12px;">
+                                    ${time}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            contentArea.innerHTML = html;
+        }
+        
+        // Mesaj listesini en alta kaydır
+        function scrollToBottom() {
+            setTimeout(() => {
+                messageList.scrollTop = messageList.scrollHeight;
+            }, 100);
+        }
+        
+        // HTML escape fonksiyonu
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         // --- UTILITY FUNCTIONS ---
         function getTranslation(key) {
@@ -3437,6 +4298,8 @@
         homeLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showHomePage(); });
         searchLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showSearchPage(); });
         playlistsLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showPlaylistsPage(); }); 
+        document.getElementById('friends-link').addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showFriendsPage(); });
+        document.getElementById('messages-link').addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showMessagesPage(); });
         recentlyPlayedLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showRecentlyPlayedPage(); }); 
         settingsLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showSettingsPage(); }); 
         
@@ -3448,6 +4311,32 @@
             }
             if (!addToPlaylistModal.classList.contains('hidden')) {
                 hideAddToPlaylistModal();
+            }
+            if (!addFriendModal.classList.contains('hidden')) {
+                hideAddFriendModal();
+            }
+            if (!messageModal.classList.contains('hidden')) {
+                closeMessageModal();
+            }
+        });
+        
+        // Friend system event listeners
+        sendFriendRequestBtn.addEventListener('click', sendFriendRequest);
+        cancelFriendRequestBtn.addEventListener('click', hideAddFriendModal);
+        closeMessageModalBtn.addEventListener('click', closeMessageModal);
+        sendMessageBtn.addEventListener('click', sendMessage);
+        
+        // Enter tuşu ile mesaj gönderme
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Enter tuşu ile arkadaş ekleme
+        friendUsernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendFriendRequest();
             }
         });
         
@@ -3669,7 +4558,7 @@
                     console.log('👑 Hakan kullanıcısı bulunamadı, oluşturuluyor...');
                     
                     // Hakan kullanıcısını oluştur
-                    const hakanEmail = 'alparmaklih@gmail.com';
+                    const hakanEmail = 'Alparmaklijsh@gmail.com';
                     const hakanPassword = 'Hakan5225522541';
                     
                     // Önce Firebase Authentication'da hesap oluştur
@@ -3688,7 +4577,7 @@
                         });
                         
                         console.log('✅ Hakan kullanıcısı oluşturuldu! UID:', user.uid);
-                        console.log('📧 Email: alparmaklih@gmail.com');
+                        console.log('📧 Email: Alparmaklijsh@gmail.com');
                         console.log('🔑 Şifre: Hakan5225522541');
                         console.log('👑 Rol: superadmin');
                     } catch (authError) {
@@ -3722,6 +4611,18 @@
                 console.error('❌ Hakan kullanıcısı oluşturulamadı:', error);
             }
         }
+
+        // Global fonksiyonları tanımla
+        window.showHomePage = showHomePage;
+        window.showSearchPage = showSearchPage;
+        window.showFriendsPage = showFriendsPage;
+        window.showMessagesPage = showMessagesPage;
+        window.showAddFriendModal = showAddFriendModal;
+        window.acceptFriendRequest = acceptFriendRequest;
+        window.declineFriendRequest = declineFriendRequest;
+        window.cancelFriendRequest = cancelFriendRequest;
+        window.removeFriend = removeFriend;
+        window.openChat = openChat;
 
     </script>
 
