@@ -740,6 +740,55 @@
             opacity: 0.9;
         }
         
+        /* Şarkı Seçim Modalı */
+        .song-select-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: #1A1A1A;
+        }
+        
+        .song-select-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .song-select-item:hover {
+            background: #2C2C2C;
+        }
+        
+        .song-select-item:last-child {
+            border-bottom: none;
+        }
+        
+        .song-select-thumbnail {
+            width: 60px;
+            height: 45px;
+            border-radius: 4px;
+            margin-right: 12px;
+            object-fit: cover;
+        }
+        
+        .song-select-info {
+            flex: 1;
+        }
+        
+        .song-select-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: white;
+        }
+        
+        .song-select-duration {
+            font-size: 12px;
+            color: #A9A9A9;
+        }
+        
         .message-sender {
             font-size: 12px;
             font-weight: 600;
@@ -1680,7 +1729,32 @@
                 </div>
                 <div class="message-input-container">
                     <input type="text" id="message-input" placeholder="Mesajınızı yazın..." maxlength="500">
+                    <button id="share-song-btn" title="Şarkı Paylaş" style="margin-right: 5px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);"><i class="fas fa-music"></i></button>
                     <button id="send-message-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ŞARKI SEÇİM MODALI -->
+    <div id="song-select-modal" class="message-modal hidden">
+        <div class="message-modal-content">
+            <div class="message-header">
+                <h3 id="song-select-header-title"><i class="fas fa-music"></i> Paylaşılacak Şarkıyı Seç</h3>
+                <button id="close-song-select-btn" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="song-select-content">
+                <div class="search-container" style="margin-bottom: 20px;">
+                    <input type="text" id="song-select-search" placeholder="Şarkı ara..." style="width: 100%; padding: 12px; border: 1px solid #444; border-radius: 8px; background: #2C2C2C; color: white;">
+                    <button id="song-select-search-btn" style="margin-top: 10px; width: 100%; padding: 12px; background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-search"></i> Ara
+                    </button>
+                </div>
+                <div id="song-select-results" class="song-select-results">
+                    <div style="text-align: center; color: #A9A9A9; margin-top: 50px;">
+                        <i class="fas fa-music" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px;"></i>
+                        <p>Paylaşmak istediğiniz şarkıyı arayın</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1776,13 +1850,19 @@
         const addFriendModal = document.getElementById('add-friend-modal');
         const messageModal = document.getElementById('message-modal');
         const shareSongModal = document.getElementById('share-song-modal');
+        const songSelectModal = document.getElementById('song-select-modal');
         const friendUsernameInput = document.getElementById('friend-username-input');
         const sendFriendRequestBtn = document.getElementById('send-friend-request-btn');
         const cancelFriendRequestBtn = document.getElementById('cancel-friend-request-btn');
         const closeMessageModalBtn = document.getElementById('close-message-modal');
+        const closeSongSelectBtn = document.getElementById('close-song-select-btn');
+        const songSelectSearch = document.getElementById('song-select-search');
+        const songSelectSearchBtn = document.getElementById('song-select-search-btn');
+        const songSelectResults = document.getElementById('song-select-results');
         const messageList = document.getElementById('message-list');
         const messageInput = document.getElementById('message-input');
         const sendMessageBtn = document.getElementById('send-message-btn');
+        const shareSongBtn = document.getElementById('share-song-btn');
         const messageHeaderTitle = document.getElementById('message-header-title');
         const shareFriendsList = document.getElementById('share-friends-list');
         const cancelShareBtn = document.getElementById('cancel-share-btn');
@@ -2892,14 +2972,14 @@
                 if (message.type === 'song') {
                     // Şarkı mesajı
                     messageContent = `
-                        <div class="shared-song" onclick="playSharedSong('${message.songData.videoId}', '${escapeHtml(message.songData.title)}', '${message.songData.thumbnail}')">
-                            <div class="shared-song-title">🎵 ${escapeHtml(message.songData.title)}</div>
+                        <div class="shared-song" data-video-id="${message.songData.videoId}" data-title="${message.songData.title}" data-thumbnail="${message.songData.thumbnail}">
+                            <div class="shared-song-title">🎵 ${message.songData.title}</div>
                             <div class="shared-song-info">Şarkıyı çalmak için tıklayın</div>
                         </div>
                     `;
                 } else {
                     // Normal metin mesajı
-                    messageContent = `<div class="message-text">${escapeHtml(message.text)}</div>`;
+                    messageContent = `<div class="message-text">${message.text}</div>`;
                 }
                 
                 html += `
@@ -2913,6 +2993,19 @@
             });
             
             messageList.innerHTML = html;
+            
+            // Paylaşılan şarkılar için event listener'ları ekle
+            const sharedSongs = messageList.querySelectorAll('.shared-song');
+            sharedSongs.forEach(songElement => {
+                songElement.addEventListener('click', () => {
+                    const videoId = songElement.getAttribute('data-video-id');
+                    const title = songElement.getAttribute('data-title');
+                    const thumbnail = songElement.getAttribute('data-thumbnail');
+                    
+                    playSharedSong(videoId, title, thumbnail);
+                });
+            });
+            
             messageList.scrollTop = messageList.scrollHeight;
         }
         
@@ -3055,7 +3148,187 @@
                 }, { merge: true });
                 
                 alert(`Şarkı ${friendName} ile paylaşıldı!`);
-                hideShareSongModal();
+                
+                
+            } catch (error) {
+                console.error('Şarkı paylaşma hatası:', error);
+                alert('Şarkı paylaşılırken bir hata oluştu.');
+            }
+        }
+        
+        // Mevcut çalan şarkıyı paylaşma modalını göster
+        function showCurrentSongShareModal() {
+            // Eğer şarkı çalıyorsa direkt paylaş
+            if (playlist[currentSongIndex]) {
+                const currentSong = playlist[currentSongIndex];
+                songToShare = currentSong;
+                
+                // Arkadaş listesini göster - sadece mevcut sohbet arkadaşı
+                if (currentChatUser) {
+                    shareFriendsList.innerHTML = `
+                        <div class="friend-item" onclick="shareCurrentSongWithFriend('${currentChatUser.uid}', '${currentChatUser.username}')">
+                            <div class="friend-info">
+                                <div class="friend-name">${currentChatUser.username}</div>
+                                <div class="friend-status">Aktif sohbet</div>
+                            </div>
+                            <button class="share-btn">
+                                <i class="fas fa-share"></i> Paylaş
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Modal başlığını güncelle
+                    document.querySelector('#share-song-modal h3').textContent = `${currentChatUser.username} ile Şarkı Paylaş`;
+                    
+                    shareSongModal.classList.remove('hidden');
+                    overlay.classList.remove('hidden');
+                } else {
+                    alert('Önce bir arkadaşınızla sohbet başlatın!');
+                }
+            } else {
+                // Şarkı çalmıyorsa şarkı seçim modalını aç
+                if (currentChatUser) {
+                    showSongSelectModal();
+                } else {
+                    alert('Önce bir arkadaşınızla sohbet başlatın!');
+                }
+            }
+        }
+        
+        // Şarkı seçim modalını göster
+        function showSongSelectModal() {
+            songSelectModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            songSelectSearch.focus();
+        }
+        
+        // Şarkı seçim modalını gizle
+        function hideSongSelectModal() {
+            songSelectModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+            songSelectSearch.value = '';
+            songSelectResults.innerHTML = `
+                <div style="text-align: center; color: #A9A9A9; margin-top: 50px;">
+                    <i class="fas fa-music" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px;"></i>
+                    <p>Paylaşmak istediğiniz şarkıyı arayın</p>
+                </div>
+            `;
+        }
+        
+        // Şarkı ara (paylaşım için)
+        async function searchSongsForShare() {
+            const query = songSelectSearch.value.trim();
+            if (!query) return;
+            
+            songSelectResults.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Aranıyor...</div>';
+            
+            try {
+                const results = await searchYouTube(query);
+                displaySongSelectResults(results);
+            } catch (error) {
+                console.error('Şarkı arama hatası:', error);
+                songSelectResults.innerHTML = '<div style="text-align: center; color: #E74C3C; padding: 20px;">Arama başarısız oldu</div>';
+            }
+        }
+        
+        // Şarkı seçim sonuçlarını göster
+        function displaySongSelectResults(songs) {
+            if (!songs || songs.length === 0) {
+                songSelectResults.innerHTML = '<div style="text-align: center; color: #A9A9A9; padding: 20px;">Sonuç bulunamadı</div>';
+                return;
+            }
+            
+            let html = '';
+            songs.forEach((song, index) => {
+                html += `
+                    <div class="song-select-item" data-video-id="${song.videoId}" data-title="${song.title}" data-thumbnail="${song.thumbnail}" data-duration="${song.duration}" data-index="${index}">
+                        <img src="${song.thumbnail}" alt="${song.title}" class="song-select-thumbnail">
+                        <div class="song-select-info">
+                            <div class="song-select-title">${song.title}</div>
+                            <div class="song-select-duration">${formatDuration(song.duration)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            songSelectResults.innerHTML = html;
+            
+            // Event listener'ları ekle
+            const songItems = songSelectResults.querySelectorAll('.song-select-item');
+            songItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const videoId = item.getAttribute('data-video-id');
+                    const title = item.getAttribute('data-title');
+                    const thumbnail = item.getAttribute('data-thumbnail');
+                    const duration = parseInt(item.getAttribute('data-duration'));
+                    
+                    selectSongToShare(videoId, title, thumbnail, duration);
+                });
+            });
+        }
+        
+        // Paylaşılacak şarkıyı seç ve direkt paylaş
+        async function selectSongToShare(videoId, title, thumbnail, duration) {
+            songToShare = {
+                videoId: videoId,
+                title: title,
+                thumbnail: thumbnail,
+                duration: duration
+            };
+            
+            // Şarkı seçim modalını kapat
+            hideSongSelectModal();
+            
+            // Direkt arkadaşa paylaş
+            if (currentChatUser) {
+                await shareCurrentSongWithFriend(currentChatUser.uid, currentChatUser.username);
+            } else {
+                alert('Sohbet kullanıcısı bulunamadı!');
+            }
+        }
+        
+        // Mevcut şarkıyı arkadaşla paylaş
+        async function shareCurrentSongWithFriend(friendUid, friendName) {
+            if (!songToShare) return;
+            
+            const currentUid = localStorage.getItem('h_sound_uid');
+            const currentUsername = localStorage.getItem('h_sound_username');
+            
+            try {
+                // Chat ID oluştur
+                const chatId = [currentUid, friendUid].sort().join('_');
+                
+                // Şarkı mesajını gönder
+                await db.collection('messages')
+                    .doc(chatId)
+                    .collection('chat')
+                    .add({
+                        type: 'song',
+                        songData: {
+                            videoId: songToShare.videoId,
+                            title: songToShare.title,
+                            thumbnail: songToShare.thumbnail,
+                            duration: songToShare.duration || 'Bilinmiyor'
+                        },
+                        text: `🎵 ${songToShare.title}`,
+                        senderId: currentUid,
+                        senderName: currentUsername,
+                        receiverId: friendUid,
+                        receiverName: friendName,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                
+                // Sohbet meta bilgisini güncelle
+                await db.collection('messages').doc(chatId).set({
+                    participants: [currentUid, friendUid],
+                    participantNames: [currentUsername, friendName],
+                    lastMessage: `🎵 ${songToShare.title}`,
+                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessageSender: currentUid
+                }, { merge: true });
+                
+                alert(`Şarkı ${friendName} ile paylaşıldı!`);
+                
                 
             } catch (error) {
                 console.error('Şarkı paylaşma hatası:', error);
@@ -3206,6 +3479,15 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Süre formatı (saniye -> mm:ss)
+        function formatDuration(seconds) {
+            if (!seconds || seconds === 0) return 'Bilinmiyor';
+            
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
 
         // --- UTILITY FUNCTIONS ---
@@ -4821,13 +5103,19 @@
             if (!messageModal.classList.contains('hidden')) {
                 closeMessageModal();
             }
+            if (!songSelectModal.classList.contains('hidden')) {
+                hideSongSelectModal();
+            }
         });
         
         // Friend system event listeners
         sendFriendRequestBtn.addEventListener('click', sendFriendRequest);
         cancelFriendRequestBtn.addEventListener('click', hideAddFriendModal);
         closeMessageModalBtn.addEventListener('click', closeMessageModal);
+        closeSongSelectBtn.addEventListener('click', hideSongSelectModal);
+        songSelectSearchBtn.addEventListener('click', searchSongsForShare);
         sendMessageBtn.addEventListener('click', sendMessage);
+        shareSongBtn.addEventListener('click', showCurrentSongShareModal);
         cancelShareBtn.addEventListener('click', hideShareSongModal);
         
         // Enter tuşu ile mesaj gönderme
@@ -4841,6 +5129,13 @@
         friendUsernameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 sendFriendRequest();
+            }
+        });
+        
+        // Enter tuşu ile şarkı arama (paylaşım için)
+        songSelectSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchSongsForShare();
             }
         });
         
