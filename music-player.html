@@ -741,6 +741,12 @@
         }
         
         /* Şarkı Seçim Modalı */
+        .song-select-content {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
         .song-select-results {
             max-height: 400px;
             overflow-y: auto;
@@ -1458,6 +1464,24 @@
             
             .setting-control {
                 width: 100%;
+            }
+            
+            /* Şarkı Seçim Modalı - Mobil */
+            .song-select-content {
+                padding: 15px;
+            }
+            
+            .song-select-results {
+                max-height: 300px;
+            }
+            
+            .song-select-item {
+                padding: 10px;
+            }
+            
+            .song-select-thumbnail {
+                width: 50px;
+                height: 38px;
             }
         }
         
@@ -3197,9 +3221,15 @@
         
         // Şarkı seçim modalını göster
         function showSongSelectModal() {
+            console.log('🎵 Şarkı seçim modalı açılıyor...');
+            console.log('Modal element:', songSelectModal);
+            console.log('Overlay element:', overlay);
+            
             songSelectModal.classList.remove('hidden');
             overlay.classList.remove('hidden');
             songSelectSearch.focus();
+            
+            console.log('✅ Modal açıldı');
         }
         
         // Şarkı seçim modalını gizle
@@ -4832,6 +4862,11 @@
                             'rel': 0,
                             'showinfo': 0,
                             'fs': 0,
+                            'iv_load_policy': 3, // Reklam engelleme
+                            'cc_load_policy': 0, // Alt yazı kapalı
+                            'playsinline': 1, // Mobilde tam ekran engelleme
+                            'enablejsapi': 1, // JavaScript API aktif
+                            'origin': window.location.origin // Güvenlik
                         },
                         events: {
                             'onReady': onPlayerReady,
@@ -5317,8 +5352,18 @@
 
         // --- Initial Page Load ---
         
-        // 0. Uygulamayı başlat
-        showHomePage();
+        // 0. Giriş kontrolü yap
+        const isLoggedIn = localStorage.getItem('h_sound_logged_in');
+        const username = localStorage.getItem('h_sound_username');
+        
+        if (isLoggedIn !== 'true' || !username) {
+            console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
+            window.location.href = 'login.html';
+        } else {
+            console.log('✅ Kullanıcı giriş yapmış:', username);
+            // 1. Uygulamayı başlat
+            showHomePage();
+        }
         
         // YouTube IFrame Player API'yi yükle
         const tag = document.createElement('script');
