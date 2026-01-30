@@ -50,10 +50,10 @@
             transform: rotateY(180deg); 
         }
         .checkbox:checked ~ .card-3d-wrap .card-back {
-            z-index: 100 !important;
+            z-index: 100;
         }
         .checkbox:not(:checked) ~ .card-3d-wrap .card-front {
-            z-index: 100 !important;
+            z-index: 100;
         }
         .checkbox:checked ~ .card-3d-wrap .card-front {
             z-index: 1;
@@ -109,17 +109,17 @@
             border: none;
             outline: none;
             position: relative;
-            z-index: 1000 !important;
-            pointer-events: auto !important;
-            -webkit-user-select: text !important;
-            -moz-user-select: text !important;
-            user-select: text !important;
+            z-index: 1000;
+            pointer-events: auto;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            user-select: text;
         }
         .form-style:focus {
-            background-color: #2a2b35 !important;
-            color: #ffffff !important;
-            border: 1px solid #3498DB !important;
-            z-index: 1001 !important;
+            background-color: #2a2b35;
+            color: #ffffff;
+            border: 1px solid #3498DB;
+            z-index: 1001;
         }
         .input-icon {
             position: absolute;
@@ -149,8 +149,6 @@
         }
         .toggle-password:hover {
             color: #3498DB;
-        }
-            cursor: pointer;
         }
         .btn {
             border-radius: 6px !important;
