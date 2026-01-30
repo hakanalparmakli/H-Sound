@@ -334,7 +334,7 @@
         /* ÇALMA LİSTESİNE EKLE BUTONU */
         .add-to-playlist-btn {
             position: absolute;
-            right: 5px;
+            right: 35px;
             bottom: 5px;
             background: none;
             border: none;
@@ -349,6 +349,27 @@
         
         .add-to-playlist-btn:hover {
             color: var(--primary-color);
+            background-color: #333;
+        }
+        
+        /* ARKADAŞA GÖNDER BUTONU */
+        .share-to-friend-btn {
+            position: absolute;
+            right: 5px;
+            bottom: 5px;
+            background: none;
+            border: none;
+            color: var(--secondary-text-color);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: color 0.2s, background-color 0.2s;
+            z-index: 5;
+        }
+        
+        .share-to-friend-btn:hover {
+            color: #27AE60;
             background-color: #333;
         }
         /* --------------------------- */
@@ -667,6 +688,7 @@
             border-radius: 8px;
             max-width: 80%;
             word-wrap: break-word;
+            position: relative;
         }
         
         .message-item.sent {
@@ -680,6 +702,56 @@
             background-color: #2C2C2C;
             color: var(--text-color);
             margin-right: auto;
+        }
+        
+        .message-delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .message-item:hover .message-delete-btn {
+            opacity: 1;
+        }
+        
+        .message-delete-btn:hover {
+            background: #E74C3C;
+        }
+        
+        .shared-song {
+            background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .shared-song:hover {
+            transform: scale(1.02);
+        }
+        
+        .shared-song-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .shared-song-info {
+            font-size: 12px;
+            opacity: 0.9;
         }
         
         .message-sender {
@@ -1592,6 +1664,23 @@
         </div>
     </div>
 
+    <!-- ŞARKI PAYLAŞMA MODALI -->
+    <div id="share-song-modal" class="playlist-modal hidden">
+        <h3><i class="fas fa-share"></i> Şarkıyı Arkadaşa Gönder</h3>
+        <div id="share-song-info" style="margin: 15px 0; padding: 10px; background-color: #2C2C2C; border-radius: 6px;">
+            <!-- Şarkı bilgisi buraya gelecek -->
+        </div>
+        <h4 style="margin: 15px 0 10px 0; font-size: 14px;">Arkadaş Seç:</h4>
+        <ul id="share-friends-list" class="playlist-modal-list">
+            <!-- Arkadaş listesi buraya gelecek -->
+        </ul>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button id="cancel-share-btn" style="flex: 1; padding: 10px; background: #E74C3C; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-times"></i> İptal
+            </button>
+        </div>
+    </div>
+
     <!-- MESAJ MODALI -->
     <div id="message-modal" class="message-modal hidden">
         <div class="message-modal-content">
@@ -1713,6 +1802,7 @@
         // Friend and Message Modal elements
         const addFriendModal = document.getElementById('add-friend-modal');
         const messageModal = document.getElementById('message-modal');
+        const shareSongModal = document.getElementById('share-song-modal');
         const friendUsernameInput = document.getElementById('friend-username-input');
         const sendFriendRequestBtn = document.getElementById('send-friend-request-btn');
         const cancelFriendRequestBtn = document.getElementById('cancel-friend-request-btn');
@@ -1721,10 +1811,13 @@
         const messageInput = document.getElementById('message-input');
         const sendMessageBtn = document.getElementById('send-message-btn');
         const messageHeaderTitle = document.getElementById('message-header-title');
+        const shareFriendsList = document.getElementById('share-friends-list');
+        const cancelShareBtn = document.getElementById('cancel-share-btn');
         
         // Friend system variables
         let currentChatUser = null;
         let messageListener = null;
+        let songToShare = null;
 
         // YOUTUBE PLAYER VARIABLES (Global - Cordova için)
         window.player = null;
@@ -2822,16 +2915,32 @@
                 const messageClass = isSent ? 'sent' : 'received';
                 const time = message.timestamp ? new Date(message.timestamp.toDate()).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
                 
+                let messageContent = '';
+                if (message.type === 'song') {
+                    // Şarkı mesajı
+                    messageContent = `
+                        <div class="shared-song" onclick="playSharedSong('${message.songData.videoId}', '${escapeHtml(message.songData.title)}', '${message.songData.thumbnail}')">
+                            <div class="shared-song-title">🎵 ${escapeHtml(message.songData.title)}</div>
+                            <div class="shared-song-info">Şarkıyı çalmak için tıklayın</div>
+                        </div>
+                    `;
+                } else {
+                    // Normal metin mesajı
+                    messageContent = `<div class="message-text">${escapeHtml(message.text)}</div>`;
+                }
+                
                 html += `
-                    <div class="message-item ${messageClass}">
+                    <div class="message-item ${messageClass}" data-message-id="${message.id}">
                         ${!isSent ? `<div class="message-sender">${message.senderName}</div>` : ''}
-                        <div class="message-text">${escapeHtml(message.text)}</div>
+                        ${messageContent}
                         <div class="message-time">${time}</div>
+                        ${isSent ? `<button class="message-delete-btn" onclick="deleteMessage('${message.id}')" title="Mesajı Sil"><i class="fas fa-times"></i></button>` : ''}
                     </div>
                 `;
             });
             
             messageList.innerHTML = html;
+            messageList.scrollTop = messageList.scrollHeight;
         }
         
         // Mesaj gönder
@@ -2872,6 +2981,154 @@
                 console.error('Mesaj gönderme hatası:', error);
                 alert('Mesaj gönderilirken bir hata oluştu.');
             }
+        }
+        
+        // Şarkı paylaşma modalını göster
+        function showShareSongModal(song) {
+            songToShare = song;
+            
+            // Şarkı bilgisini göster
+            document.getElementById('share-song-info').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="${song.thumbnail}" alt="${song.title}" style="width: 50px; height: 50px; border-radius: 4px;">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 5px;">${escapeHtml(song.title)}</div>
+                        <div style="font-size: 12px; color: #A9A9A9;">Süre: ${formatDuration(song.duration)}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Arkadaş listesini yükle
+            loadFriendsForShare();
+            
+            shareSongModal.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+        
+        // Paylaşım için arkadaş listesini yükle
+        async function loadFriendsForShare() {
+            const currentUid = localStorage.getItem('h_sound_uid');
+            
+            try {
+                const friendsSnapshot = await db.collection('friends')
+                    .where('users', 'array-contains', currentUid)
+                    .where('status', '==', 'accepted')
+                    .get();
+                
+                let html = '';
+                
+                if (friendsSnapshot.empty) {
+                    html = '<li style="text-align: center; color: #A9A9A9; padding: 20px;">Henüz arkadaşınız yok</li>';
+                } else {
+                    for (const doc of friendsSnapshot.docs) {
+                        const friendData = doc.data();
+                        const friendUid = friendData.users.find(uid => uid !== currentUid);
+                        
+                        // Arkadaş bilgilerini al
+                        const friendDoc = await db.collection('users').doc(friendUid).get();
+                        if (friendDoc.exists) {
+                            const friend = friendDoc.data();
+                            html += `
+                                <li onclick="shareSongToFriend('${friendUid}', '${escapeHtml(friend.username)}')" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                        ${friend.username.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span>${escapeHtml(friend.username)}</span>
+                                </li>
+                            `;
+                        }
+                    }
+                }
+                
+                shareFriendsList.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Arkadaş listesi yükleme hatası:', error);
+                shareFriendsList.innerHTML = '<li style="text-align: center; color: #E74C3C; padding: 20px;">Arkadaş listesi yüklenemedi</li>';
+            }
+        }
+        
+        // Şarkıyı arkadaşa gönder
+        async function shareSongToFriend(friendUid, friendName) {
+            if (!songToShare) return;
+            
+            const currentUid = localStorage.getItem('h_sound_uid');
+            const currentUsername = localStorage.getItem('h_sound_username');
+            
+            try {
+                // Chat ID oluştur
+                const chatId = [currentUid, friendUid].sort().join('_');
+                
+                // Şarkı mesajını gönder
+                await db.collection('chats').doc(chatId).collection('messages').add({
+                    senderId: currentUid,
+                    senderName: currentUsername,
+                    type: 'song',
+                    songData: {
+                        videoId: songToShare.videoId,
+                        title: songToShare.title,
+                        thumbnail: songToShare.thumbnail,
+                        duration: songToShare.duration
+                    },
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Chat bilgilerini güncelle
+                await db.collection('chats').doc(chatId).set({
+                    users: [currentUid, friendUid],
+                    lastMessage: `🎵 ${songToShare.title}`,
+                    lastMessageTime: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastMessageSender: currentUid
+                }, { merge: true });
+                
+                alert(`Şarkı ${friendName} ile paylaşıldı!`);
+                hideShareSongModal();
+                
+            } catch (error) {
+                console.error('Şarkı paylaşma hatası:', error);
+                alert('Şarkı paylaşılırken bir hata oluştu.');
+            }
+        }
+        
+        // Paylaşılan şarkıyı çal
+        function playSharedSong(videoId, title, thumbnail) {
+            const song = {
+                videoId: videoId,
+                title: title,
+                thumbnail: thumbnail
+            };
+            
+            // Playlist'i güncelle
+            playlist = [song];
+            currentSongIndex = 0;
+            
+            playSong(song);
+            closeMessageModal();
+        }
+        
+        // Mesaj sil
+        async function deleteMessage(messageId) {
+            if (!confirm('Bu mesajı silmek istediğinizden emin misiniz?')) return;
+            
+            const currentUid = localStorage.getItem('h_sound_uid');
+            
+            try {
+                const chatId = [currentUid, currentChatUser.uid].sort().join('_');
+                await db.collection('chats').doc(chatId).collection('messages').doc(messageId).delete();
+                
+                console.log('H-Sound çalışıyor');
+                
+            } catch (error) {
+                console.error('Mesaj silme hatası:', error);
+                alert('Mesaj silinirken bir hata oluştu.');
+            }
+        }
+        
+        // Şarkı paylaşma modalını gizle
+        function hideShareSongModal() {
+            shareSongModal.classList.add('hidden');
+            overlay.classList.add('hidden');
+            songToShare = null;
         }
         
         // Mesaj listesini yükle
@@ -3376,6 +3633,9 @@
                             <button class="add-to-playlist-btn" title="Çalma Listesine Ekle">
                                 <i class="fas fa-plus"></i>
                             </button>
+                            <button class="share-to-friend-btn" title="Arkadaşa Gönder">
+                                <i class="fas fa-share"></i>
+                            </button>
                         </div>
                         `;
                     }).join('')}
@@ -3418,6 +3678,21 @@
                         thumbnail: parent.dataset.thumbnail
                     };
                     showAddToPlaylistModal();
+                });
+            });
+            
+            // Arkadaşa Gönder Butonları
+            document.querySelectorAll('.share-to-friend-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Oynatma olayını engelle
+                    const parent = this.closest('.result-item');
+                    const song = {
+                        videoId: parent.dataset.videoid,
+                        title: parent.dataset.title,
+                        thumbnail: parent.dataset.thumbnail,
+                        duration: parseInt(parent.dataset.duration) || 0
+                    };
+                    showShareSongModal(song);
                 });
             });
         }
@@ -4155,6 +4430,10 @@
         }
 
         function onPlayerReady(event) {
+            console.log('✅ YouTube Player hazır!');
+            window.player = event.target;
+            player = window.player;
+            
             if (progressInterval) clearInterval(progressInterval);
             progressInterval = setInterval(updateProgress, 1000);
             
@@ -4208,6 +4487,9 @@
         }
         
         function playSong(song) {
+            console.log('🎵 playSong çağrıldı:', song.title);
+            console.log('🎬 Player durumu:', player ? 'Var' : 'Yok');
+            
             playerFooter.classList.remove('hidden');
             
             addToRecentlyPlayed(song);
@@ -4265,25 +4547,39 @@
             }
 
             if (player) {
+                console.log('🔄 Mevcut player ile video yükleniyor:', song.videoId);
                 player.loadVideoById(song.videoId);
                 player.setPlaybackRate(playbackRate);
             } else {
-                player = new YT.Player('player-iframe', {
-                    videoId: song.videoId,
-                    playerVars: {
-                        'autoplay': 1,
-                        'controls': 0, 
-                        'disablekb': 1,
-                        'modestbranding': 1,
-                        'rel': 0,
-                        'showinfo': 0,
-                        'fs': 0,
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
-                    }
-                });
+                console.log('🆕 Yeni player oluşturuluyor:', song.videoId);
+                console.log('🎯 Player iframe elementi:', document.getElementById('player-iframe'));
+                
+                if (!document.getElementById('player-iframe')) {
+                    console.error('❌ player-iframe elementi bulunamadı!');
+                    return;
+                }
+                
+                try {
+                    player = new YT.Player('player-iframe', {
+                        videoId: song.videoId,
+                        playerVars: {
+                            'autoplay': 1,
+                            'controls': 0, 
+                            'disablekb': 1,
+                            'modestbranding': 1,
+                            'rel': 0,
+                            'showinfo': 0,
+                            'fs': 0,
+                        },
+                        events: {
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange
+                        }
+                    });
+                    console.log('✅ Player oluşturuldu');
+                } catch (error) {
+                    console.error('❌ Player oluşturma hatası:', error);
+                }
             }
             
             // CORDOVA MÜZİK KONTROLÜ - Bildirim güncelle
@@ -4552,6 +4848,7 @@
         cancelFriendRequestBtn.addEventListener('click', hideAddFriendModal);
         closeMessageModalBtn.addEventListener('click', closeMessageModal);
         sendMessageBtn.addEventListener('click', sendMessage);
+        cancelShareBtn.addEventListener('click', hideShareSongModal);
         
         // Enter tuşu ile mesaj gönderme
         messageInput.addEventListener('keypress', (e) => {
@@ -4724,6 +5021,9 @@
         
         // YouTube API yüklendikten sonra global olarak çağrılacak fonksiyon
         window.onYouTubeIframeAPIReady = function() {
+            console.log('🎬 YouTube API yüklendi!');
+            console.log('🔍 YT objesi:', typeof YT !== 'undefined' ? 'Var' : 'Yok');
+            
             // Verileri yükle
             loadPlaylists(); 
 
@@ -4785,8 +5085,7 @@
                         
                         console.log('✅ Hakan kullanıcısı oluşturuldu! UID:', user.uid);
                         console.log('📧 Email: Alparmaklijsh@gmail.com');
-                        console.log('🔑 Şifre: Hakan5225522541');
-                        console.log('👑 Rol: superadmin');
+                        console.log('�  Rol: superadmin');
                     } catch (authError) {
                         // Eğer hesap zaten varsa, sadece Firestore'u güncelle
                         if (authError.code === 'auth/email-already-in-use') {

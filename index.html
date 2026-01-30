@@ -528,13 +528,37 @@
 
         // Kayıt işlemi
         async function handleRegister() {
-            const username = document.getElementById('regusername').value;
-            const email = document.getElementById('regemail').value;
+            let username = document.getElementById('regusername').value.trim();
+            const email = document.getElementById('regemail').value.trim();
             const password = document.getElementById('regpass').value;
             const confirmPassword = document.getElementById('regpassconfirm').value;
             
             if (!username || !email || !password || !confirmPassword) {
                 alert('Lütfen tüm alanları doldurun.');
+                return;
+            }
+
+            // Kullanıcı adı kontrolü - ilk harf büyük olmalı
+            if (username.length < 2) {
+                alert('Kullanıcı adı en az 2 karakter olmalıdır.');
+                return;
+            }
+
+            // İlk harfi büyük yap, geri kalanını küçük yap
+            username = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+
+            // E-posta format kontrolü
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Geçerli bir e-posta adresi girin.');
+                return;
+            }
+
+            // Yaygın e-posta sağlayıcıları kontrolü
+            const validDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'live.com', 'msn.com', 'yandex.com', 'yandex.ru', 'mail.ru'];
+            const emailDomain = email.split('@')[1].toLowerCase();
+            if (!validDomains.includes(emailDomain)) {
+                alert('Lütfen geçerli bir e-posta sağlayıcısı kullanın (Gmail, Hotmail, Outlook, Yahoo, iCloud vb.)');
                 return;
             }
             
@@ -551,7 +575,7 @@
             try {
                 console.log('📝 Kayıt işlemi başlatılıyor:', username, email);
                 
-                // Kullanıcı adı kontrolü
+                // Kullanıcı adı kontrolü (büyük/küçük harf duyarsız)
                 const usernameCheck = await db.collection('users')
                     .where('username', '==', username)
                     .limit(1)
@@ -561,21 +585,28 @@
                     alert('Bu kullanıcı adı zaten kullanılıyor!');
                     return;
                 }
+
+                // E-posta kontrolü
+                const emailCheck = await db.collection('users').where('email', '==', email.toLowerCase()).limit(1).get();
+                if (!emailCheck.empty) {
+                    alert('Bu e-posta adresi zaten kullanılıyor!');
+                    return;
+                }
                 
                 // Firebase Authentication ile hesap oluştur
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 
                 // Firestore'a kullanıcı bilgilerini kaydet
                 await db.collection('users').doc(userCredential.user.uid).set({
-                    username: username,
-                    email: email,
+                    username: username, // İlk harfi büyük
+                    email: email.toLowerCase(),
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     role: 'user'
                 });
                 
                 // LocalStorage'a kaydet
                 localStorage.setItem('h_sound_username', username);
-                localStorage.setItem('h_sound_email', email);
+                localStorage.setItem('h_sound_email', email.toLowerCase());
                 localStorage.setItem('h_sound_uid', userCredential.user.uid);
                 localStorage.setItem('h_sound_role', 'user');
                 localStorage.setItem('h_sound_logged_in', 'true');
@@ -589,7 +620,20 @@
                 
             } catch (error) {
                 console.error('❌ Kayıt hatası:', error);
-                alert('Kayıt hatası: ' + error.message);
+                
+                let errorMessage = 'Kayıt hatası: ';
+                
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'Bu e-posta adresi zaten kullanılıyor!';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Geçersiz e-posta adresi! Lütfen e-posta adresinizi değiştirin.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'Şifre çok zayıf! En az 6 karakter olmalıdır.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                alert(errorMessage);
             }
         }
 
