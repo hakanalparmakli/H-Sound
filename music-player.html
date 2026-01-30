@@ -7,7 +7,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>H-Sound Müzik Çalar</title>
-    <link rel="manifest" href="manifest.json">
+    <!-- Manifest sadece dosya varsa yüklenir -->
+    <script>
+        // Manifest dosyasının varlığını kontrol et
+        fetch('manifest.json', { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    const manifestLink = document.createElement('link');
+                    manifestLink.rel = 'manifest';
+                    manifestLink.href = 'manifest.json';
+                    document.head.appendChild(manifestLink);
+                    console.log('✅ Manifest yüklendi');
+                } else {
+                    console.log('ℹ️ Manifest dosyası bulunamadı');
+                }
+            })
+            .catch(() => {
+                console.log('ℹ️ Manifest kontrol edilemedi');
+            });
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -1501,11 +1519,24 @@
         </div>
     </div>
 
-    <!-- Cordova Script (APK için) -->
-    <script src="cordova.js"></script>
-    
-    <!-- Cordova Müzik Kontrolü -->
-    <script src="cordova-music-controls.js"></script>
+    <!-- Cordova Script (APK için) - Koşullu yükleme -->
+    <script>
+        // Cordova kontrolü - sadece mobil uygulamada yükle
+        if (window.cordova || (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1)) {
+            // Cordova scriptlerini dinamik olarak yükle
+            const cordovaScript = document.createElement('script');
+            cordovaScript.src = 'cordova.js';
+            cordovaScript.onerror = () => console.log('ℹ️ Cordova bulunamadı - web versiyonu çalışıyor');
+            document.head.appendChild(cordovaScript);
+            
+            const musicControlsScript = document.createElement('script');
+            musicControlsScript.src = 'cordova-music-controls.js';
+            musicControlsScript.onerror = () => console.log('ℹ️ Cordova Music Controls bulunamadı');
+            document.head.appendChild(musicControlsScript);
+        } else {
+            console.log('ℹ️ Web versiyonu - Cordova scriptleri yüklenmedi');
+        }
+    </script>
     
     <!-- Firebase SDK (Compat version) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1532,7 +1563,7 @@
         window.auth = firebase.auth();
         window.db = firebase.firestore();
 
-        console.log('🔥 Firebase başlatıldı ve hazır!');
+        console.log('🎵 H-Sound çalışıyor');
     </script>
 
     <script type="module">
@@ -1707,9 +1738,7 @@
         
         let useServerAPI = false; // Netlify'de backend yok, direkt Invidious kullan
         
-        console.log(`🎵 H-Sound v9.0 - YouTube Data API v3 Entegrasyonu`);
-        console.log(`🔑 4 API Key | Invidious Fallback | Sınırsız Arama`);
-        console.log(`💡 YouTube Data API v3 ile profesyonel müzik arama!`);
+        console.log('🎵 H-Sound çalışıyor');
         
 
         
@@ -2516,8 +2545,6 @@
                     alert('Arkadaş kaldırılırken bir hata oluştu.');
                 }
             }
-        }
-
         }
         
         // --- MESAJLAŞMA SİSTEMİ FONKSİYONLARI ---
@@ -4628,17 +4655,27 @@
 
     <!-- Service Worker Registration - PWA & Background Support -->
     <script>
-        // Service Worker kaydı
-        if ('serviceWorker' in navigator) {
+        // Service Worker kaydı - sadece HTTPS'de ve sw.js varsa çalışır
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                // Önce sw.js dosyasının var olup olmadığını kontrol et
+                fetch('/sw.js', { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            return navigator.serviceWorker.register('/sw.js');
+                        } else {
+                            throw new Error('sw.js bulunamadı');
+                        }
+                    })
                     .then(registration => {
                         console.log('✅ Service Worker kayıtlı:', registration.scope);
                     })
                     .catch(error => {
-                        console.error('❌ Service Worker hatası:', error);
+                        console.log('ℹ️ Service Worker kaydedilemedi (normal - dosya yok):', error.message);
                     });
             });
+        } else {
+            console.log('ℹ️ Service Worker desteklenmiyor veya HTTPS gerekli');
         }
 
         // Wake Lock - Ekran kapansa bile müzik çalsın
