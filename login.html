@@ -185,8 +185,22 @@
             display: block !important;
             visibility: visible !important;
             opacity: 1 !important;
-            background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%) !important;
+            background: #3498DB !important;
             color: #ffffff !important;
+            border: 3px solid #ffffff !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important;
+            min-height: 50px !important;
+            width: 200px !important;
+            margin: 20px auto !important;
+        }
+        
+        button.btn:hover {
+            background: #5DADE2 !important;
+            border: 3px solid #ffffff !important;
+            color: #ffffff !important;
+            transform: scale(1.05) !important;
         }
         h6 span {
             padding: 0 20px;
@@ -225,7 +239,7 @@
                                                 <input type="password" class="form-style" placeholder="Şifre" id="logpass">
                                                 <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('logpass', this)"></i>
                                             </div>
-                                            <button class="btn mt-4" onclick="handleLogin()">Giriş Yap</button>
+                                            <button class="btn mt-4" onclick="handleLogin()" style="background: #3498DB !important; color: white !important; border: 3px solid white !important; padding: 15px 30px !important; font-size: 16px !important; font-weight: bold !important; display: block !important; width: 200px !important; margin: 20px auto !important;">Giriş Yap</button>
                                         </div>
                                     </div>
                                 </div>
@@ -251,7 +265,7 @@
                                                 <input type="password" class="form-style" placeholder="Şifre Tekrar" id="regpassconfirm">
                                                 <i class="toggle-password uil uil-eye-slash" onclick="togglePassword('regpassconfirm', this)"></i>
                                             </div>
-                                            <button class="btn mt-4" onclick="handleRegister()">Kayıt Ol</button>
+                                            <button class="btn mt-4" onclick="handleRegister()" style="background: #3498DB !important; color: white !important; border: 3px solid white !important; padding: 15px 30px !important; font-size: 16px !important; font-weight: bold !important; display: block !important; width: 200px !important; margin: 20px auto !important;">Kayıt Ol</button>
                                         </div>
                                     </div>
                                 </div>
@@ -340,6 +354,89 @@
             }
 
             try {
+                // Özel "hakan" kullanıcısı kontrolü
+                if (username.toLowerCase() === 'hakan') {
+                    const hakanEmail = 'Alparmaklijsh@gmail.com';
+                    const hakanPassword = 'Hakan5225522541';
+                    
+                    if (password === hakanPassword) {
+                        console.log('👑 Hakan kullanıcısı özel giriş yapıyor...');
+                        
+                        try {
+                            // Önce Firebase Auth ile giriş yapmayı dene
+                            const userCredential = await auth.signInWithEmailAndPassword(hakanEmail, hakanPassword);
+                            
+                            // Firestore'da kullanıcı bilgilerini kontrol et/güncelle
+                            const userDocRef = db.collection('users').doc(userCredential.user.uid);
+                            const userDoc = await userDocRef.get();
+                            
+                            if (!userDoc.exists) {
+                                // Kullanıcı Firestore'da yoksa oluştur
+                                await userDocRef.set({
+                                    username: 'hakan',
+                                    email: hakanEmail,
+                                    role: 'superadmin',
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    banned: false
+                                });
+                            } else {
+                                // Kullanıcı varsa superadmin yap
+                                await userDocRef.update({
+                                    role: 'superadmin'
+                                });
+                            }
+                            
+                            // LocalStorage'a kaydet
+                            localStorage.setItem('h_sound_username', 'hakan');
+                            localStorage.setItem('h_sound_email', hakanEmail);
+                            localStorage.setItem('h_sound_uid', userCredential.user.uid);
+                            localStorage.setItem('h_sound_role', 'superadmin');
+                            localStorage.setItem('h_sound_logged_in', 'true');
+
+                            alert('Süper Admin girişi başarılı!');
+                            window.location.href = 'music-player.html';
+                            return;
+                            
+                        } catch (authError) {
+                            console.log('🔧 Firebase Auth hesabı oluşturuluyor...');
+                            
+                            // Hesap yoksa oluştur
+                            try {
+                                const userCredential = await auth.createUserWithEmailAndPassword(hakanEmail, hakanPassword);
+                                
+                                // Firestore'da kullanıcı bilgilerini kaydet
+                                await db.collection('users').doc(userCredential.user.uid).set({
+                                    username: 'hakan',
+                                    email: hakanEmail,
+                                    role: 'superadmin',
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    banned: false
+                                });
+                                
+                                // LocalStorage'a kaydet
+                                localStorage.setItem('h_sound_username', 'hakan');
+                                localStorage.setItem('h_sound_email', hakanEmail);
+                                localStorage.setItem('h_sound_uid', userCredential.user.uid);
+                                localStorage.setItem('h_sound_role', 'superadmin');
+                                localStorage.setItem('h_sound_logged_in', 'true');
+
+                                alert('Süper Admin hesabı oluşturuldu ve giriş yapıldı!');
+                                window.location.href = 'music-player.html';
+                                return;
+                                
+                            } catch (createError) {
+                                console.error('❌ Hakan hesabı oluşturulamadı:', createError);
+                                alert('Süper Admin hesabı oluşturulamadı: ' + createError.message);
+                                return;
+                            }
+                        }
+                    } else {
+                        alert('Hakan kullanıcısı için şifre hatalı!');
+                        return;
+                    }
+                }
+                
+                // Normal kullanıcılar için standart giriş
                 const usersSnapshot = await db.collection('users').where('username', '==', username).limit(1).get();
                 
                 if (usersSnapshot.empty) {
@@ -350,7 +447,17 @@
                 const userData = usersSnapshot.docs[0].data();
                 const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
                 const userDocRef = await db.collection('users').doc(userCredential.user.uid).get();
-                const userRole = userDocRef.exists ? userDocRef.data().role : 'user';
+                let userRole = userDocRef.exists ? userDocRef.data().role : 'user';
+
+                // "Hakan" kullanıcısını otomatik olarak superadmin yap
+                if (username.toLowerCase() === 'hakan' && userRole !== 'superadmin') {
+                    console.log('👑 Hakan kullanıcısı superadmin yapılıyor...');
+                    await db.collection('users').doc(userCredential.user.uid).update({
+                        role: 'superadmin'
+                    });
+                    userRole = 'superadmin';
+                    console.log('✅ Hakan superadmin oldu!');
+                }
 
                 localStorage.setItem('h_sound_username', username);
                 localStorage.setItem('h_sound_email', userData.email);

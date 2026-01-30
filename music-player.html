@@ -1472,14 +1472,8 @@
                 <li><a href="#" id="search-link"><i class="fas fa-search"></i> Ara</a></li>
                 <li><a href="#" id="playlists-link"><i class="fas fa-compact-disc"></i> Çalma Listeleri</a></li> 
                 <li><a href="#" id="friends-link"><i class="fas fa-users"></i> Arkadaşlar</a></li>
-                <li><a href="#" id="messages-link"><i class="fas fa-comments"></i> Mesajlar</a></li>
                 <li><a href="#" id="recently-played-link"><i class="fas fa-history"></i> Son Dinlenenler</a></li>
                 <li><a href="#" id="settings-link"><i class="fas fa-cog"></i> Ayarlar</a></li>
-                <li id="admin-menu-item" style="display: none;">
-                    <a href="#" id="admin-link" style="background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); border-radius: 8px; margin-top: 10px;">
-                        <i class="fas fa-shield-alt"></i> Admin Panel
-                    </a>
-                </li>
                 <li id="superadmin-menu-item" style="display: none;">
                     <a href="#" id="superadmin-link" style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); border-radius: 8px; margin-top: 10px; box-shadow: 0 0 15px rgba(231, 76, 60, 0.4);">
                         <i class="fas fa-crown"></i>✨ Süper Admin Panel
@@ -3750,7 +3744,7 @@
                     if (userDoc.exists) {
                         const userData = userDoc.data();
                         userRole = userData?.role || 'user';
-                        isAdmin = userRole === 'admin' || userRole === 'superadmin';
+                        isAdmin = userRole === 'superadmin';
                         console.log('✅ Firebase rol bilgisi alındı:', userRole);
                     }
                 }
@@ -3761,11 +3755,6 @@
                         roleBadge = '<span style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px; box-shadow: 0 0 15px rgba(231, 76, 60, 0.6); animation: glow 2s ease-in-out infinite;"><i class="fas fa-crown"></i>✨ Süper Admin</span>';
                         roleText = 'Süper Yönetici (Tüm Yetkiler)';
                         roleColor = '#E74C3C';
-                        break;
-                    case 'admin':
-                        roleBadge = '<span style="background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;"><i class="fas fa-crown"></i> Admin</span>';
-                        roleText = 'Yönetici (Tam Yetki)';
-                        roleColor = '#9B59B6';
                         break;
                     case 'premium':
                         roleBadge = '<span style="background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%); color: white; padding: 4px 12px; border-radius: 15px; font-size: 12px; margin-left: 10px;"><i class="fas fa-star"></i> Premium</span>';
@@ -4379,7 +4368,6 @@
         searchLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showSearchPage(); });
         playlistsLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showPlaylistsPage(); }); 
         document.getElementById('friends-link').addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showFriendsPage(); });
-        document.getElementById('messages-link').addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showMessagesPage(); });
         recentlyPlayedLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showRecentlyPlayedPage(); }); 
         settingsLink.addEventListener('click', (e) => { e.preventDefault(); sidebar.classList.remove('open'); overlay.classList.add('hidden'); showSettingsPage(); }); 
         
@@ -4510,46 +4498,26 @@
                     console.log('✅ Hakan superadmin oldu!');
                 }
                 
-                const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+                const isAdmin = userRole === 'superadmin';
                 
                 console.log('📡 Firebase rol kontrolü:', { userRole, isAdmin });
                 
-                if (isAdmin) {
-                    // Admin menüsünü göster (superadmin değilse)
-                    const adminMenuItem = document.getElementById('admin-menu-item');
-                    if (adminMenuItem && userRole !== 'superadmin') {
-                        adminMenuItem.style.display = 'block';
-                        console.log('✅ Admin menüsü gösterildi!');
+                if (userRole === 'superadmin') {
+                    // Superadmin menüsünü göster
+                    const superadminMenuItem = document.getElementById('superadmin-menu-item');
+                    if (superadminMenuItem) {
+                        superadminMenuItem.style.display = 'block';
+                        console.log('✅ Süper Admin menüsü gösterildi!');
                         
-                        // Admin link'e event listener ekle
-                        const adminLink = document.getElementById('admin-link');
-                        if (adminLink) {
-                            adminLink.addEventListener('click', (e) => {
+                        // Superadmin link'e event listener ekle
+                        const superadminLink = document.getElementById('superadmin-link');
+                        if (superadminLink) {
+                            superadminLink.addEventListener('click', (e) => {
                                 e.preventDefault();
-                                // Direkt admin paneline git
+                                // Direkt superadmin paneline git
                                 localStorage.setItem('h_sound_admin_session', uid);
-                                window.location.href = 'admin.html';
+                                window.location.href = 'superadmin.html';
                             });
-                        }
-                    }
-                    
-                    // Superadmin menüsünü göster (sadece superadmin için)
-                    if (userRole === 'superadmin') {
-                        const superadminMenuItem = document.getElementById('superadmin-menu-item');
-                        if (superadminMenuItem) {
-                            superadminMenuItem.style.display = 'block';
-                            console.log('✅ Süper Admin menüsü gösterildi!');
-                            
-                            // Superadmin link'e event listener ekle
-                            const superadminLink = document.getElementById('superadmin-link');
-                            if (superadminLink) {
-                                superadminLink.addEventListener('click', (e) => {
-                                    e.preventDefault();
-                                    // Direkt superadmin paneline git
-                                    localStorage.setItem('h_sound_admin_session', uid);
-                                    window.location.href = 'superadmin.html';
-                                });
-                            }
                         }
                     }
                 } else {
