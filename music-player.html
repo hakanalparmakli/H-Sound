@@ -5314,18 +5314,15 @@
 
         // --- Initial Page Load ---
         
-        // 0. Giriş kontrolü yap
-        const isLoggedIn = localStorage.getItem('h_sound_logged_in');
-        const username = localStorage.getItem('h_sound_username');
+        // 0. Debug - localStorage değerlerini kontrol et
+        console.log('🔍 Sayfa yüklendiğinde localStorage:', {
+            isLoggedIn: localStorage.getItem('h_sound_logged_in'),
+            username: localStorage.getItem('h_sound_username'),
+            uid: localStorage.getItem('h_sound_uid')
+        });
         
-        if (isLoggedIn !== 'true' || !username) {
-            console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
-            window.location.href = 'login.html';
-        } else {
-            console.log('✅ Kullanıcı giriş yapmış:', username);
-            // 1. Uygulamayı başlat
-            showHomePage();
-        }
+        // 1. Uygulamayı başlat (giriş kontrolü Firebase yüklendikten sonra yapılacak)
+        showHomePage();
         
         // YouTube IFrame Player API'yi yükle
         const tag = document.createElement('script');
@@ -5357,7 +5354,6 @@
                 }
                 
                 console.log('✅ Kullanıcı giriş yapmış:', username);
-                showHomePage();
                 
                 // Hakan kullanıcısını otomatik oluştur (ilk çalıştırmada)
                 createHakanUserIfNotExists();
