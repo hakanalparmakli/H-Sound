@@ -4698,6 +4698,22 @@
         }
         
         function onPlayerStateChange(event) {
+            // Reklam kontrolü ve atlama
+            try {
+                if (player && player.getPlayerState) {
+                    const currentTime = player.getCurrentTime();
+                    const duration = player.getDuration();
+                    
+                    // Eğer video başında veya sonunda takılıysa (reklam olabilir)
+                    if (currentTime < 1 && duration > 0 && event.data == YT.PlayerState.BUFFERING) {
+                        console.log('⏭️ Reklam atlanıyor...');
+                        player.seekTo(1); // 1 saniye ileri sar
+                    }
+                }
+            } catch (e) {
+                // Hata olursa devam et
+            }
+            
             if (event.data == YT.PlayerState.PLAYING) {
                 isPlaying = true;
                 playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
@@ -4828,7 +4844,14 @@
                             'cc_load_policy': 0, // Alt yazı kapalı
                             'playsinline': 1, // Mobilde tam ekran engelleme
                             'enablejsapi': 1, // JavaScript API aktif
-                            'origin': window.location.origin // Güvenlik
+                            'origin': window.location.origin, // Güvenlik
+                            'widget_referrer': window.location.origin, // Referrer
+                            'start': 0, // Baştan başlat
+                            'end': 0, // Son reklam engelleme
+                            'loop': 0, // Loop kapalı
+                            'playlist': '', // Playlist yok
+                            'color': 'white', // Player rengi
+                            'autohide': 1 // Kontrolleri gizle
                         },
                         events: {
                             'onReady': onPlayerReady,
@@ -5314,14 +5337,23 @@
 
         // --- Initial Page Load ---
         
-        // 0. Debug - localStorage değerlerini kontrol et
-        console.log('🔍 Sayfa yüklendiğinde localStorage:', {
-            isLoggedIn: localStorage.getItem('h_sound_logged_in'),
-            username: localStorage.getItem('h_sound_username'),
-            uid: localStorage.getItem('h_sound_uid')
-        });
+        // 0. Otomatik giriş kontrolü
+        const isLoggedIn = localStorage.getItem('h_sound_logged_in');
+        const username = localStorage.getItem('h_sound_username');
+        const uid = localStorage.getItem('h_sound_uid');
         
-        // 1. Uygulamayı başlat (giriş kontrolü Firebase yüklendikten sonra yapılacak)
+        console.log('🔍 Sayfa yüklendiğinde localStorage:', { isLoggedIn, username, uid });
+        
+        // Eğer giriş yapılmamışsa login.html'e yönlendir
+        if (isLoggedIn !== 'true' || !username || !uid) {
+            console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
+            window.location.href = 'login.html';
+            throw new Error('Giriş yapılmamış'); // Kodun devam etmesini engelle
+        }
+        
+        console.log('✅ Kullanıcı giriş yapmış:', username);
+        
+        // 1. Uygulamayı başlat
         showHomePage();
         
         // YouTube IFrame Player API'yi yükle
