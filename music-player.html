@@ -3942,7 +3942,31 @@
             currentView = 'home';
             setActiveLink(homeLink);
             searchContainer.classList.add('hidden');
-            fetchPopularMusic(); 
+            
+            console.log('🏠 Ana sayfa yükleniyor...');
+            
+            // Önce basit bir içerik göster
+            clearContentArea();
+            contentArea.innerHTML = `
+                <h2 class="content-header">Popüler Müzikler</h2>
+                <div class="loading-spinner"></div>
+                <p style="text-align: center; margin-top: 20px; color: #888;">Müzikler yükleniyor...</p>
+            `;
+            
+            // Sonra müzikleri yükle
+            fetchPopularMusic().catch(error => {
+                console.error('❌ Müzik yükleme hatası:', error);
+                contentArea.innerHTML = `
+                    <h2 class="content-header">Popüler Müzikler</h2>
+                    <div class="error-message">
+                        <h2>⚠️ Müzikler Yüklenemedi</h2>
+                        <p>Bir hata oluştu. Lütfen sayfayı yenileyin.</p>
+                        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            Sayfayı Yenile
+                        </button>
+                    </div>
+                `;
+            });
         }
 
         function showSearchPage() {
