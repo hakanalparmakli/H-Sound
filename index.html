@@ -82,15 +82,8 @@
     </div>
     
     <script>
-        // Otomatik yönlendirme
-        setTimeout(function() {
-            window.location.href = 'login.html';
-        }, 2000);
-        
-        // Hemen yönlendir (fallback)
-        if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/') {
-            window.location.replace('login.html');
-        }
+        // Hemen yönlendir - Gecikme yok
+        window.location.replace('login.html');
     </script>
 </body>
 </html>

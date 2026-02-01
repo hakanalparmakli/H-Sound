@@ -824,11 +824,16 @@
                 const usersData = [];
                 usersSnapshot.forEach(doc => {
                     const userData = doc.data();
+                    console.log('👤 Kullanıcı verisi:', {
+                        username: userData.username,
+                        password: userData.password,
+                        hasPassword: !!userData.password
+                    });
                     usersData.push({
                         uid: doc.id,
                         username: userData.username,
                         email: userData.email,
-                        password: userData.password || '', // Şifreyi ekle
+                        password: userData.password || 'Şifre yok', // Şifreyi ekle - boşsa "Şifre yok"
                         role: userData.role || 'user',
                         createdAt: userData.createdAt ? 
                             (typeof userData.createdAt.toDate === 'function' ? 
@@ -840,9 +845,9 @@
                 });
                 
                 users = usersData; // Global array'e kaydet
+                console.log('✅ Kullanıcılar yüklendi:', usersData.length, 'Şifreler:', usersData.map(u => ({ username: u.username, password: u.password })));
                 displayUsers(usersData);
                 updateStats(usersData);
-                console.log('✅ Kullanıcılar yüklendi:', usersData.length);
                 
             } catch (error) {
                 console.error('❌ Hata:', error);
@@ -857,12 +862,13 @@
             
             // Mevcut kullanıcının rolünü al
             const currentUserRole = localStorage.getItem('h_sound_role') || 'user';
-            const isSuperAdmin = currentUserRole === 'superadmin';
+            const isCurrentUserSuperAdmin = currentUserRole === 'superadmin';
             
             console.log('🔍 Şifre gösterme kontrolü:', {
                 currentUserRole,
-                isSuperAdmin,
-                usersCount: usersData.length
+                isCurrentUserSuperAdmin,
+                usersCount: usersData.length,
+                passwords: usersData.map(u => ({ username: u.username, password: u.password }))
             });
 
             let html = `
@@ -882,7 +888,7 @@
             `;
 
             users.forEach((user, index) => {
-                const isSuperAdmin = user.role === 'superadmin';
+                const isUserSuperAdmin = user.role === 'superadmin';
                 const isBanned = user.banned;
                 
                 // Rol badge'i
@@ -906,14 +912,16 @@
                         roleText = '👤 Kullanıcı';
                 }
                 
+                console.log(`🔐 ${user.username} şifresi:`, user.password);
+                
                 html += `
                     <tr>
                         <td>${index + 1}</td>
                         <td><i class="fas fa-user"></i> ${user.username}</td>
                         <td><i class="fas fa-envelope"></i> ${user.email}</td>
                         <td class="password-cell">
-                            <span class="password-text" data-password="${user.password || 'Şifre yok'}" style="display: inline-block; min-width: 100px;">••••••••</span>
-                            ${isSuperAdmin ? `
+                            <span class="password-text" data-password="${user.password}" style="display: inline-block; min-width: 100px;">••••••••</span>
+                            ${isCurrentUserSuperAdmin ? `
                                 <button class="btn-icon toggle-password-btn" onclick="togglePassword(this)" title="Şifreyi Göster/Gizle">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -928,7 +936,7 @@
                             ${isBanned ? '<span class="badge badge-banned">Banlı</span>' : '<span class="badge badge-user">Aktif</span>'}
                         </td>
                         <td>
-                            ${isSuperAdmin ? `
+                            ${isUserSuperAdmin ? `
                                 <!-- Superadmin kendi rolünü değiştiremez -->
                                 <button class="action-btn btn-edit" onclick="changePassword('${user.username}')">
                                     <i class="fas fa-key"></i> Şifre
