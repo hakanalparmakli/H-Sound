@@ -268,11 +268,6 @@
             50% { box-shadow: 0 0 25px rgba(155, 89, 182, 0.9); }
         }
 
-        .badge-admin {
-            background: #9B59B6;
-            color: white;
-        }
-
         .badge-user {
             background: #27AE60;
             color: white;
@@ -696,8 +691,8 @@
             const username = localStorage.getItem('h_sound_username');
             const role = localStorage.getItem('h_sound_role');
             
-            // Eğer session token varsa veya kullanıcı admin/superadmin ise otomatik giriş yap
-            if (sessionToken || (username && (role === 'admin' || role === 'superadmin'))) {
+            // Eğer session token varsa veya kullanıcı superadmin ise otomatik giriş yap
+            if (sessionToken || (username && role === 'superadmin')) {
                 console.log('🔐 Otomatik giriş yapılıyor...', { username, role });
                 
                 // Otomatik giriş başarılı - şifre istemeden gir
@@ -761,9 +756,9 @@
                 const userDoc = usersSnapshot.docs[0];
                 const userData = userDoc.data();
                 
-                // Sadece admin veya superadmin girişine izin ver
-                if (userData.role !== 'admin' && userData.role !== 'superadmin') {
-                    errorDiv.textContent = 'Bu panele erişim yetkiniz yok!';
+                // Sadece superadmin girişine izin ver
+                if (userData.role !== 'superadmin') {
+                    errorDiv.textContent = 'Bu panele erişim yetkiniz yok! Sadece Süper Admin girebilir.';
                     errorDiv.style.display = 'block';
                     return;
                 }
@@ -863,6 +858,12 @@
             // Mevcut kullanıcının rolünü al
             const currentUserRole = localStorage.getItem('h_sound_role') || 'user';
             const isSuperAdmin = currentUserRole === 'superadmin';
+            
+            console.log('🔍 Şifre gösterme kontrolü:', {
+                currentUserRole,
+                isSuperAdmin,
+                usersCount: usersData.length
+            });
 
             let html = `
                 <table>
@@ -881,7 +882,7 @@
             `;
 
             users.forEach((user, index) => {
-                const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+                const isSuperAdmin = user.role === 'superadmin';
                 const isBanned = user.banned;
                 
                 // Rol badge'i
@@ -891,10 +892,6 @@
                     case 'superadmin':
                         roleBadge = 'badge-superadmin';
                         roleText = '👑✨ Süper Admin';
-                        break;
-                    case 'admin':
-                        roleBadge = 'badge-admin';
-                        roleText = '👑 Admin';
                         break;
                     case 'premium':
                         roleBadge = 'badge-premium';
@@ -915,8 +912,8 @@
                         <td><i class="fas fa-user"></i> ${user.username}</td>
                         <td><i class="fas fa-envelope"></i> ${user.email}</td>
                         <td class="password-cell">
-                            <span class="password-text" data-password="${user.password || ''}" style="display: inline-block; min-width: 100px;">••••••••</span>
-                            ${isSuperAdmin && user.password ? `
+                            <span class="password-text" data-password="${user.password || 'Şifre yok'}" style="display: inline-block; min-width: 100px;">••••••••</span>
+                            ${isSuperAdmin ? `
                                 <button class="btn-icon toggle-password-btn" onclick="togglePassword(this)" title="Şifreyi Göster/Gizle">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -931,11 +928,8 @@
                             ${isBanned ? '<span class="badge badge-banned">Banlı</span>' : '<span class="badge badge-user">Aktif</span>'}
                         </td>
                         <td>
-                            ${isAdmin ? `
-                                <!-- Admin kendi rolünü değiştirebilir -->
-                                <button class="action-btn btn-role" onclick="changeRole('${user.username}')">
-                                    <i class="fas fa-crown"></i> Rol
-                                </button>
+                            ${isSuperAdmin ? `
+                                <!-- Superadmin kendi rolünü değiştiremez -->
                                 <button class="action-btn btn-edit" onclick="changePassword('${user.username}')">
                                     <i class="fas fa-key"></i> Şifre
                                 </button>
@@ -967,7 +961,7 @@
             document.getElementById('totalUsers').textContent = users.length;
             document.getElementById('activeUsers').textContent = users.filter(u => !u.banned).length;
             document.getElementById('bannedUsers').textContent = users.filter(u => u.banned).length;
-            document.getElementById('adminCount').textContent = users.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
+            document.getElementById('adminCount').textContent = users.filter(u => u.role === 'superadmin').length;
         }
 
         async function toggleBan(username, banned) {
@@ -1010,10 +1004,10 @@
                 return;
             }
             
-            // Sadece superadmin admin/superadmin kullanıcılarını silebilir
+            // Sadece superadmin diğer superadminleri silebilir
             if (currentUserRole !== 'superadmin') {
-                if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
-                    alert('❌ Sadece süper admin diğer adminleri silebilir!');
+                if (targetUser.role === 'superadmin') {
+                    alert('❌ Sadece süper admin diğer süper adminleri silebilir!');
                     return;
                 }
             }
@@ -1073,23 +1067,21 @@
                 return;
             }
             
-            // Admin kendi rolünü değiştiremez
-            if (username === currentUsername && currentUserRole === 'admin') {
-                alert('❌ Kendi rolünüzü değiştiremezsiniz!');
+            // Sadece superadmin rol değiştirebilir
+            if (currentUserRole !== 'superadmin') {
+                alert('❌ Sadece süper admin rol değiştirebilir!');
                 return;
             }
             
-            // Sadece superadmin diğer adminlerin rolünü değiştirebilir
-            if (targetUser && (targetUser.role === 'admin' || targetUser.role === 'superadmin')) {
-                if (currentUserRole !== 'superadmin') {
-                    alert('❌ Sadece süper admin diğer adminlerin yetkilerini değiştirebilir!');
-                    return;
-                }
+            // Superadmin rolü değiştirilemez
+            if (targetUser && targetUser.role === 'superadmin') {
+                alert('❌ Süper admin rolü değiştirilemez!');
+                return;
             }
             
-            const newRole = prompt(`${username} için yeni rol:\n\nadmin - Yönetici\nuser - Kullanıcı\npremium - Premium Üye\nvip - VIP Üye`, 'user');
-            if (!newRole || !['admin', 'user', 'premium', 'vip'].includes(newRole)) {
-                alert('Geçersiz rol! Lütfen admin, user, premium veya vip yazın.');
+            const newRole = prompt(`${username} için yeni rol:\n\nuser - Kullanıcı\npremium - Premium Üye\nvip - VIP Üye`, 'user');
+            if (!newRole || !['user', 'premium', 'vip'].includes(newRole)) {
+                alert('Geçersiz rol! Lütfen user, premium veya vip yazın.');
                 return;
             }
 
@@ -1170,9 +1162,14 @@
             const icon = button.querySelector('i');
             const actualPassword = passwordSpan.getAttribute('data-password');
             
+            console.log('🔐 Şifre göster/gizle:', {
+                currentText: passwordSpan.textContent,
+                actualPassword: actualPassword
+            });
+            
             if (passwordSpan.textContent === '••••••••') {
                 // Şifreyi göster
-                passwordSpan.textContent = actualPassword;
+                passwordSpan.textContent = actualPassword || 'Şifre yok';
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
                 button.classList.add('active');

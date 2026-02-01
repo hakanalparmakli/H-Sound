@@ -217,7 +217,12 @@
                     localStorage.setItem('h_sound_logged_in', 'true');
 
                     alert('Süper Admin girişi başarılı!');
-                    window.location.href = 'music-player.html';
+                    
+                    // Mobil uyumlu yönlendirme
+                    setTimeout(() => {
+                        window.location.replace('music-player.html');
+                    }, 100);
+                    
                     return;
                 } catch (error) {
                     // Hesap yoksa oluştur
@@ -240,7 +245,12 @@
                         localStorage.setItem('h_sound_logged_in', 'true');
 
                         alert('Süper Admin hesabı oluşturuldu ve giriş yapıldı!');
-                        window.location.href = 'music-player.html';
+                        
+                        // Mobil uyumlu yönlendirme
+                        setTimeout(() => {
+                            window.location.replace('music-player.html');
+                        }, 100);
+                        
                         return;
                     } catch (createError) {
                         alert('Hakan girişi başarısız: ' + createError.message);
@@ -279,7 +289,11 @@
                 localStorage.setItem('h_sound_logged_in', 'true');
 
                 alert('Giriş başarılı!');
-                window.location.href = 'music-player.html';
+                
+                // Mobil uyumlu yönlendirme
+                setTimeout(() => {
+                    window.location.replace('music-player.html');
+                }, 100);
             } catch (error) {
                 alert('Kullanıcı adı veya şifre hatalı!');
             }
@@ -346,7 +360,11 @@
                 localStorage.setItem('h_sound_logged_in', 'true');
 
                 alert('Kayıt başarılı!');
-                window.location.href = 'music-player.html';
+                
+                // Mobil uyumlu yönlendirme
+                setTimeout(() => {
+                    window.location.replace('music-player.html');
+                }, 100);
             } catch (error) {
                 let errorMessage = 'Kayıt hatası: ';
                 if (error.code === 'auth/email-already-in-use') {

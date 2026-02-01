@@ -310,6 +310,7 @@
             text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             height: 44px; 
             line-height: 1.5;
@@ -2145,9 +2146,9 @@
                         const data = await response.json();
                         
                         if (data.items && data.items.length > 0) {
-                            // Video detaylarını al (süre ve kategori için)
+                            // Video detaylarını al (süre için)
                             const videoIds = data.items.map(item => item.id.videoId).join(',');
-                            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${currentKey}`;
+                            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${currentKey}`;
                             
                             const detailsResponse = await fetch(detailsUrl);
                             const detailsData = await detailsResponse.json();
@@ -2155,23 +2156,18 @@
                             const videos = data.items.map((item, index) => {
                                 const details = detailsData.items[index];
                                 const duration = details ? parseDurationISO(details.contentDetails.duration) : 0;
-                                const categoryId = details ? details.snippet.categoryId : null;
                                 
                                 return {
                                     videoId: item.id.videoId,
                                     title: item.snippet.title,
                                     artist: item.snippet.channelTitle,
                                     thumbnail: item.snippet.thumbnails.medium.url,
-                                    duration: duration,
-                                    categoryId: categoryId
+                                    duration: duration
                                 };
                             });
                             
-                            // Sadece müzik kategorisindeki videoları filtrele (categoryId: 10 = Music)
-                            const musicVideos = videos.filter(v => v.categoryId === '10' || v.categoryId === 10);
-                            
                             // Client-side filtreleme
-                            const filteredData = filterMusicOnly(musicVideos.length > 0 ? musicVideos : videos);
+                            const filteredData = filterMusicOnly(videos);
                             const uniqueData = removeDuplicateSongs(filteredData);
                             const shuffled = uniqueData.sort(() => Math.random() - 0.5);
                             return shuffled;
@@ -4693,6 +4689,45 @@
             window.player = event.target;
             player = window.player;
             
+            // Reklam engelleme - Player hazır olduğunda
+            try {
+                // Ses seviyesini ayarla (reklamlar genelde sessiz başlar)
+                player.setVolume(100);
+                
+                // Reklam atlama interval'i
+                const adSkipInterval = setInterval(() => {
+                    try {
+                        if (player && player.getPlayerState) {
+                            const currentTime = player.getCurrentTime();
+                            const duration = player.getDuration();
+                            
+                            // Eğer video çok kısa süreli ise (reklam olabilir)
+                            if (duration > 0 && duration < 30 && currentTime < 5) {
+                                console.log('⏭️ Kısa video tespit edildi, atlanıyor...');
+                                player.seekTo(duration - 1);
+                            }
+                            
+                            // Eğer video başında takılıysa
+                            if (currentTime < 2 && duration > 30) {
+                                const state = player.getPlayerState();
+                                if (state === YT.PlayerState.BUFFERING || state === YT.PlayerState.PAUSED) {
+                                    console.log('⏭️ Başlangıç reklamı atlanıyor...');
+                                    player.seekTo(2);
+                                    player.playVideo();
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Hata olursa devam et
+                    }
+                }, 500); // Her 0.5 saniyede kontrol et
+                
+                // 30 saniye sonra interval'i temizle
+                setTimeout(() => clearInterval(adSkipInterval), 30000);
+            } catch (e) {
+                console.log('Reklam engelleme hatası:', e);
+            }
+            
             if (progressInterval) clearInterval(progressInterval);
             progressInterval = setInterval(updateProgress, 1000);
             
@@ -5342,21 +5377,50 @@
 
         // --- Initial Page Load ---
         
-        // 0. Otomatik giriş kontrolü
-        const isLoggedIn = localStorage.getItem('h_sound_logged_in');
-        const username = localStorage.getItem('h_sound_username');
-        const uid = localStorage.getItem('h_sound_uid');
-        
-        console.log('🔍 Sayfa yüklendiğinde localStorage:', { isLoggedIn, username, uid });
-        
-        // Eğer giriş yapılmamışsa login.html'e yönlendir
-        if (isLoggedIn !== 'true' || !username || !uid) {
-            console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
-            window.location.href = 'login.html';
-            throw new Error('Giriş yapılmamış'); // Kodun devam etmesini engelle
+        // 0. Mobil uyumlu otomatik giriş kontrolü
+        function checkLoginStatus() {
+            // Mobil tarayıcılar için localStorage kontrolü
+            try {
+                // localStorage'ın çalışıp çalışmadığını test et
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+            } catch (e) {
+                console.error('❌ localStorage çalışmıyor:', e);
+                alert('Tarayıcınız localStorage desteklemiyor. Lütfen gizli mod kapalı olduğundan emin olun.');
+                return false;
+            }
+            
+            const isLoggedIn = localStorage.getItem('h_sound_logged_in');
+            const username = localStorage.getItem('h_sound_username');
+            const uid = localStorage.getItem('h_sound_uid');
+            
+            console.log('🔍 Giriş kontrolü:', { 
+                isLoggedIn, 
+                username, 
+                uid,
+                userAgent: navigator.userAgent.substring(0, 50)
+            });
+            
+            // Eğer giriş yapılmamışsa login.html'e yönlendir
+            if (isLoggedIn !== 'true' || !username || !uid) {
+                console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
+                
+                // Mobil için setTimeout ekle
+                setTimeout(() => {
+                    window.location.replace('login.html');
+                }, 100);
+                
+                return false;
+            }
+            
+            console.log('✅ Kullanıcı giriş yapmış:', username);
+            return true;
         }
         
-        console.log('✅ Kullanıcı giriş yapmış:', username);
+        // Giriş kontrolü yap
+        if (!checkLoginStatus()) {
+            throw new Error('Giriş yapılmamış');
+        }
         
         // 1. Uygulamayı başlat
         showHomePage();
