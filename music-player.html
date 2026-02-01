@@ -5528,28 +5528,9 @@
 
     <!-- Service Worker Registration - PWA & Background Support -->
     <script>
-        // Service Worker kaydı - sadece HTTPS'de ve sw.js varsa çalışır
-        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-            window.addEventListener('load', () => {
-                // Önce sw.js dosyasının var olup olmadığını kontrol et
-                fetch('/sw.js', { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            return navigator.serviceWorker.register('/sw.js');
-                        } else {
-                            throw new Error('sw.js bulunamadı');
-                        }
-                    })
-                    .then(registration => {
-                        console.log('✅ Service Worker kayıtlı:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('ℹ️ Service Worker kaydedilemedi (normal - dosya yok):', error.message);
-                    });
-            });
-        } else {
-            console.log('ℹ️ Service Worker desteklenmiyor veya HTTPS gerekli');
-        }
+        // Service Worker devre dışı (isteğe bağlı özellik)
+        console.log('ℹ️ Service Worker devre dışı');
+    </script>
 
         // Wake Lock - Ekran kapansa bile müzik çalsın
         let wakeLock = null;
