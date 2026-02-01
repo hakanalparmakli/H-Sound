@@ -1757,13 +1757,6 @@
             </div>
         </div>
     </div>
-
-    <!-- PWA için gerekli scriptler -->
-    <script>
-        // PWA kontrolü - sadece web'de çalışır
-        console.log('H-Sound çalışıyor');
-    </script>
-    
     <!-- Firebase SDK (Compat version) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -1789,7 +1782,7 @@
         window.auth = firebase.auth();
         window.db = firebase.firestore();
 
-        console.log('🎵 H-Sound çalışıyor');
+        console.log('🔥 Firebase başlatıldı ve hazır!');
     </script>
 
     <script type="module">
@@ -5408,9 +5401,7 @@
         }
         
         // Giriş kontrolü yap
-        if (!checkLoginStatus()) {
-            throw new Error('Giriş yapılmamış');
-        }
+        checkLoginStatus();
         
         // 1. Uygulamayı başlat
         showHomePage();
@@ -5451,8 +5442,8 @@
                 
                 // Kullanıcı verilerini kontrol et
                 checkUserData();
-            });
-        };
+            }); // loadLanguage().then() bloğunu kapat
+        }; // onYouTubeIframeAPIReady fonksiyonunu kapat
         
         // Hakan kullanıcısını otomatik oluştur
         async function createHakanUserIfNotExists() {
@@ -5530,7 +5521,9 @@
         window.cancelFriendRequest = cancelFriendRequest;
         window.removeFriend = removeFriend;
         window.openChat = openChat;
-
+    }
+    }
+    }
     </script>
 
     <!-- Service Worker Registration - PWA & Background Support -->
