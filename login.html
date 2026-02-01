@@ -4,487 +4,273 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>H-Sound - Giriş Yap</title>
-    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css'>
-    <link rel='stylesheet' href='https://unicons.iconscout.com/release/v2.1.9/css/unicons.css'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1A1A1A 0%, #0D0D0D 100%);
             color: #ffffff;
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-        .section { width: 100%; display: block; }
-        .full-height { min-height: 100vh; }
-        .card-3d-wrap {
-            position: relative;
-            width: 440px;
-            max-width: 100%;
-            height: 400px;
-            transform-style: preserve-3d;
-            perspective: 800px;
-            margin-top: 60px;
-        }
-        .card-3d-wrapper {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            transform-style: preserve-3d;
-            transition: all 600ms ease-out;
-        }
-        .card-front, .card-back {
-            width: 100%;
-            height: 100%;
+        .container {
             background: linear-gradient(135deg, #1C1C1C 0%, #2C2C2C 100%);
-            border: 1px solid #3498DB;
-            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
-            position: absolute;
-            border-radius: 10px;
-            backface-visibility: hidden;
-        }
-        .card-back { 
-            transform: rotateY(180deg); 
-        }
-        .checkbox:checked ~ .card-3d-wrap .card-3d-wrapper { 
-            transform: rotateY(180deg); 
-        }
-        .checkbox:checked ~ .card-3d-wrap .card-back {
-            z-index: 100;
-        }
-        .checkbox:not(:checked) ~ .card-3d-wrap .card-front {
-            z-index: 100;
-        }
-        .checkbox:checked ~ .card-3d-wrap .card-front {
-            z-index: 1;
-        }
-        .checkbox:not(:checked) ~ .card-3d-wrap .card-back {
-            z-index: 1;
-        }
-        [type="checkbox"]:checked, [type="checkbox"]:not(:checked) { position: absolute; left: -9999px; }
-        .checkbox:checked + label, .checkbox:not(:checked) + label {
-            position: relative;
-            display: block;
-            text-align: center;
-            width: 60px;
-            height: 16px;
-            border-radius: 8px;
-            margin: 10px auto;
-            cursor: pointer;
-            background-color: #3498DB;
-        }
-        .checkbox:checked + label:before, .checkbox:not(:checked) + label:before {
-            position: absolute;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            color: #3498DB;
-            background-color: #1A1A1A;
-            font-family: 'unicons';
-            content: '\eb4f';
-            top: -10px;
-            left: -10px;
-            line-height: 36px;
-            text-align: center;
-            font-size: 24px;
-            transition: all 0.5s ease;
             border: 2px solid #3498DB;
-        }
-        .checkbox:checked + label:before { transform: translateX(44px) rotate(-270deg); }
-        .center-wrap {
-            position: absolute;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 400px;
             width: 100%;
-            padding: 0 35px;
-            top: 50%;
-            transform: translate3d(0, -50%, 35px);
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.3);
         }
-        .form-group { position: relative; margin: 0; padding: 0; }
-        .form-style {
-            padding: 13px 20px 13px 55px;
-            height: 48px;
-            width: 100%;
-            border-radius: 4px;
-            color: #c4c3ca;
-            background-color: #1f2029;
-            border: none;
-            outline: none;
-            position: relative;
-            z-index: 1000;
-            pointer-events: auto;
-            -webkit-user-select: text;
-            -moz-user-select: text;
-            user-select: text;
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
         }
-        .form-style:focus {
-            background-color: #2a2b35;
-            color: #ffffff;
-            border: 1px solid #3498DB;
-            z-index: 1001;
-        }
-        .input-icon {
-            position: absolute;
-            top: 0;
-            left: 18px;
-            height: 48px;
-            font-size: 20px;
-            line-height: 48px;
+        .logo h1 {
             color: #3498DB;
-            z-index: 1002;
-            transition: color 0.3s ease;
+            font-size: 48px;
+            margin-bottom: 10px;
         }
-        .form-group:hover .input-icon {
-            color: #5DADE2;
+        .logo p {
+            color: #A9A9A9;
+            font-size: 14px;
         }
-        .toggle-password {
-            position: absolute;
-            top: 0;
-            right: 18px;
-            height: 48px;
-            font-size: 18px;
-            line-height: 48px;
-            color: #c4c3ca;
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2C2C2C;
+        }
+        .tab {
+            padding: 10px 30px;
             cursor: pointer;
-            z-index: 1002;
-            transition: color 0.3s ease;
+            color: #A9A9A9;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
         }
-        .toggle-password:hover {
+        .tab.active {
             color: #3498DB;
+            border-bottom-color: #3498DB;
+        }
+        .form-container {
+            display: none;
+        }
+        .form-container.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .form-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #3498DB;
+            font-size: 18px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 1px solid #2C2C2C;
+            border-radius: 8px;
+            background: #1f2029;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .form-group input:focus {
+            border-color: #3498DB;
+            background: #2a2b35;
         }
         .btn {
-            border-radius: 6px !important;
-            height: 44px !important;
-            padding: 0 30px !important;
-            border: 2px solid #3498DB !important;
-            background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%) !important;
-            color: #ffffff !important;
-            font-weight: 600 !important;
-            text-transform: uppercase !important;
-            cursor: pointer !important;
-            position: relative !important;
-            z-index: 1000 !important;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3) !important;
-            transition: all 0.3s ease !important;
-            display: inline-block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
         }
         .btn:hover {
-            background: linear-gradient(135deg, #5DADE2 0%, #3498DB 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
         }
         .btn:active {
             transform: translateY(0);
-            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
-        }
-        
-        /* Butonların her zaman görünür olması için */
-        button.btn {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            background: #3498DB !important;
-            color: #ffffff !important;
-            border: 3px solid #ffffff !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important;
-            min-height: 50px !important;
-            width: 200px !important;
-            margin: 20px auto !important;
-        }
-        
-        button.btn:hover {
-            background: #5DADE2 !important;
-            border: 3px solid #ffffff !important;
-            color: #ffffff !important;
-            transform: scale(1.05) !important;
-        }
-        h6 span {
-            padding: 0 20px;
-            text-transform: uppercase;
-            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1A1A1A 0%, #0D0D0D 100%); display: flex; justify-content: center; align-items: center; z-index: 9999;">
-        <div style="text-align: center;">
-            <h1 style="color: #3498DB; font-size: 48px; margin-bottom: 20px;">
-                <i class="fas fa-music"></i> H-Sound
-            </h1>
-            <div style="border: 4px solid #2C2C2C; border-top: 4px solid #3498DB; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+    <div class="container">
+        <div class="logo">
+            <h1><i class="fas fa-music"></i> H-Sound</h1>
+            <p>Modern Müzik Çalar</p>
         </div>
-    </div>
-    
-    <style>
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-    
-    <div class="section">
-        <div class="container">
-            <div class="row full-height justify-content-center">
-                <div class="col-12 text-center align-self-center py-5">
-                    <div class="section pb-5 pt-5 text-center">
-                        <div style="margin-bottom: 30px;">
-                            <h1 style="color: #3498DB; font-size: 48px; font-weight: 700;">
-                                <i class="fas fa-music"></i> H-Sound
-                            </h1>
-                            <p style="color: #A9A9A9;">Modern Müzik Çalar</p>
-                        </div>
-                        <h6 class="mb-0 pb-3"><span>Giriş Yap </span><span>Kayıt Ol</span></h6>
-                        <input class="checkbox" type="checkbox" id="reg-log" />
-                        <label for="reg-log"></label>
-                        <div class="card-3d-wrap mx-auto">
-                            <div class="card-3d-wrapper">
-                                <div class="card-front">
-                                    <div class="center-wrap">
-                                        <div class="section text-center">
-                                            <h4 class="mb-4">Giriş Yap</h4>
-                                            <div class="form-group">
-                                                <i class="input-icon fas fa-user"></i>
-                                                <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="logusername">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon fas fa-lock"></i>
-                                                <input type="password" class="form-style" placeholder="Şifre" id="logpass">
-                                                <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('logpass', this)"></i>
-                                            </div>
-                                            <button class="btn mt-4" onclick="handleLogin()" style="background: #3498DB !important; color: white !important; border: 3px solid white !important; padding: 15px 30px !important; font-size: 16px !important; font-weight: bold !important; display: block !important; width: 200px !important; margin: 20px auto !important;">Giriş Yap</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="card-back">
-                                    <div class="center-wrap">
-                                        <div class="section text-center">
-                                            <h4 class="mb-4">Kayıt Ol</h4>
-                                            <div class="form-group">
-                                                <i class="input-icon uil uil-user"></i>
-                                                <input type="text" class="form-style" placeholder="Kullanıcı Adı" id="regusername">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-at"></i>
-                                                <input type="email" class="form-style" placeholder="E-posta" id="regemail">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-lock-alt"></i>
-                                                <input type="password" class="form-style" placeholder="Şifre" id="regpass">
-                                                <i class="toggle-password uil uil-eye-slash" onclick="togglePassword('regpass', this)"></i>
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <i class="input-icon uil uil-lock-access"></i>
-                                                <input type="password" class="form-style" placeholder="Şifre Tekrar" id="regpassconfirm">
-                                                <i class="toggle-password uil uil-eye-slash" onclick="togglePassword('regpassconfirm', this)"></i>
-                                            </div>
-                                            <button class="btn mt-4" onclick="handleRegister()" style="background: #3498DB !important; color: white !important; border: 3px solid white !important; padding: 15px 30px !important; font-size: 16px !important; font-weight: bold !important; display: block !important; width: 200px !important; margin: 20px auto !important;">Kayıt Ol</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('login')">Giriş Yap</div>
+            <div class="tab" onclick="showTab('register')">Kayıt Ol</div>
+        </div>
+        
+        <!-- Giriş Formu -->
+        <div id="login-form" class="form-container active">
+            <div class="form-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="logusername" placeholder="Kullanıcı Adı">
             </div>
+            <div class="form-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="logpass" placeholder="Şifre">
+            </div>
+            <button class="btn" onclick="handleLogin()">Giriş Yap</button>
+        </div>
+        
+        <!-- Kayıt Formu -->
+        <div id="register-form" class="form-container">
+            <div class="form-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="regusername" placeholder="Kullanıcı Adı">
+            </div>
+            <div class="form-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="regemail" placeholder="E-posta">
+            </div>
+            <div class="form-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="regpass" placeholder="Şifre">
+            </div>
+            <div class="form-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="regpassconfirm" placeholder="Şifre Tekrar">
+            </div>
+            <button class="btn" onclick="handleRegister()">Kayıt Ol</button>
         </div>
     </div>
 
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
+
     <script>
-        // Test için input alanlarının çalışıp çalışmadığını kontrol et
-        document.addEventListener('DOMContentLoaded', function() {
-            // Loading ekranını gizle
-            setTimeout(() => {
-                const loadingScreen = document.getElementById('loading-screen');
-                if (loadingScreen) {
-                    loadingScreen.style.opacity = '0';
-                    loadingScreen.style.transition = 'opacity 0.5s';
-                    setTimeout(() => {
-                        loadingScreen.style.display = 'none';
-                    }, 500);
-                }
-            }, 500);
-            
-            // Tüm input alanlarına event listener ekle
-            const inputs = document.querySelectorAll('.form-style');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    console.log('Input focused:', this.id);
-                    this.style.backgroundColor = '#2a2b35';
-                    this.style.border = '1px solid #3498DB';
-                });
-                
-                input.addEventListener('blur', function() {
-                    this.style.backgroundColor = '#1f2029';
-                    this.style.border = 'none';
-                });
-                
-                input.addEventListener('input', function() {
-                    console.log('Input changed:', this.id, this.value);
-                });
-            });
-            
-            // Checkbox değişimini kontrol et
-            const checkbox = document.getElementById('reg-log');
-            checkbox.addEventListener('change', function() {
-                console.log('Checkbox changed:', this.checked);
-                setTimeout(() => {
-                    // Form geçişinden sonra input alanlarını yeniden aktif et
-                    const activeInputs = document.querySelectorAll('.form-style');
-                    activeInputs.forEach(input => {
-                        input.style.pointerEvents = 'auto';
-                        input.style.zIndex = '100';
-                    });
-                }, 700); // Animasyon süresinden sonra
-            });
-        });
-    </script>
-    
-    <script>
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE",
             authDomain: "h-sound-b2391.firebaseapp.com",
             projectId: "h-sound-b2391",
             storageBucket: "h-sound-b2391.firebasestorage.app",
             messagingSenderId: "2853371644",
-            appId: "1:2853371644:web:a2a6509e238c4f4a8aa179"
+            appId: "1:2853371644:web:a2a6509e238c4f4a8aa179",
+            measurementId: "G-MZPSZN23QT"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        function togglePassword(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('uil-eye-slash', 'uil-eye');
+        // Tab değiştirme
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('login-form').classList.add('active');
             } else {
-                input.type = 'password';
-                icon.classList.replace('uil-eye', 'uil-eye-slash');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('register-form').classList.add('active');
             }
         }
 
+        // Giriş işlemi
         async function handleLogin() {
-            const username = document.getElementById('logusername').value;
+            const username = document.getElementById('logusername').value.trim();
             const password = document.getElementById('logpass').value;
 
             if (!username || !password) {
-                alert('Lütfen kullanıcı adı ve şifrenizi girin.');
+                alert('Lütfen tüm alanları doldurun!');
                 return;
             }
 
-            try {
-                // Özel "Hakan" kullanıcısı kontrolü
-                if (username.toLowerCase() === 'hakan') {
-                    const hakanEmail = 'alparmaklih@gmail.com';
-                    const hakanPassword = 'Hakan5225522541';
+            // Hakan özel giriş
+            if (username.toLowerCase() === 'hakan') {
+                const hakanEmail = 'alparmaklih@gmail.com';
+                const hakanPassword = 'Hakan5225522541';
+
+                try {
+                    const userCredential = await auth.signInWithEmailAndPassword(hakanEmail, hakanPassword);
                     
-                    if (password === hakanPassword) {
-                        console.log('👑 Hakan kullanıcısı özel giriş yapıyor...');
+                    localStorage.setItem('h_sound_username', 'Hakan');
+                    localStorage.setItem('h_sound_email', hakanEmail);
+                    localStorage.setItem('h_sound_uid', userCredential.user.uid);
+                    localStorage.setItem('h_sound_role', 'superadmin');
+                    localStorage.setItem('h_sound_logged_in', 'true');
+
+                    alert('Süper Admin girişi başarılı!');
+                    window.location.href = 'music-player.html';
+                    return;
+                } catch (error) {
+                    // Hesap yoksa oluştur
+                    try {
+                        const userCredential = await auth.createUserWithEmailAndPassword(hakanEmail, hakanPassword);
                         
-                        try {
-                            // Önce Firebase Auth ile giriş yapmayı dene
-                            const userCredential = await auth.signInWithEmailAndPassword(hakanEmail, hakanPassword);
-                            
-                            // Firestore'da kullanıcı bilgilerini kontrol et/güncelle
-                            const userDocRef = db.collection('users').doc(userCredential.user.uid);
-                            const userDoc = await userDocRef.get();
-                            
-                            if (!userDoc.exists) {
-                                // Kullanıcı Firestore'da yoksa oluştur
-                                await userDocRef.set({
-                                    username: 'Hakan',
-                                    email: hakanEmail,
-                                    role: 'superadmin',
-                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                    banned: false
-                                });
-                            } else {
-                                // Kullanıcı varsa superadmin yap
-                                await userDocRef.update({
-                                    role: 'superadmin'
-                                });
-                            }
-                            
-                            // LocalStorage'a kaydet
-                            localStorage.setItem('h_sound_username', 'Hakan');
-                            localStorage.setItem('h_sound_email', hakanEmail);
-                            localStorage.setItem('h_sound_uid', userCredential.user.uid);
-                            localStorage.setItem('h_sound_role', 'superadmin');
-                            localStorage.setItem('h_sound_logged_in', 'true');
+                        await db.collection('users').doc(userCredential.user.uid).set({
+                            username: 'Hakan',
+                            email: hakanEmail,
+                            password: hakanPassword,
+                            role: 'superadmin',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            banned: false
+                        });
+                        
+                        localStorage.setItem('h_sound_username', 'Hakan');
+                        localStorage.setItem('h_sound_email', hakanEmail);
+                        localStorage.setItem('h_sound_uid', userCredential.user.uid);
+                        localStorage.setItem('h_sound_role', 'superadmin');
+                        localStorage.setItem('h_sound_logged_in', 'true');
 
-                            alert('Süper Admin girişi başarılı!');
-                            window.location.href = 'music-player.html';
-                            return;
-                            
-                        } catch (authError) {
-                            console.log('🔧 Firebase Auth hesabı oluşturuluyor...');
-                            
-                            // Hesap yoksa oluştur
-                            try {
-                                const userCredential = await auth.createUserWithEmailAndPassword(hakanEmail, hakanPassword);
-                                
-                                // Firestore'da kullanıcı bilgilerini kaydet
-                                await db.collection('users').doc(userCredential.user.uid).set({
-                                    username: 'Hakan',
-                                    email: hakanEmail,
-                                    role: 'superadmin',
-                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                    banned: false
-                                });
-                                
-                                // LocalStorage'a kaydet
-                                localStorage.setItem('h_sound_username', 'Hakan');
-                                localStorage.setItem('h_sound_email', hakanEmail);
-                                localStorage.setItem('h_sound_uid', userCredential.user.uid);
-                                localStorage.setItem('h_sound_role', 'superadmin');
-                                localStorage.setItem('h_sound_logged_in', 'true');
-
-                                alert('Süper Admin hesabı oluşturuldu ve giriş yapıldı!');
-                                window.location.href = 'music-player.html';
-                                return;
-                                
-                            } catch (createError) {
-                                console.error('❌ Hakan hesabı oluşturulamadı:', createError);
-                                alert('Süper Admin hesabı oluşturulamadı: ' + createError.message);
-                                return;
-                            }
-                        }
-                    } else {
-                        alert('Hakan kullanıcısı için şifre hatalı!');
+                        alert('Süper Admin hesabı oluşturuldu ve giriş yapıldı!');
+                        window.location.href = 'music-player.html';
+                        return;
+                    } catch (createError) {
+                        alert('Hakan girişi başarısız: ' + createError.message);
                         return;
                     }
                 }
-                
-                // Normal kullanıcılar için standart giriş
-                const usersSnapshot = await db.collection('users').where('username', '==', username).limit(1).get();
-                
+            }
+
+            // Normal kullanıcı girişi
+            try {
+                const usersSnapshot = await db.collection('users')
+                    .where('username', '==', username)
+                    .where('password', '==', password)
+                    .get();
+
                 if (usersSnapshot.empty) {
-                    alert('Kullanıcı bulunamadı!');
+                    alert('Kullanıcı adı veya şifre hatalı!');
                     return;
                 }
 
-                const userData = usersSnapshot.docs[0].data();
-                const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
-                const userDocRef = await db.collection('users').doc(userCredential.user.uid).get();
-                let userRole = userDocRef.exists ? userDocRef.data().role : 'user';
+                const userDoc = usersSnapshot.docs[0];
+                const userData = userDoc.data();
 
-                // "Hakan" kullanıcısını otomatik olarak superadmin yap
-                if (username.toLowerCase() === 'hakan' && userRole !== 'superadmin') {
-                    console.log('👑 Hakan kullanıcısı superadmin yapılıyor...');
-                    await db.collection('users').doc(userCredential.user.uid).update({
-                        role: 'superadmin'
-                    });
-                    userRole = 'superadmin';
-                    console.log('✅ Hakan superadmin oldu!');
+                if (userData.banned) {
+                    alert('Hesabınız yasaklanmış!');
+                    return;
                 }
+
+                const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
+                const userRole = userData.role || 'user';
 
                 localStorage.setItem('h_sound_username', username);
                 localStorage.setItem('h_sound_email', userData.email);
@@ -499,76 +285,62 @@
             }
         }
 
+        // Kayıt işlemi
         async function handleRegister() {
-            let username = document.getElementById('regusername').value.trim();
-            const email = document.getElementById('regemail').value.trim();
+            const username = document.getElementById('regusername').value.trim();
+            const email = document.getElementById('regemail').value.trim().toLowerCase();
             const password = document.getElementById('regpass').value;
-            const confirmPassword = document.getElementById('regpassconfirm').value;
+            const passwordConfirm = document.getElementById('regpassconfirm').value;
 
-            if (!username || !email || !password || !confirmPassword) {
-                alert('Lütfen tüm alanları doldurun.');
+            if (!username || !email || !password || !passwordConfirm) {
+                alert('Lütfen tüm alanları doldurun!');
                 return;
             }
 
-            // Kullanıcı adı kontrolü - ilk harf büyük olmalı
-            if (username.length < 2) {
-                alert('Kullanıcı adı en az 2 karakter olmalıdır.');
-                return;
-            }
-
-            // İlk harfi büyük yap, geri kalanını küçük yap
-            username = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
-
-            // E-posta format kontrolü
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                alert('Geçerli bir e-posta adresi girin.');
-                return;
-            }
-
-            // Yaygın e-posta sağlayıcıları kontrolü
-            const validDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'icloud.com', 'live.com', 'msn.com', 'yandex.com', 'yandex.ru', 'mail.ru'];
-            const emailDomain = email.split('@')[1].toLowerCase();
-            if (!validDomains.includes(emailDomain)) {
-                alert('Lütfen geçerli bir e-posta sağlayıcısı kullanın (Gmail, Hotmail, Outlook, Yahoo, iCloud vb.)');
-                return;
-            }
-
-            if (password !== confirmPassword) {
+            if (password !== passwordConfirm) {
                 alert('Şifreler eşleşmiyor!');
                 return;
             }
 
             if (password.length < 6) {
-                alert('Şifre en az 6 karakter olmalıdır.');
+                alert('Şifre en az 6 karakter olmalıdır!');
+                return;
+            }
+
+            // Kullanıcı adı formatı
+            const formattedUsername = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+
+            // E-posta doğrulama
+            const validProviders = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'];
+            const emailDomain = email.split('@')[1];
+            if (!validProviders.includes(emailDomain)) {
+                alert('Lütfen geçerli bir e-posta sağlayıcısı kullanın (Gmail, Outlook, Yahoo, iCloud)');
                 return;
             }
 
             try {
-                // Kullanıcı adı kontrolü (büyük/küçük harf duyarsız)
-                const usernameCheck = await db.collection('users').where('username', '==', username).limit(1).get();
+                const usernameCheck = await db.collection('users')
+                    .where('username', '==', formattedUsername)
+                    .get();
+
                 if (!usernameCheck.empty) {
                     alert('Bu kullanıcı adı zaten kullanılıyor!');
                     return;
                 }
 
-                // E-posta kontrolü
-                const emailCheck = await db.collection('users').where('email', '==', email.toLowerCase()).limit(1).get();
-                if (!emailCheck.empty) {
-                    alert('Bu e-posta adresi zaten kullanılıyor!');
-                    return;
-                }
-
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+
                 await db.collection('users').doc(userCredential.user.uid).set({
-                    username: username, // İlk harfi büyük
-                    email: email.toLowerCase(),
+                    username: formattedUsername,
+                    email: email,
+                    password: password,
+                    role: 'user',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    role: 'user'
+                    banned: false
                 });
 
-                localStorage.setItem('h_sound_username', username);
-                localStorage.setItem('h_sound_email', email.toLowerCase());
+                localStorage.setItem('h_sound_username', formattedUsername);
+                localStorage.setItem('h_sound_email', email);
                 localStorage.setItem('h_sound_uid', userCredential.user.uid);
                 localStorage.setItem('h_sound_role', 'user');
                 localStorage.setItem('h_sound_logged_in', 'true');
@@ -577,27 +349,26 @@
                 window.location.href = 'music-player.html';
             } catch (error) {
                 let errorMessage = 'Kayıt hatası: ';
-                
                 if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Bu e-posta adresi zaten kullanılıyor!';
+                    errorMessage += 'Bu e-posta zaten kullanılıyor!';
                 } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Geçersiz e-posta adresi! Lütfen e-posta adresinizi değiştirin.';
+                    errorMessage += 'Geçersiz e-posta adresi!';
                 } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'Şifre çok zayıf! En az 6 karakter olmalıdır.';
+                    errorMessage += 'Şifre çok zayıf!';
                 } else {
                     errorMessage += error.message;
                 }
-                
                 alert(errorMessage);
             }
         }
 
+        // Enter tuşu ile giriş/kayıt
         document.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const active = document.activeElement;
-                if (active.id === 'logusername' || active.id === 'logpass') {
+                const activeForm = document.querySelector('.form-container.active');
+                if (activeForm.id === 'login-form') {
                     handleLogin();
-                } else if (active.id.startsWith('reg')) {
+                } else {
                     handleRegister();
                 }
             }

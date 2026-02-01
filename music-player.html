@@ -2145,9 +2145,9 @@
                         const data = await response.json();
                         
                         if (data.items && data.items.length > 0) {
-                            // Video detaylarını al (süre için)
+                            // Video detaylarını al (süre ve kategori için)
                             const videoIds = data.items.map(item => item.id.videoId).join(',');
-                            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${currentKey}`;
+                            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${currentKey}`;
                             
                             const detailsResponse = await fetch(detailsUrl);
                             const detailsData = await detailsResponse.json();
@@ -2155,18 +2155,23 @@
                             const videos = data.items.map((item, index) => {
                                 const details = detailsData.items[index];
                                 const duration = details ? parseDurationISO(details.contentDetails.duration) : 0;
+                                const categoryId = details ? details.snippet.categoryId : null;
                                 
                                 return {
                                     videoId: item.id.videoId,
                                     title: item.snippet.title,
                                     artist: item.snippet.channelTitle,
                                     thumbnail: item.snippet.thumbnails.medium.url,
-                                    duration: duration
+                                    duration: duration,
+                                    categoryId: categoryId
                                 };
                             });
                             
+                            // Sadece müzik kategorisindeki videoları filtrele (categoryId: 10 = Music)
+                            const musicVideos = videos.filter(v => v.categoryId === '10' || v.categoryId === 10);
+                            
                             // Client-side filtreleme
-                            const filteredData = filterMusicOnly(videos);
+                            const filteredData = filterMusicOnly(musicVideos.length > 0 ? musicVideos : videos);
                             const uniqueData = removeDuplicateSongs(filteredData);
                             const shuffled = uniqueData.sort(() => Math.random() - 0.5);
                             return shuffled;
