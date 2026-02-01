@@ -9,15 +9,8 @@
     <title>H-Sound Müzik Çalar</title>
     <!-- PWA Manifest - Direkt yükle -->
     <link rel="manifest" href="manifest.json">
+    
     <script>
-        console.log('H-Sound çalışıyor');
-            
-        // Tüm console.log mesajlarını gizle ve sadece "H-Sound çalışıyor" göster
-        const originalConsoleLog = console.log;
-        console.log = function() {
-            originalConsoleLog('H-Sound çalışıyor');
-        };
-        
         // Kod koruma - Sağ tık menüsünü engelle
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
@@ -1888,7 +1881,7 @@
         
         // PWA install prompt'unu yakala
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('H-Sound çalışıyor');
+            console.log('📱 PWA yüklenebilir!');
             e.preventDefault();
             deferredPrompt = e;
             showInstallButton();
@@ -1939,7 +1932,7 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                console.log('H-Sound çalışıyor');
+                console.log('✅ PWA yüklendi:', outcome);
                 deferredPrompt = null;
                 hideInstallButton();
             }
@@ -1955,7 +1948,7 @@
         
         // PWA yüklendikten sonra butonu gizle
         window.addEventListener('appinstalled', (evt) => {
-            console.log('H-Sound çalışıyor');
+            console.log('✅ PWA yüklendi!');
             hideInstallButton();
         });
         
@@ -2116,7 +2109,7 @@
         
         let useServerAPI = false; // Netlify'de backend yok, direkt Invidious kullan
         
-        console.log('🎵 H-Sound çalışıyor');
+        console.log(`🎵 H-Sound v7.0 - Netlify Edge Functions`);
         
 
         
@@ -3373,7 +3366,7 @@
                 const chatId = [currentUid, currentChatUser.uid].sort().join('_');
                 await db.collection('chats').doc(chatId).collection('messages').doc(messageId).delete();
                 
-                console.log('H-Sound çalışıyor');
+                console.log('✅ Mesaj silindi:', messageId);
                 
             } catch (error) {
                 console.error('Mesaj silme hatası:', error);
@@ -4765,8 +4758,7 @@
                 
                 // PWA - Bildirim güncelle (çalıyor)
                 if (window.updateMusicControls && playlist[currentSongIndex]) {
-                    console.log('H-Sound çalışıyor');
-                }
+                    window.updateMusicControls(playlist[currentSongIndex], true);
             } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.BUFFERING) {
                 isPlaying = false;
                 playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -4778,8 +4770,7 @@
                 
                 // PWA - Bildirim güncelle (duraklatıldı)
                 if (window.updateMusicControls && playlist[currentSongIndex]) {
-                    console.log('H-Sound çalışıyor');
-                }
+                    window.updateMusicControls(playlist[currentSongIndex], false);
             } else if (event.data == YT.PlayerState.ENDED) {
                 console.log('🏁 Şarkı bitti - playMode:', playMode);
                 
@@ -4906,8 +4897,7 @@
             
             // PWA MÜZİK KONTROLÜ - Bildirim güncelle
             if (window.updateMusicControls) {
-                console.log('H-Sound çalışıyor');
-            }
+                window.updateMusicControls(song, true);
         }
         
         /**
