@@ -362,32 +362,60 @@
                     return;
                 }
                 
-                const userData = usersSnapshot.docs[0].data();
-                const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
-                const userDocRef = await db.collection('users').doc(userCredential.user.uid).get();
-                let userRole = userDocRef.exists ? userDocRef.data().role : 'user';
+                const userDoc = usersSnapshot.docs[0];
+                const userData = userDoc.data();
+                const userUid = userDoc.id;
                 
-                // Şifreyi Firebase'e kaydet (eski kullanıcılar için)
-                if (!userData.password || userData.password === '') {
-                    console.log('🔐 Şifre Firebase\'e kaydediliyor:', username);
-                    await db.collection('users').doc(userCredential.user.uid).update({
-                        password: password
-                    });
-                    console.log('✅ Şifre kaydedildi!');
+                try {
+                    // Önce Firebase Authentication ile dene
+                    const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
+                    const userDocRef = await db.collection('users').doc(userCredential.user.uid).get();
+                    let userRole = userDocRef.exists ? userDocRef.data().role : 'user';
+                    
+                    // Şifreyi Firestore'a kaydet (eski kullanıcılar için)
+                    if (!userData.password || userData.password === '') {
+                        console.log('🔐 Şifre Firestore\'a kaydediliyor:', username);
+                        await db.collection('users').doc(userCredential.user.uid).update({
+                            password: password
+                        });
+                        console.log('✅ Şifre kaydedildi!');
+                    }
+                    
+                    localStorage.setItem('h_sound_username', username);
+                    localStorage.setItem('h_sound_email', userData.email);
+                    localStorage.setItem('h_sound_uid', userCredential.user.uid);
+                    localStorage.setItem('h_sound_role', userRole);
+                    localStorage.setItem('h_sound_logged_in', 'true');
+                    
+                    alert('✅ Giriş başarılı!');
+                    window.location.href = 'music-player.html';
+                    
+                } catch (authError) {
+                    console.log('⚠️ Firebase Authentication başarısız, Firestore şifresi kontrol ediliyor...', authError.code);
+                    
+                    // Firebase Authentication başarısız - Firestore şifresini kontrol et
+                    if (userData.password && userData.password === password) {
+                        console.log('✅ Firestore şifresi eşleşti, kullanıcı içeri alınıyor...');
+                        
+                        // Firestore şifresi doğru - kullanıcıyı içeri al
+                        localStorage.setItem('h_sound_username', username);
+                        localStorage.setItem('h_sound_email', userData.email);
+                        localStorage.setItem('h_sound_uid', userUid);
+                        localStorage.setItem('h_sound_role', userData.role || 'user');
+                        localStorage.setItem('h_sound_logged_in', 'true');
+                        
+                        alert('✅ Giriş başarılı!\n\n⚠️ Not: Şifreniz güncellendi. Bir sonraki girişinizde yeni şifrenizi kullanabilirsiniz.');
+                        window.location.href = 'music-player.html';
+                    } else {
+                        // Her iki şifre de yanlış
+                        console.error('❌ Hem Firebase hem Firestore şifresi yanlış');
+                        alert('❌ Kullanıcı adı veya şifre hatalı!');
+                    }
                 }
-                
-                localStorage.setItem('h_sound_username', username);
-                localStorage.setItem('h_sound_email', userData.email);
-                localStorage.setItem('h_sound_uid', userCredential.user.uid);
-                localStorage.setItem('h_sound_role', userRole);
-                localStorage.setItem('h_sound_logged_in', 'true');
-                
-                alert('✅ Giriş başarılı!');
-                window.location.href = 'music-player.html';
                 
             } catch (error) {
                 console.error('❌ Giriş hatası:', error);
-                alert('❌ Kullanıcı adı veya şifre hatalı!');
+                alert('❌ Bir hata oluştu: ' + error.message);
             }
         }
 

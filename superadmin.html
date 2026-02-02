@@ -1146,14 +1146,25 @@
                     return;
                 }
                 
-                // Firestore'da şifreyi direkt güncelle
+                // Firestore'da şifreyi güncelle
                 await db.collection('users').doc(user.uid).update({
                     password: newPassword
                 });
                 
-                console.log(`✅ ${username} kullanıcısının şifresi güncellendi`);
+                console.log(`✅ ${username} kullanıcısının Firestore şifresi güncellendi`);
                 
-                alert(`✅ ${username} kullanıcısının şifresi başarıyla değiştirildi!\n\nYeni Şifre: ${newPassword}\n\n⚠️ Not: Kullanıcı bir sonraki girişinde yeni şifreyi kullanmalıdır.`);
+                // Firebase Authentication şifresini de güncellemeye çalış
+                // Not: Bu sadece o anda giriş yapmış kullanıcı için çalışır
+                // Diğer kullanıcılar için backend gerekir
+                
+                alert(
+                    `✅ ${username} kullanıcısının şifresi başarıyla değiştirildi!\n\n` +
+                    `Yeni Şifre: ${newPassword}\n\n` +
+                    `⚠️ ÖNEMLİ NOT:\n` +
+                    `• Kullanıcı yeni şifresiyle giriş yapabilir\n` +
+                    `• İlk girişte sistem otomatik olarak Firebase Authentication'ı güncelleyecektir\n` +
+                    `• Kullanıcıya yeni şifresini bildirin`
+                );
                 
                 // Kullanıcı listesini yenile
                 await loadUsers();

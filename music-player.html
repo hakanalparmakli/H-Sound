@@ -4880,6 +4880,9 @@
                 }
                 
                 try {
+                    // Mobil cihaz kontrolü
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
                     player = new YT.Player('player-iframe', {
                         videoId: song.videoId,
                         playerVars: {
@@ -4890,25 +4893,38 @@
                             'rel': 0,
                             'showinfo': 0,
                             'fs': 0,
-                            'iv_load_policy': 3, // Reklam engelleme
-                            'cc_load_policy': 0, // Alt yazı kapalı
-                            'playsinline': 1, // Mobilde tam ekran engelleme
-                            'enablejsapi': 1, // JavaScript API aktif
-                            'origin': window.location.origin, // Güvenlik
-                            'widget_referrer': window.location.origin, // Referrer
-                            'start': 0, // Baştan başlat
-                            'end': 0, // Son reklam engelleme
-                            'loop': 0, // Loop kapalı
-                            'playlist': '', // Playlist yok
-                            'color': 'white', // Player rengi
-                            'autohide': 1 // Kontrolleri gizle
+                            'iv_load_policy': 3,
+                            'cc_load_policy': 0,
+                            'playsinline': 1,
+                            'enablejsapi': 1,
+                            'origin': window.location.origin,
+                            'widget_referrer': window.location.origin,
+                            'start': 0,
+                            'loop': 0,
+                            'playlist': '',
+                            'color': 'white',
+                            'autohide': 1,
+                            // Mobil için ek ayarlar
+                            'mute': isMobile ? 1 : 0, // Mobilde önce sessiz başlat (autoplay için)
+                            'allow': 'autoplay; encrypted-media'
                         },
                         events: {
-                            'onReady': onPlayerReady,
+                            'onReady': (event) => {
+                                onPlayerReady(event);
+                                // Mobilde sessiz başlatıp sonra sesi aç
+                                if (isMobile) {
+                                    setTimeout(() => {
+                                        if (player && player.unMute) {
+                                            player.unMute();
+                                            player.setVolume(100);
+                                        }
+                                    }, 500);
+                                }
+                            },
                             'onStateChange': onPlayerStateChange
                         }
                     });
-                    console.log('✅ Player oluşturuldu');
+                    console.log('✅ Player oluşturuldu' + (isMobile ? ' (Mobil mod)' : ''));
                 } catch (error) {
                     console.error('❌ Player oluşturma hatası:', error);
                 }
