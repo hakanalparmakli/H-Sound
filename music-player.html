@@ -2107,120 +2107,84 @@
 
         
         // Ana YouTube arama fonksiyonu (YouTube Data API v3)
+        // Ana arama fonksiyonu - Invidious API
         async function searchYouTube(query) {
-            // YouTube Data API v3 Key'leri (Çoklu API Key Sistemi)
-            const API_KEYS = [
-                'AIzaSyARhRMSuwCZWljEAyVTek6WXiKMXcR-tSo', // Key 1
-                'AIzaSyDtjNMCzvp3WhA-OmJfUcsQtepF_W5tUdI', // Key 2
-                'AIzaSyCRbah2q8W7QkIyDaIJlMEirCI2mfPWMS0', // Key 3
-                'AIzaSyC0ODxZKmu_KvSLYk5l-J6plhH0NE--mjE', // Key 4
-            ];
+            console.log('🔍 Invidious API ile arama yapılıyor:', query);
             
-            // Tüm key'leri dene
-            for (let i = 0; i < API_KEYS.length; i++) {
-                const currentKey = API_KEYS[i];
-                
-                try {
-                    const apiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=50&key=${currentKey}`;
-                    
-                    const response = await fetch(apiUrl, {
-                        method: 'GET',
-                        signal: AbortSignal.timeout(15000)
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        
-                        if (data.items && data.items.length > 0) {
-                            // Video detaylarını al (süre için)
-                            const videoIds = data.items.map(item => item.id.videoId).join(',');
-                            const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${currentKey}`;
-                            
-                            const detailsResponse = await fetch(detailsUrl);
-                            const detailsData = await detailsResponse.json();
-                            
-                            const videos = data.items.map((item, index) => {
-                                const details = detailsData.items[index];
-                                const duration = details ? parseDurationISO(details.contentDetails.duration) : 0;
-                                
-                                return {
-                                    videoId: item.id.videoId,
-                                    title: item.snippet.title,
-                                    artist: item.snippet.channelTitle,
-                                    thumbnail: item.snippet.thumbnails.medium.url,
-                                    duration: duration
-                                };
-                            });
-                            
-                            // Client-side filtreleme
-                            const filteredData = filterMusicOnly(videos);
-                            const uniqueData = removeDuplicateSongs(filteredData);
-                            const shuffled = uniqueData.sort(() => Math.random() - 0.5);
-                            return shuffled;
-                        }
-                    } else if (response.status === 403) {
-                        continue; // Sonraki key'i dene
-                    }
-                } catch (error) {
-                    continue; // Sonraki key'i dene
-                }
-            }
-            
-            // Tüm key'ler başarısız - Fallback olarak Invidious dene
-            return await searchYouTubeInvidious(query);
-        }
-        
-        // Invidious API Fallback (Yedek sistem)
-        async function searchYouTubeInvidious(query) {
-            // Invidious sunucuları (Ücretsiz & Açık Kaynak)
+            // Invidious sunucuları (Güvenilir & Hızlı)
             const INVIDIOUS_INSTANCES = [
-                'https://invidious.io',
-                'https://invidious.kavin.rocks',
-                'https://invidious.snopyta.org',
-                'https://invidious.namazso.eu'
+                'https://invidious.fdn.fr',
+                'https://inv.nadeko.net',
+                'https://invidious.privacyredirect.com',
+                'https://invidious.nerdvpn.de',
+                'https://invidious.protokolla.fi',
+                'https://iv.melmac.space'
             ];
             
-            // Tüm sunucuları dene
-            for (let i = 0; i < INVIDIOUS_INSTANCES.length; i++) {
-                const instance = INVIDIOUS_INSTANCES[i];
-                
+            // Paralel olarak tüm sunuculara istek at, ilk başarılı olanı kullan
+            const promises = INVIDIOUS_INSTANCES.map(async (instance) => {
                 try {
-                    const apiUrl = `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance&duration=short,medium&features=hd`;
+                    const apiUrl = `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance&page=1`;
                     
                     const response = await fetch(apiUrl, {
                         method: 'GET',
-                        signal: AbortSignal.timeout(10000),
-                        headers: {
-                            'Accept': 'application/json',
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                        }
+                        signal: AbortSignal.timeout(5000) // 5 saniye timeout
                     });
                     
                     if (response.ok) {
                         const data = await response.json();
                         
                         if (data && data.length > 0) {
-                            const videos = data.map(item => ({
-                                videoId: item.videoId,
-                                title: item.title,
-                                artist: item.author,
-                                thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
-                                duration: item.lengthSeconds || 0
-                            }));
+                            console.log(`✅ ${instance} başarılı! ${data.length} sonuç`);
                             
-                            // Client-side filtreleme
-                            const filteredData = filterMusicOnly(videos);
-                            const uniqueData = removeDuplicateSongs(filteredData);
-                            const shuffled = uniqueData.sort(() => Math.random() - 0.5);
-                            return shuffled;
+                            // Sadece video tipindeki sonuçları al
+                            const videos = data
+                                .filter(item => item.type === 'video')
+                                .map(item => {
+                                    // En iyi thumbnail'i seç (medium quality)
+                                    const thumbnail = item.videoThumbnails?.find(t => t.quality === 'medium')?.url 
+                                        || item.videoThumbnails?.[0]?.url 
+                                        || `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`;
+                                    
+                                    return {
+                                        videoId: item.videoId,
+                                        title: item.title,
+                                        artist: item.author || 'Bilinmiyor',
+                                        thumbnail: thumbnail,
+                                        duration: item.lengthSeconds || 0
+                                    };
+                                });
+                            
+                            return videos;
                         }
                     }
+                    throw new Error('No data');
                 } catch (error) {
-                    continue; // Sonraki sunucuyu dene
+                    console.log(`❌ ${instance} başarısız:`, error.message);
+                    throw error;
                 }
-            }
+            });
             
-            return [];
+            // İlk başarılı sonucu al
+            try {
+                const videos = await Promise.any(promises);
+                
+                // Client-side filtreleme
+                const filteredData = filterMusicOnly(videos);
+                const uniqueData = removeDuplicateSongs(filteredData);
+                const shuffled = uniqueData.sort(() => Math.random() - 0.5);
+                
+                console.log(`🎵 ${shuffled.length} müzik bulundu`);
+                return shuffled;
+            } catch (error) {
+                console.error('❌ Tüm Invidious sunucuları başarısız!');
+                return [];
+            }
+        }
+        
+        // Eski Invidious fallback fonksiyonu - artık gerekli değil ama uyumluluk için bırakıyoruz
+        async function searchYouTubeInvidious(query) {
+            return await searchYouTube(query);
         }
         
         // ISO 8601 süre formatını saniyeye çevir (PT4M13S -> 253)
@@ -3670,14 +3634,22 @@
             try {
                 isLoadingMore = true;
                 
-                // Farklı arama terimleri kullanarak çeşitlilik sağla
-                const searchTerm = POPULAR_SEARCH_TERMS[popularSearchIndex % POPULAR_SEARCH_TERMS.length];
-                popularSearchIndex++; // Her yüklemede farklı terim kullan
+                let data = [];
                 
-                console.log('🎵 Popüler müzikler yükleniyor:', searchTerm, `(${popularSearchIndex}/${POPULAR_SEARCH_TERMS.length})`);
+                // Önce Invidious trending/popular API'yi dene
+                if (!append || popularSearchIndex === 0) {
+                    console.log('🎵 Invidious trending API ile popüler müzikler yükleniyor...');
+                    data = await fetchInvidiousTrending();
+                }
                 
-                // YouTube'dan popüler müzikler (doğrudan)
-                const data = await searchYouTube(searchTerm);
+                // Eğer trending başarısız olursa veya append modundaysa, arama terimlerini kullan
+                if (data.length === 0) {
+                    const searchTerm = POPULAR_SEARCH_TERMS[popularSearchIndex % POPULAR_SEARCH_TERMS.length];
+                    popularSearchIndex++; // Her yüklemede farklı terim kullan
+                    
+                    console.log('🎵 Arama terimi ile müzikler yükleniyor:', searchTerm, `(${popularSearchIndex}/${POPULAR_SEARCH_TERMS.length})`);
+                    data = await searchYouTube(searchTerm);
+                }
                 
                 if (!data || data.length === 0) {
                     if (!append) {
@@ -3685,16 +3657,15 @@
                             <h2 class="content-header">${getTranslation('popular_music')}</h2>
                             <div class="error-message">
                                 <h2>⚠️ Müzik Yüklenemedi</h2>
-                                <p>YouTube API'lerine erişilemiyor. Lütfen aşağıdaki çözümleri deneyin:</p>
+                                <p>Invidious API'lerine erişilemiyor. Lütfen aşağıdaki çözümleri deneyin:</p>
                                 <ul style="text-align: left; max-width: 600px; margin: 20px auto;">
                                     <li>İnternet bağlantınızı kontrol edin</li>
                                     <li>VPN kullanıyorsanız kapatmayı deneyin</li>
                                     <li>Tarayıcı eklentilerinizi (AdBlock, Privacy Badger vb.) geçici olarak devre dışı bırakın</li>
                                     <li>Farklı bir tarayıcı deneyin (Chrome, Firefox, Edge)</li>
-                                    <li><a href="test-api.html" target="_blank" style="color: #3498db;">API Test Sayfası</a>'nı açarak hangi servislerin çalıştığını kontrol edin</li>
                                 </ul>
                                 <p style="margin-top: 20px; font-size: 14px; color: #888;">
-                                    <strong>Teknik Detay:</strong> YouTube API'sine erişilemiyor. Lütfen internet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin.
+                                    <strong>Teknik Detay:</strong> Invidious API'sine erişilemiyor. Lütfen internet bağlantınızı kontrol edin veya birkaç dakika sonra tekrar deneyin.
                                 </p>
                             </div>
                         `;
@@ -3745,6 +3716,86 @@
                 displayErrorMessage('Müzikler yüklenirken bir hata oluştu. İnternet bağlantınızı kontrol edin.');
             } finally {
                 isLoadingMore = false;
+            }
+        }
+        
+        // Invidious Trending/Popular API
+        async function fetchInvidiousTrending() {
+            const INVIDIOUS_INSTANCES = [
+                'https://invidious.fdn.fr',
+                'https://inv.nadeko.net',
+                'https://invidious.privacyredirect.com',
+                'https://invidious.nerdvpn.de',
+                'https://invidious.protokolla.fi',
+                'https://iv.melmac.space'
+            ];
+            
+            // Paralel olarak tüm sunuculara istek at
+            const promises = INVIDIOUS_INSTANCES.map(async (instance) => {
+                try {
+                    // Önce /api/v1/popular dene
+                    const endpoints = [
+                        `${instance}/api/v1/popular`,
+                        `${instance}/api/v1/trending?type=music`
+                    ];
+                    
+                    for (const apiUrl of endpoints) {
+                        try {
+                            const response = await fetch(apiUrl, {
+                                method: 'GET',
+                                signal: AbortSignal.timeout(5000) // 5 saniye timeout
+                            });
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                
+                                if (data && data.length > 0) {
+                                    console.log(`✅ ${instance} trending başarılı! ${data.length} video`);
+                                    
+                                    // Videoları formatla
+                                    const videos = data
+                                        .filter(item => item.type === 'shortVideo' || !item.type || item.lengthSeconds > 0)
+                                        .map(item => {
+                                            const thumbnail = item.videoThumbnails?.find(t => t.quality === 'medium')?.url 
+                                                || item.videoThumbnails?.[0]?.url 
+                                                || `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`;
+                                            
+                                            return {
+                                                videoId: item.videoId,
+                                                title: item.title,
+                                                artist: item.author || 'Bilinmiyor',
+                                                thumbnail: thumbnail,
+                                                duration: item.lengthSeconds || 0
+                                            };
+                                        });
+                                    
+                                    return videos;
+                                }
+                            }
+                        } catch (endpointError) {
+                            continue;
+                        }
+                    }
+                    throw new Error('No data');
+                } catch (error) {
+                    throw error;
+                }
+            });
+            
+            // İlk başarılı sonucu al
+            try {
+                const videos = await Promise.any(promises);
+                
+                // Client-side filtreleme
+                const filteredData = filterMusicOnly(videos);
+                const uniqueData = removeDuplicateSongs(filteredData);
+                const shuffled = uniqueData.sort(() => Math.random() - 0.5);
+                
+                console.log(`🎵 ${shuffled.length} popüler müzik bulundu`);
+                return shuffled;
+            } catch (error) {
+                console.log('⚠️ Tüm trending endpoint\'leri başarısız');
+                return [];
             }
         }
         
@@ -5600,6 +5651,7 @@
         console.log('ℹ️ Service Worker devre dışı');
     </script>
 
+    <script>
         // Wake Lock - Ekran kapansa bile müzik çalsın
         let wakeLock = null;
         
