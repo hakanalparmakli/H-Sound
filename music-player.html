@@ -3558,69 +3558,74 @@
         
         // Popüler müzik arama terimleri - Güncellenmiş (Türkçe + İngilizce)
         const POPULAR_SEARCH_TERMS = [
-            // 2024 Popüler Türkçe Şarkılar
+            // 2024-2025 Türkiye'de Trend Şarkılar
             'Lvbel C5 kime ne',
-            'Ati242 gece gölgenin rahatına bak',
-            'Sefo yine yeni yeniden',
+            'Lvbel C5 tak tak tak',
+            'Lvbel C5 akdo',
+            'Sefo demet akalın yerinde dur',
             'Poizi yalan',
+            'Poizi bi rüyatmış',
+            'Khontkar lvbel c5 hayhay',
+            'Ati242 gece gölgenin rahatına bak',
             'Reynmen derdim olsun',
             'Ezhel geceler',
-            'Ezhel şehrimin tadı',
-            'Ceza holocaust',
-            'Sagopa kajmer bir dizi iz',
-            'Norm ender aura',
-            'Khontkar ters',
+            'Semicenk geceler',
             'Motive kayıp',
             'Murda ezhel aya',
-            'Semicenk geceler',
-            'Uzi kan',
+            'Norm ender aura',
+            'Ceza holocaust',
+            'Sagopa kajmer bir dizi iz',
             'Baneva yalan',
-            'Şehinşah karma',
-            'Gazapizm heyecanı yok',
+            'Uzi kan',
             
-            // 2024 Dünya Popüler Şarkıları
-            'Billie Eilish what was i made for',
-            'Taylor Swift anti hero',
-            'Harry Styles as it was',
-            'Dua Lipa levitating',
-            'The Weeknd blinding lights',
-            'Olivia Rodrigo drivers license',
-            'Ed Sheeran shape of you',
-            'Adele easy on me',
-            'Justin Bieber peaches',
-            'Ariana Grande positions',
+            // 2024-2025 Dünya Hit Şarkıları
+            'Sabrina Carpenter espresso',
+            'Sabrina Carpenter please please please',
+            'Billie Eilish birds of a feather',
+            'Benson Boone beautiful things',
+            'Teddy Swims lose control',
+            'Hozier too sweet',
+            'Dua Lipa houdini',
+            'Ariana Grande yes and',
+            'Taylor Swift cruel summer',
+            'Olivia Rodrigo vampire',
+            'Tate McRae greedy',
+            'Doja Cat paint the town red',
+            'Miley Cyrus flowers',
+            'SZA kill bill',
+            'The Weeknd one of the girls',
+            'Metro Boomin creepin',
             
-            // Klasik Popüler Şarkılar
-            'despacito luis fonsi',
-            'shape of you ed sheeran',
-            'uptown funk bruno mars',
-            'see you again wiz khalifa',
-            'gangnam style psy',
-            'sorry justin bieber',
-            'hello adele',
-            'roar katy perry',
-            'counting stars onerepublic',
-            'someone like you adele',
+            // Viral TikTok Şarkıları
+            'cupid twin version',
+            'bloody mary lady gaga',
+            'calm down rema',
+            'unholy sam smith',
+            'anti hero taylor swift',
+            'as it was harry styles',
+            'heat waves glass animals',
+            'stay kid laroi',
+            'levitating dua lipa',
+            'blinding lights the weeknd',
             
-            // Türkçe Klasikler
-            'müslüm gürses itirazım var',
-            'müslüm gürses affet',
-            'barış manço dönence',
-            'sezen aksu git',
+            // Türkçe Pop Klasikleri
             'tarkan şımarık',
+            'sezen aksu git',
+            'müslüm gürses itirazım var',
+            'barış manço dönence',
             'ajda pekkan pet r oil',
             'ferdi tayfur emmoğlu',
             'ibrahim tatlıses haydi söyle',
             
-            // Genel Arama Terimleri
-            'türkçe pop müzik',
-            'türkçe rap şarkıları',
-            'pop music 2024',
-            'hit songs 2024',
-            'top 40 hits',
+            // Genel Popüler Aramalar
+            'türkçe rap 2024',
+            'türkçe pop 2024',
+            'top hits 2024',
             'billboard hot 100',
-            'spotify top 50',
-            'viral songs tiktok'
+            'spotify viral 50',
+            'tiktok viral songs',
+            'trending music 2024',
+            'popular songs right now'
         ];
         
         async function fetchPopularMusic(append = false) {
@@ -3636,18 +3641,19 @@
                 
                 let data = [];
                 
-                // Önce Invidious trending/popular API'yi dene
-                if (!append || popularSearchIndex === 0) {
+                // İlk yüklemede Invidious trending API'yi dene
+                if (!append && popularSearchIndex === 0) {
                     console.log('🎵 Invidious trending API ile popüler müzikler yükleniyor...');
                     data = await fetchInvidiousTrending();
                 }
                 
-                // Eğer trending başarısız olursa veya append modundaysa, arama terimlerini kullan
+                // Eğer trending başarısız olursa veya append modundaysa, güncel hit şarkıları ara
                 if (data.length === 0) {
-                    const searchTerm = POPULAR_SEARCH_TERMS[popularSearchIndex % POPULAR_SEARCH_TERMS.length];
-                    popularSearchIndex++; // Her yüklemede farklı terim kullan
+                    // Rastgele bir popüler şarkı seç
+                    const searchTerm = POPULAR_SEARCH_TERMS[Math.floor(Math.random() * POPULAR_SEARCH_TERMS.length)];
+                    popularSearchIndex++;
                     
-                    console.log('🎵 Arama terimi ile müzikler yükleniyor:', searchTerm, `(${popularSearchIndex}/${POPULAR_SEARCH_TERMS.length})`);
+                    console.log('🎵 Güncel hit şarkı arıyor:', searchTerm);
                     data = await searchYouTube(searchTerm);
                 }
                 
@@ -3689,10 +3695,7 @@
                         
                         console.log(`✅ ${newSongs.length} yeni şarkı eklendi. Toplam: ${popularMusicCache.length}`);
                     } else {
-                        console.log('⚠️ Yeni şarkı bulunamadı. Tüm arama terimleri tükendi.');
-                        // Infinite scroll'u durdur
-                        const mainContent = document.getElementById('main-content');
-                        mainContent.removeEventListener('scroll', handleInfiniteScroll);
+                        console.log('⚠️ Yeni şarkı bulunamadı.');
                     }
                 } else {
                     // Yenileme - cache'i temizle ve yeni listeyi yükle
@@ -4750,41 +4753,58 @@
             window.player = event.target;
             player = window.player;
             
-            // Reklam engelleme - Player hazır olduğunda
+            // GÜÇLÜ REKLAM ENGELLEME - Hem mobil hem PC
             try {
-                // Ses seviyesini ayarla (reklamlar genelde sessiz başlar)
+                // Ses seviyesini maksimuma ayarla
                 player.setVolume(100);
+                player.unMute();
                 
-                // Reklam atlama interval'i
+                // Agresif reklam atlama interval'i
                 const adSkipInterval = setInterval(() => {
                     try {
                         if (player && player.getPlayerState) {
                             const currentTime = player.getCurrentTime();
                             const duration = player.getDuration();
+                            const state = player.getPlayerState();
                             
-                            // Eğer video çok kısa süreli ise (reklam olabilir)
+                            // Reklam tespiti 1: Çok kısa videolar (< 30 saniye)
                             if (duration > 0 && duration < 30 && currentTime < 5) {
-                                console.log('⏭️ Kısa video tespit edildi, atlanıyor...');
-                                player.seekTo(duration - 1);
+                                console.log('⏭️ Kısa video (reklam) tespit edildi, atlanıyor...');
+                                player.seekTo(duration - 0.5);
+                                player.playVideo();
                             }
                             
-                            // Eğer video başında takılıysa
-                            if (currentTime < 2 && duration > 30) {
-                                const state = player.getPlayerState();
+                            // Reklam tespiti 2: Video başında takılma
+                            if (currentTime < 3 && duration > 30) {
                                 if (state === YT.PlayerState.BUFFERING || state === YT.PlayerState.PAUSED) {
                                     console.log('⏭️ Başlangıç reklamı atlanıyor...');
-                                    player.seekTo(2);
+                                    player.seekTo(3);
                                     player.playVideo();
                                 }
+                            }
+                            
+                            // Reklam tespiti 3: Video ortasında duraklama (mid-roll ads)
+                            if (currentTime > 10 && currentTime < duration - 10) {
+                                if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
+                                    console.log('⏭️ Ortadaki reklam atlanıyor...');
+                                    player.playVideo();
+                                }
+                            }
+                            
+                            // Reklam tespiti 4: Sessiz video (reklamlar bazen sessiz başlar)
+                            if (player.isMuted && player.isMuted()) {
+                                console.log('🔊 Sessiz video tespit edildi, ses açılıyor...');
+                                player.unMute();
+                                player.setVolume(100);
                             }
                         }
                     } catch (e) {
                         // Hata olursa devam et
                     }
-                }, 500); // Her 0.5 saniyede kontrol et
+                }, 250); // Her 0.25 saniyede kontrol et (daha agresif)
                 
-                // 30 saniye sonra interval'i temizle
-                setTimeout(() => clearInterval(adSkipInterval), 30000);
+                // 60 saniye sonra interval'i temizle
+                setTimeout(() => clearInterval(adSkipInterval), 60000);
             } catch (e) {
                 console.log('Reklam engelleme hatası:', e);
             }
@@ -4944,7 +4964,7 @@
                             'rel': 0,
                             'showinfo': 0,
                             'fs': 0,
-                            'iv_load_policy': 3,
+                            'iv_load_policy': 3, // Reklam engelleme
                             'cc_load_policy': 0,
                             'playsinline': 1,
                             'enablejsapi': 1,
@@ -4955,27 +4975,30 @@
                             'playlist': '',
                             'color': 'white',
                             'autohide': 1,
-                            // Mobil için ek ayarlar
-                            'mute': isMobile ? 1 : 0, // Mobilde önce sessiz başlat (autoplay için)
-                            'allow': 'autoplay; encrypted-media'
+                            // Mobil ve PC için aynı ayarlar - reklam engelleme
+                            'mute': 0, // Sessiz başlatma (hem mobil hem PC)
+                            'allow': 'autoplay; encrypted-media',
+                            // Ek reklam engelleme parametreleri
+                            'hl': 'tr', // Türkçe
+                            'cc_lang_pref': 'tr',
+                            'host': 'https://www.youtube-nocookie.com' // Reklamsız domain
                         },
+                        host: 'https://www.youtube-nocookie.com', // Reklamsız YouTube domain
                         events: {
                             'onReady': (event) => {
                                 onPlayerReady(event);
-                                // Mobilde sessiz başlatıp sonra sesi aç
-                                if (isMobile) {
-                                    setTimeout(() => {
-                                        if (player && player.unMute) {
-                                            player.unMute();
-                                            player.setVolume(100);
-                                        }
-                                    }, 500);
-                                }
+                                // Hem mobil hem PC için ses kontrolü
+                                setTimeout(() => {
+                                    if (player && player.unMute) {
+                                        player.unMute();
+                                        player.setVolume(100);
+                                    }
+                                }, 300);
                             },
                             'onStateChange': onPlayerStateChange
                         }
                     });
-                    console.log('✅ Player oluşturuldu' + (isMobile ? ' (Mobil mod)' : ''));
+                    console.log('✅ Player oluşturuldu (Reklamsız mod)');
                 } catch (error) {
                     console.error('❌ Player oluşturma hatası:', error);
                 }
