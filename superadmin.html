@@ -938,6 +938,9 @@
                         <td>
                             ${isUserSuperAdmin ? `
                                 <!-- Superadmin kendi rolünü değiştiremez -->
+                                <button class="action-btn btn-edit" onclick="changeUsername('${user.username}')">
+                                    <i class="fas fa-user-edit"></i> İsim
+                                </button>
                                 <button class="action-btn btn-edit" onclick="changePassword('${user.username}')">
                                     <i class="fas fa-key"></i> Şifre
                                 </button>
@@ -948,6 +951,9 @@
                                 </button>
                                 <button class="action-btn btn-role" onclick="changeRole('${user.username}')">
                                     <i class="fas fa-crown"></i> Rol
+                                </button>
+                                <button class="action-btn btn-edit" onclick="changeUsername('${user.username}')">
+                                    <i class="fas fa-user-edit"></i> İsim
                                 </button>
                                 <button class="action-btn btn-edit" onclick="changePassword('${user.username}')">
                                     <i class="fas fa-key"></i> Şifre
@@ -1171,6 +1177,82 @@
                 
             } catch (error) {
                 console.error('❌ Şifre değiştirme hatası:', error);
+                alert('❌ İşlem başarısız: ' + error.message);
+            }
+        }
+
+        async function changeUsername(oldUsername) {
+            const currentUserRole = localStorage.getItem('h_sound_role') || 'user';
+            
+            // Sadece superadmin kullanıcı adı değiştirebilir
+            if (currentUserRole !== 'superadmin') {
+                alert('❌ Sadece süper admin kullanıcı adlarını değiştirebilir!');
+                return;
+            }
+            
+            // Hakan'ın kullanıcı adı değiştirilemez
+            if (oldUsername === 'Hakan') {
+                alert('❌ Sistem sahibinin (Hakan) kullanıcı adı değiştirilemez!');
+                return;
+            }
+            
+            const newUsername = prompt(`${oldUsername} için yeni kullanıcı adı:\n\n(En az 3 karakter, boşluk yok)`);
+            if (!newUsername) return;
+            
+            // Kullanıcı adı kontrolü
+            if (newUsername.length < 3) {
+                alert('❌ Kullanıcı adı en az 3 karakter olmalıdır!');
+                return;
+            }
+            
+            if (newUsername.includes(' ')) {
+                alert('❌ Kullanıcı adında boşluk olamaz!');
+                return;
+            }
+            
+            // İlk harfi büyük yap
+            const formattedUsername = newUsername.charAt(0).toUpperCase() + newUsername.slice(1).toLowerCase();
+
+            try {
+                // Yeni kullanıcı adının kullanılıp kullanılmadığını kontrol et
+                const existingUserSnapshot = await db.collection('users')
+                    .where('username', '==', formattedUsername)
+                    .get();
+                
+                if (!existingUserSnapshot.empty) {
+                    alert('❌ Bu kullanıcı adı zaten kullanılıyor!');
+                    return;
+                }
+                
+                // Kullanıcıyı bul
+                const user = users.find(u => u.username === oldUsername);
+                if (!user) {
+                    alert('❌ Kullanıcı bulunamadı!');
+                    return;
+                }
+                
+                // Firestore'da kullanıcı adını güncelle
+                await db.collection('users').doc(user.uid).update({
+                    username: formattedUsername
+                });
+                
+                console.log(`✅ ${oldUsername} kullanıcı adı ${formattedUsername} olarak değiştirildi`);
+                
+                alert(
+                    `✅ Kullanıcı adı başarıyla değiştirildi!\n\n` +
+                    `Eski: ${oldUsername}\n` +
+                    `Yeni: ${formattedUsername}\n\n` +
+                    `⚠️ ÖNEMLİ NOT:\n` +
+                    `• Kullanıcı yeni kullanıcı adıyla giriş yapabilir\n` +
+                    `• Şifresi aynı kalacaktır\n` +
+                    `• Kullanıcıya yeni kullanıcı adını bildirin`
+                );
+                
+                // Kullanıcı listesini yenile
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('❌ Kullanıcı adı değiştirme hatası:', error);
                 alert('❌ İşlem başarısız: ' + error.message);
             }
         }

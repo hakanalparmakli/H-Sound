@@ -5416,25 +5416,48 @@
                 return false;
             }
             
-            const isLoggedIn = localStorage.getItem('h_sound_logged_in');
-            const username = localStorage.getItem('h_sound_username');
-            const uid = localStorage.getItem('h_sound_uid');
+            // Mobil için birden fazla deneme yap
+            let isLoggedIn = localStorage.getItem('h_sound_logged_in');
+            let username = localStorage.getItem('h_sound_username');
+            let uid = localStorage.getItem('h_sound_uid');
+            
+            // Mobilde bazen ilk okuma başarısız olabiliyor, tekrar dene
+            if (!isLoggedIn || !username || !uid) {
+                console.log('⚠️ İlk okuma başarısız, tekrar deneniyor...');
+                setTimeout(() => {
+                    isLoggedIn = localStorage.getItem('h_sound_logged_in');
+                    username = localStorage.getItem('h_sound_username');
+                    uid = localStorage.getItem('h_sound_uid');
+                }, 50);
+            }
             
             console.log('🔍 Giriş kontrolü:', { 
                 isLoggedIn, 
                 username, 
                 uid,
-                userAgent: navigator.userAgent.substring(0, 50)
+                userAgent: navigator.userAgent.substring(0, 50),
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
             });
             
             // Eğer giriş yapılmamışsa login.html'e yönlendir
             if (isLoggedIn !== 'true' || !username || !uid) {
                 console.log('❌ Kullanıcı giriş yapmamış, giriş sayfasına yönlendiriliyor...');
                 
-                // Mobil için setTimeout ekle
+                // Mobil için daha uzun timeout
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const delay = isMobile ? 200 : 100;
+                
                 setTimeout(() => {
-                    window.location.replace('login.html');
-                }, 100);
+                    // Son bir kez daha kontrol et
+                    const finalCheck = localStorage.getItem('h_sound_logged_in');
+                    if (finalCheck !== 'true') {
+                        console.log('❌ Son kontrol de başarısız, yönlendiriliyor...');
+                        window.location.replace('login.html');
+                    } else {
+                        console.log('✅ Son kontrol başarılı, sayfa yükleniyor...');
+                        // Sayfa zaten yüklenmiş, hiçbir şey yapma
+                    }
+                }, delay);
                 
                 return false;
             }
@@ -5444,10 +5467,15 @@
         }
         
         // Giriş kontrolü yap
-        checkLoginStatus();
+        const loginStatus = checkLoginStatus();
         
-        // 1. Uygulamayı başlat
-        showHomePage();
+        // Sadece giriş yapılmışsa uygulamayı başlat
+        if (loginStatus) {
+            console.log('🚀 Uygulama başlatılıyor...');
+            showHomePage();
+        } else {
+            console.log('⏳ Giriş kontrolü bekleniyor...');
+        }
         
         // YouTube IFrame Player API'yi yükle
         const tag = document.createElement('script');
