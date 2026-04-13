@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Temizle - H-Sound</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 30px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,234,255,0.3);
+        }
+        button {
+            background: linear-gradient(135deg, #00eaff, #ff00ff);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,234,255,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 H-Sound Cache Temizle</h1>
+        <p>Animasyonu görmek için cache'i temizleyin:</p>
+        
+        <button onclick="clearCache()">🗑️ Cache Temizle</button>
+        <button onclick="goToIndex()">🏠 Ana Sayfaya Git</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function clearCache() {
+            // LocalStorage temizle
+            localStorage.clear();
+            
+            // SessionStorage temizle
+            sessionStorage.clear();
+            
+            // Service Worker cache temizle (varsa)
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            document.getElementById('status').innerHTML = 
+                '<p style="color: #00ff00;">✅ Cache temizlendi! Şimdi ana sayfaya gidin.</p>';
+        }
+        
+        function goToIndex() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hakan Kullanıcısını Oluştur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #E74C3C;
+            text-align: center;
+        }
+        button {
+            background: #E74C3C;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #C0392B;
+        }
+        .log {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success { color: #2ecc71; }
+        .error { color: #e74c3c; }
+        .info { color: #3498db; }
+        .warning { color: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👑 Hakan Kullanıcısını Oluştur</h1>
+        
+        <button onclick="deleteOldHakan()">1. Eski Hakan Kullanıcısını Sil</button>
+        <button onclick="createNewHakan()">2. Yeni Hakan Kullanıcısını Oluştur</button>
+        <button onclick="checkHakan()">3. Hakan Kullanıcısını Kontrol Et</button>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE",
+            authDomain: "h-sound-b2391.firebaseapp.com",
+            projectId: "h-sound-b2391",
+            storageBucket: "h-sound-b2391.firebasestorage.app",
+            messagingSenderId: "2853371644",
+            appId: "1:2853371644:web:a2a6509e238c4f4a8aa179",
+            measurementId: "G-MZPSZN23QT"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString('tr-TR');
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        async function deleteOldHakan() {
+            try {
+                log('🔍 Eski Hakan kullanıcısı aranıyor...', 'info');
+                
+                // Firestore'da Hakan kullanıcısını bul
+                const usersSnapshot = await db.collection('users')
+                    .where('username', '==', 'Hakan')
+                    .get();
+                
+                if (usersSnapshot.empty) {
+                    log('⚠️ Hakan kullanıcısı bulunamadı', 'warning');
+                    return;
+                }
+                
+                // Tüm Hakan kullanıcılarını sil
+                for (const doc of usersSnapshot.docs) {
+                    const userData = doc.data();
+                    log(`📧 Bulunan kullanıcı: ${userData.email}`, 'info');
+                    
+                    await db.collection('users').doc(doc.id).delete();
+                    log(`✅ Firestore'dan silindi: ${doc.id}`, 'success');
+                }
+                
+                log('✅ Eski Hakan kullanıcısı silindi!', 'success');
+                log('⚠️ Not: Firebase Authentication hesabı manuel silinmeli', 'warning');
+                
+            } catch (error) {
+                log(`❌ Hata: ${error.message}`, 'error');
+            }
+        }
+
+        async function createNewHakan() {
+            try {
+                log('👑 Yeni Hakan kullanıcısı oluşturuluyor...', 'info');
+                
+                const hakanEmail = 'alparmaklih@gmail.com';
+                const hakanPassword = 'Hakan5225522541';
+                
+                // Firebase Authentication'da hesap oluştur
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(hakanEmail, hakanPassword);
+                    const user = userCredential.user;
+                    
+                    log(`✅ Firebase Auth hesabı oluşturuldu: ${user.uid}`, 'success');
+                    
+                    // Firestore'a kullanıcı bilgilerini kaydet
+                    await db.collection('users').doc(user.uid).set({
+                        username: 'Hakan',
+                        email: hakanEmail,
+                        password: hakanPassword,
+                        role: 'superadmin',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        banned: false
+                    });
+                    
+                    log('✅ Firestore\'a kaydedildi', 'success');
+                    log('📧 Email: alparmaklih@gmail.com', 'info');
+                    log('🔑 Şifre: Hakan5225522541', 'info');
+                    log('👑 Rol: superadmin', 'info');
+                    log('✅ Hakan kullanıcısı başarıyla oluşturuldu!', 'success');
+                    
+                } catch (authError) {
+                    if (authError.code === 'auth/email-already-in-use') {
+                        log('⚠️ Email zaten kullanımda', 'warning');
+                        log('🔄 Mevcut hesap güncelleniyor...', 'info');
+                        
+                        // Giriş yap ve UID'yi al
+                        const userCredential = await auth.signInWithEmailAndPassword(hakanEmail, hakanPassword);
+                        const user = userCredential.user;
+                        
+                        // Firestore'u güncelle
+                        await db.collection('users').doc(user.uid).set({
+                            username: 'Hakan',
+                            email: hakanEmail,
+                            password: hakanPassword,
+                            role: 'superadmin',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            banned: false
+                        }, { merge: true });
+                        
+                        log('✅ Mevcut hesap güncellendi!', 'success');
+                    } else {
+                        throw authError;
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Hata: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkHakan() {
+            try {
+                log('🔍 Hakan kullanıcısı kontrol ediliyor...', 'info');
+                
+                // Firestore'da ara
+                const usersSnapshot = await db.collection('users')
+                    .where('username', '==', 'Hakan')
+                    .get();
+                
+                if (usersSnapshot.empty) {
+                    log('❌ Hakan kullanıcısı bulunamadı', 'error');
+                    return;
+                }
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    log('✅ Hakan kullanıcısı bulundu:', 'success');
+                    log(`   UID: ${doc.id}`, 'info');
+                    log(`   Email: ${userData.email}`, 'info');
+                    log(`   Password: ${userData.password}`, 'info');
+                    log(`   Role: ${userData.role}`, 'info');
+                    log(`   Banned: ${userData.banned}`, 'info');
+                });
+                
+            } catch (error) {
+                log(`❌ Hata: ${error.message}`, 'error');
+            }
+        }
+
+        // Sayfa yüklendiğinde kontrol et
+        window.onload = () => {
+            log('🔥 Firebase bağlantısı hazır', 'success');
+            log('👆 Yukarıdaki butonları sırayla kullanın', 'info');
+        };
+    </script>
+</body>
+</html>

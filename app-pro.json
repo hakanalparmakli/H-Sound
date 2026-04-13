@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "H-Sound Professional",
+    "slug": "h-sound-professional",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.hsound.professional",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "NSMicrophoneUsageDescription": "Bu uygulama müzik kaydetmek için mikrofon kullanır."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "package": "com.hsound.professional",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "WAKE_LOCK"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 33,
+            "targetSdkVersion": 33,
+            "buildToolsVersion": "33.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "11.0"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "h-sound-professional-2024"
+      }
+    }
+  }
+}

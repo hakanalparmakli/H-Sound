@@ -1,0 +1,6 @@
+# Admin panelleri için özel yönlendirmeler
+/admin              /admin.html           200
+/superadmin         /superadmin.html      200
+
+# SPA routing için fallback
+/*                  /index.html           200

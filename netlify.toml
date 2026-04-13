@@ -1,0 +1,13 @@
+# Netlify Configuration
+
+[[edge_functions]]
+  function = "youtube-proxy"
+  path = "/api/youtube-search"
+
+[build]
+  publish = "."
+  
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
