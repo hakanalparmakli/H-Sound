@@ -5404,52 +5404,77 @@
         }
 
         // Arkadaşlık isteği gönder
-        function sendFriendRequest() {
-            const username = document.getElementById('friend-username').value.trim();
+        async function sendFriendRequest() {
+            const input = document.getElementById('friend-username');
+            const username = input?.value.trim();
             const currentUser = localStorage.getItem('h_sound_username');
-            
+
             if (!username) {
                 showNotification('Lütfen kullanıcı adı girin!', 'warning');
                 return;
             }
-            
             if (username === currentUser) {
-                showNotification('Kendinize arkadaşlık isteği gönderemezsiniz!', 'warning');
+                showNotification('Kendinize istek gönderemezsiniz!', 'warning');
                 return;
             }
-            
-            // Gerçek hesap kontrolü
-            const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
-            console.log('🔍 Registered users:', savedUsers);
-            console.log('🔍 Searched user:', username);
-            
-            if (!savedUsers[username]) {
-                showNotification(`Bu kullanıcı adı kullanılmıyor! Kayıtlı kullanıcılar: ${Object.keys(savedUsers).join(', ')}`, 'error');
-                return;
-            }
-            
             if (friends.includes(username)) {
                 showNotification('Bu kullanıcı zaten arkadaşınız!', 'warning');
                 return;
             }
-            
             if (sentRequests.includes(username)) {
-                showNotification('Bu kullanıcıya zaten arkadaşlık isteği gönderdiniz!', 'warning');
+                showNotification('Bu kullanıcıya zaten istek gönderdiniz!', 'warning');
                 return;
             }
-            
-            // Arkadaşlık isteği gönder
-            sentRequests.push(username);
-            localStorage.setItem(`h_sound_sent_requests_${currentUser}`, JSON.stringify(sentRequests));
-            
-            // Karşı tarafa isteği ekle
-            const targetRequests = JSON.parse(localStorage.getItem(`h_sound_friend_requests_${username}`) || '[]');
-            targetRequests.push(currentUser);
-            localStorage.setItem(`h_sound_friend_requests_${username}`, JSON.stringify(targetRequests));
-            
-            showNotification(`${username} kullanıcısına arkadaşlık isteği gönderildi!`, 'success');
-            document.getElementById('friend-username').value = '';
-            closeModal('add-friend-modal');
+
+            showNotification('Kullanıcı aranıyor...', 'info');
+
+            try {
+                // Firebase'de kullanıcıyı ara
+                let userExists = false;
+
+                if (window.db && location.protocol !== 'file:') {
+                    const snap = await window.db.collection('users').where('username', '==', username).limit(1).get();
+                    userExists = !snap.empty;
+                } else {
+                    // Fallback: localStorage
+                    const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+                    userExists = !!savedUsers[username];
+                }
+
+                if (!userExists) {
+                    showNotification(`"${username}" adında bir kullanıcı bulunamadı.`, 'error');
+                    return;
+                }
+
+                // İsteği gönder
+                sentRequests.push(username);
+                localStorage.setItem(`h_sound_sent_requests_${currentUser}`, JSON.stringify(sentRequests));
+
+                // Karşı tarafa isteği ekle (localStorage)
+                const targetRequests = JSON.parse(localStorage.getItem(`h_sound_friend_requests_${username}`) || '[]');
+                if (!targetRequests.includes(currentUser)) {
+                    targetRequests.push(currentUser);
+                    localStorage.setItem(`h_sound_friend_requests_${username}`, JSON.stringify(targetRequests));
+                }
+
+                // Firebase'e de yaz
+                if (window.db && location.protocol !== 'file:') {
+                    await window.db.collection('friendRequests').add({
+                        from: currentUser,
+                        to: username,
+                        timestamp: new Date().toISOString(),
+                        status: 'pending'
+                    });
+                }
+
+                showNotification(`${username} kullanıcısına arkadaşlık isteği gönderildi!`, 'success');
+                if (input) input.value = '';
+                closeModal('add-friend-modal');
+
+            } catch (error) {
+                console.error('Friend request error:', error);
+                showNotification('Bir hata oluştu, tekrar deneyin.', 'error');
+            }
         }
 
         // Müzik paylaş (Gerçek hesaplar arası)
@@ -5854,15 +5879,23 @@
                 return;
             }
             
-            // Yeni kullanıcıyı kaydet - Hakan dışında herkes "Kullanıcı" rolü alır
+            // Yeni kullanıcıyı kaydet
             const userRole = 'Kullanıcı';
             savedUsers[username] = {
                 password: password,
                 role: userRole,
                 registerDate: new Date().toISOString()
             };
-            
             localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
+
+            // Firebase'e de kaydet (kullanıcı araması için)
+            if (window.db && location.protocol !== 'file:') {
+                window.db.collection('users').doc(username).set({
+                    username: username,
+                    role: userRole,
+                    registerDate: new Date().toISOString()
+                }).catch(e => console.log('Firebase register error:', e));
+            }
             
             showNotification(`Kayıt başarılı! Rol: ${userRole}`, 'success');
             
