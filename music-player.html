@@ -2551,38 +2551,27 @@
             isLoadingMore = false;
             hasMoreHomeContent = true;
 
-            try {
-                let apiResults;
-                if (refreshQueryIndex > 0) {
-                    const q = REFRESH_QUERIES[(refreshQueryIndex - 1) % REFRESH_QUERIES.length];
-                    apiResults = await searchYouTubeMusic(q, 24);
-                    if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
-                        apiResults = apiResults.map(s => ({ ...s, _nextPageToken: null }));
-                    }
-                } else {
-                    apiResults = await getYouTubePopularMusic(24, '');
-                }
+            const q = TR_MUSIC_QUERIES[trQueryIndex % TR_MUSIC_QUERIES.length];
 
+            try {
+                const apiResults = await searchYouTubeMusic(q, 24);
                 homeContent.innerHTML = '';
 
-                if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
-                    homeNextPageToken = apiResults._nextPageToken || null;
+                if (apiResults && apiResults.length > 0) {
                     const items = apiResults.map(song => ({
                         id: { videoId: song.videoId },
                         snippet: {
                             title: song.title,
-                            channelTitle: song.artist || song.channelTitle,
-                            thumbnails: { medium: { url: song.thumbnail } }
+                            channelTitle: song.artist || song.channelTitle || '',
+                            thumbnails: { medium: { url: song.thumbnail || '' } }
                         }
                     }));
                     displayHomeResults(items);
-                    showNotification(`${items.length} şarkı yüklendi!`, 'success');
                 } else {
-                    displayResults(localMusicDatabase['popular music'], false);
+                    homeContent.innerHTML = '<div class="no-content-message" style="grid-column:1/-1;"><i class="fas fa-sync-alt" style="font-size:40px;color:var(--primary-color);margin-bottom:15px;"></i><p>Şarkılar yüklenemedi. <button class="btn" onclick="refreshHomePage()" style="margin-top:10px;"><i class="fas fa-redo"></i> Tekrar Dene</button></p></div>';
                 }
             } catch(e) {
-                homeContent.innerHTML = '';
-                displayResults(localMusicDatabase['popular music'], false);
+                homeContent.innerHTML = '<div class="no-content-message" style="grid-column:1/-1;"><i class="fas fa-sync-alt" style="font-size:40px;color:var(--primary-color);margin-bottom:15px;"></i><p>Bağlantı hatası. <button class="btn" onclick="refreshHomePage()" style="margin-top:10px;"><i class="fas fa-redo"></i> Tekrar Dene</button></p></div>';
             }
 
             setupInfiniteScroll();
@@ -2601,8 +2590,7 @@
             isLoadingMore = false;
             hasMoreHomeContent = true;
             homeNextPageToken = null;
-            refreshQueryIndex++;
-            trQueryIndex++; // Her yenilemede farklı Türkçe sorgu
+            trQueryIndex++; // Her yenilemede farklı sanatçi
             loadLocalHomeMusic();
         }
 
