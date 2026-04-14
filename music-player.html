@@ -2803,7 +2803,35 @@
             setActiveLink(friendsLink);
             searchContainer.classList.add('hidden');
             clearContentArea();
-            
+
+            // Önce veriyi yükle, sonra render et
+            loadLocalData();
+
+            // Firebase'den de gelen istekleri çek
+            const currentUser = localStorage.getItem('h_sound_username');
+            if (window.db && location.protocol !== 'file:') {
+                window.db.collection('friendRequests')
+                    .where('to', '==', currentUser)
+                    .where('status', '==', 'pending')
+                    .get()
+                    .then(snap => {
+                        snap.forEach(doc => {
+                            const from = doc.data().from;
+                            if (!friendRequests.includes(from)) {
+                                friendRequests.push(from);
+                            }
+                        });
+                        localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
+                        renderFriendsPage();
+                    })
+                    .catch(() => renderFriendsPage());
+            } else {
+                renderFriendsPage();
+            }
+        }
+
+        function renderFriendsPage() {
+            const currentUser = localStorage.getItem('h_sound_username');
             contentArea.innerHTML = `
                 <div class="friends-container">
                     <div class="content-header">
@@ -2812,23 +2840,22 @@
                             <i class="fas fa-user-plus"></i> Arkadaşlık İsteği Gönder
                         </button>
                     </div>
-                    
-                    <!-- Arkadaşlık İstekleri -->
-                    <div id="friend-requests-section" style="margin-bottom: 30px;">
-                        <h3><i class="fas fa-bell"></i> Gelen Arkadaşlık İstekleri (<span id="requests-count">${friendRequests.length}</span>)</h3>
+
+                    <div id="friend-requests-section" style="margin-bottom:30px;">
+                        <h3><i class="fas fa-bell"></i> Gelen İstekler
+                            <span id="requests-count" style="background:${friendRequests.length > 0 ? '#E74C3C' : '#555'};color:white;border-radius:50%;padding:2px 8px;font-size:13px;margin-left:8px;">${friendRequests.length}</span>
+                        </h3>
                         <div id="friend-requests-list"></div>
                     </div>
-                    
-                    <!-- Arkadaşlar Listesi -->
+
                     <div id="friends-section">
-                        <h3><i class="fas fa-heart"></i> Arkadaşlarım (<span id="friends-count">${friends.length}</span>)</h3>
+                        <h3><i class="fas fa-heart"></i> Arkadaşlarım
+                            <span style="color:var(--secondary-text-color);font-size:14px;margin-left:8px;">(${friends.length})</span>
+                        </h3>
                         <div id="friends-list"></div>
                     </div>
                 </div>
             `;
-            
-            // Verileri yükle ve göster
-            loadLocalData();
             displayFriendRequests();
             displayFriends();
         }
@@ -3417,36 +3444,67 @@
             let rows = '';
             Object.entries(users).forEach(([username, userData]) => {
                 const roleClass = userData.role.toLowerCase().replace(' ', '').replace('ü', 'u');
-                const registerDate = new Date(userData.registerDate).toLocaleDateString('tr-TR');
-                
+                const registerDate = userData.registerDate
+                    ? new Date(userData.registerDate).toLocaleDateString('tr-TR')
+                    : '-';
+                const isBanned = userData.banned === true;
+                const isHakan = username === 'Hakan';
+
                 rows += `
-                    <tr>
+                    <tr style="${isBanned ? 'opacity:0.5;background:rgba(231,76,60,0.1);' : ''}">
                         <td>
                             <strong>${username}</strong>
-                            ${username === 'Hakan' ? '<i class="fas fa-crown" style="color: #E74C3C; margin-left: 5px;" title="Sistem Yöneticisi"></i>' : ''}
+                            ${isHakan ? '<i class="fas fa-crown" style="color:#E74C3C;margin-left:5px;"></i>' : ''}
+                            ${isBanned ? '<span style="color:#E74C3C;font-size:11px;margin-left:5px;">[BANLANDI]</span>' : ''}
                         </td>
-                        <td>
-                            <span class="role-badge role-${roleClass}">${userData.role}</span>
-                        </td>
+                        <td><span class="role-badge role-${roleClass}">${userData.role}</span></td>
                         <td>${registerDate}</td>
                         <td>
-                            ${username !== 'Hakan' ? `
+                            <button class="action-btn btn-edit" onclick="togglePasswordVisibility('${username}', '${userData.password || '?'}', this)" title="Şifreyi Göster">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${!isHakan ? `
                                 <button class="action-btn btn-edit" onclick="editUserRole('${username}')">
-                                    <i class="fas fa-edit"></i> Rol Değiştir
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn ${isBanned ? 'btn-promote' : 'btn-delete'}" onclick="toggleBanUser('${username}')">
+                                    <i class="fas fa-${isBanned ? 'unlock' : 'ban'}"></i> ${isBanned ? 'Banı Kaldır' : 'Banla'}
                                 </button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${username}')">
-                                    <i class="fas fa-trash"></i> Sil
+                                    <i class="fas fa-trash"></i>
                                 </button>
-                            ` : `
-                                <span style="color: #E74C3C; font-weight: 600;">
-                                    <i class="fas fa-shield-alt"></i> Korumalı
-                                </span>
-                            `}
+                            ` : `<span style="color:#E74C3C;font-size:12px;"><i class="fas fa-shield-alt"></i> Korumalı</span>`}
                         </td>
                     </tr>
                 `;
             });
             return rows;
+        }
+
+        function togglePasswordVisibility(username, password, btn) {
+            const td = btn.closest('td');
+            const existing = td.querySelector('.password-reveal');
+            if (existing) {
+                existing.remove();
+                btn.innerHTML = '<i class="fas fa-eye"></i>';
+            } else {
+                const span = document.createElement('span');
+                span.className = 'password-reveal';
+                span.style.cssText = 'display:block;margin-top:4px;font-size:12px;color:#ffeba7;word-break:break-all;';
+                span.textContent = password === '***' ? '(Firebase hesabı - şifre gizli)' : password;
+                td.appendChild(span);
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            }
+        }
+
+        function toggleBanUser(username) {
+            const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+            if (!savedUsers[username]) return;
+            const isBanned = savedUsers[username].banned === true;
+            savedUsers[username].banned = !isBanned;
+            localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
+            showNotification(isBanned ? `${username} banı kaldırıldı` : `${username} banlandı`, isBanned ? 'success' : 'warning');
+            showSuperAdminPage();
         }
 
         // Search function (YouTube API + Local Database)
@@ -4918,49 +4976,48 @@
         // Arkadaşlık isteğini kabul et
         function acceptFriendRequest(requesterName, index) {
             const currentUser = localStorage.getItem('h_sound_username');
-            
-            // Arkadaş listesine ekle (her iki taraf için)
+
             friends.push(requesterName);
             localStorage.setItem(`h_sound_friends_${currentUser}`, JSON.stringify(friends));
-            
+
             const requesterFriends = JSON.parse(localStorage.getItem(`h_sound_friends_${requesterName}`) || '[]');
-            requesterFriends.push(currentUser);
+            if (!requesterFriends.includes(currentUser)) requesterFriends.push(currentUser);
             localStorage.setItem(`h_sound_friends_${requesterName}`, JSON.stringify(requesterFriends));
-            
-            // İsteği kaldır
+
             friendRequests.splice(index, 1);
             localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
-            
-            // Gönderenin sent requests listesinden kaldır
-            const requesterSentRequests = JSON.parse(localStorage.getItem(`h_sound_sent_requests_${requesterName}`) || '[]');
-            const reqIndex = requesterSentRequests.indexOf(currentUser);
-            if (reqIndex > -1) {
-                requesterSentRequests.splice(reqIndex, 1);
-                localStorage.setItem(`h_sound_sent_requests_${requesterName}`, JSON.stringify(requesterSentRequests));
+
+            // Firebase'de isteği güncelle
+            if (window.db && location.protocol !== 'file:') {
+                window.db.collection('friendRequests')
+                    .where('from', '==', requesterName).where('to', '==', currentUser)
+                    .get().then(snap => snap.forEach(doc => doc.ref.update({ status: 'accepted' })))
+                    .catch(() => {});
+                // Karşı tarafın arkadaş listesine de Firebase'de ekle
+                window.db.collection('friends').doc(`${currentUser}_${requesterName}`).set({
+                    user1: currentUser, user2: requesterName, since: new Date().toISOString()
+                }).catch(() => {});
             }
-            
+
             showNotification(`${requesterName} arkadaş olarak eklendi!`, 'success');
-            showFriendsPage(); // Sayfayı yenile
+            showFriendsPage();
         }
 
-        // Arkadaşlık isteğini reddet
         function rejectFriendRequest(requesterName, index) {
             const currentUser = localStorage.getItem('h_sound_username');
-            
-            // İsteği kaldır
+
             friendRequests.splice(index, 1);
             localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
-            
-            // Gönderenin sent requests listesinden kaldır
-            const requesterSentRequests = JSON.parse(localStorage.getItem(`h_sound_sent_requests_${requesterName}`) || '[]');
-            const reqIndex = requesterSentRequests.indexOf(currentUser);
-            if (reqIndex > -1) {
-                requesterSentRequests.splice(reqIndex, 1);
-                localStorage.setItem(`h_sound_sent_requests_${requesterName}`, JSON.stringify(requesterSentRequests));
+
+            if (window.db && location.protocol !== 'file:') {
+                window.db.collection('friendRequests')
+                    .where('from', '==', requesterName).where('to', '==', currentUser)
+                    .get().then(snap => snap.forEach(doc => doc.ref.update({ status: 'rejected' })))
+                    .catch(() => {});
             }
-            
-            showNotification(`${requesterName} arkadaşlık isteği reddedildi`, 'info');
-            showFriendsPage(); // Sayfayı yenile
+
+            showNotification(`${requesterName} isteği reddedildi`, 'info');
+            showFriendsPage();
         }
 
         function displayFriends() {
@@ -5816,6 +5873,11 @@
             const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
             
             if (savedUsers[username] && savedUsers[username].password === password) {
+                // Ban kontrolü
+                if (savedUsers[username].banned === true) {
+                    showNotification('Bu hesap banlanmıştır. Yönetici ile iletişime geçin.', 'error');
+                    return;
+                }
                 // Başarılı giriş
                 localStorage.setItem('h_sound_logged_in', 'true');
                 localStorage.setItem('h_sound_username', username);
