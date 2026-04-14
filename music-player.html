@@ -7,6 +7,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>H-Sound</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
     <!-- Manifest sadece HTTP/HTTPS'de yükle -->
     <script>
         if (location.protocol === 'http:' || location.protocol === 'https:') {
@@ -1660,9 +1662,7 @@
             <div class="login-container">
                 <div class="login-header">
                     <div class="brand-logo">
-                        <i class="fas fa-music"></i>
-                        <h1>H-Sound</h1>
-                        <p></p>
+                        <img src="logo.png" alt="H-Sound" style="width:140px;height:auto;margin-bottom:10px;">
                     </div>
                 </div>
                 
@@ -1739,7 +1739,7 @@
         <div id="main-app" class="main-app">
         
         <nav id="sidebar">
-            <div class="brand">H-Sound</div>
+            <div class="brand"><img src="logo.png" alt="H-Sound" style="width:120px;height:auto;display:block;margin:0 auto;"></div>
             <ul>
                 <li><a href="#" id="home-link" class="active"><i class="fas fa-home"></i> Ana Sayfa</a></li>
                 <li><a href="#" id="search-link"><i class="fas fa-search"></i> Ara</a></li>
@@ -1844,10 +1844,15 @@
 
     <!-- Müzik Paylaşma Modalı -->
     <div id="music-share-modal" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:480px;">
             <button class="modal-close-btn" onclick="closeModal('music-share-modal')">&times;</button>
-            <h3 style="margin-top: 0; color: var(--primary-color);"><i class="fas fa-share-alt"></i> Müzik Paylaş</h3>
-            <div id="music-share-list" style="max-height: 300px; overflow-y: auto;"></div>
+            <h3 style="margin-top:0;color:var(--primary-color);"><i class="fas fa-music"></i> Müzik Paylaş</h3>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input type="text" id="music-share-search" class="form-input" placeholder="Şarkı ara..." style="flex:1;margin:0;"
+                    onkeypress="if(event.key==='Enter') searchMusicToShare()">
+                <button class="btn" onclick="searchMusicToShare()"><i class="fas fa-search"></i></button>
+            </div>
+            <div id="music-share-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
         </div>
     </div>
 
@@ -5289,34 +5294,63 @@
         // Müzik paylaşma modalını göster
         function showMusicShareModal() {
             if (!currentChatFriend) return;
-            
             openModal('music-share-modal');
-            
+            const musicList = document.getElementById('music-share-list');
+            // Şu an çalınan playlist'i göster
+            if (playlist.length > 0) {
+                renderMusicShareList(playlist.map(s => ({
+                    videoId: s.videoId, title: s.title, thumbnail: s.thumbnail, artist: s.artist
+                })));
+            } else {
+                musicList.innerHTML = '<p style="color:var(--secondary-text-color);text-align:center;padding:20px;">Şarkı aramak için yukarıdaki kutuyu kullanın</p>';
+            }
+            // Arama kutusunu temizle ve odakla
+            const searchInput = document.getElementById('music-share-search');
+            if (searchInput) { searchInput.value = ''; setTimeout(() => searchInput.focus(), 200); }
+        }
+
+        async function searchMusicToShare() {
+            const query = document.getElementById('music-share-search')?.value.trim();
+            if (!query) return;
+            const musicList = document.getElementById('music-share-list');
+            musicList.innerHTML = '<div class="loading-spinner" style="margin:20px auto;"></div>';
+            try {
+                const results = await searchYouTubeMusic(query, 10);
+                if (results && results.length > 0) {
+                    renderMusicShareList(results.map(r => ({
+                        videoId: r.videoId || r.id?.videoId,
+                        title: r.title || r.snippet?.title,
+                        thumbnail: r.thumbnail || r.snippet?.thumbnails?.medium?.url || '',
+                        artist: r.artist || r.channelTitle || r.snippet?.channelTitle || ''
+                    })));
+                } else {
+                    musicList.innerHTML = '<p style="color:var(--secondary-text-color);text-align:center;padding:20px;">Sonuç bulunamadı</p>';
+                }
+            } catch(e) {
+                musicList.innerHTML = '<p style="color:#E74C3C;text-align:center;padding:20px;">Arama başarısız</p>';
+            }
+        }
+
+        function renderMusicShareList(songs) {
             const musicList = document.getElementById('music-share-list');
             musicList.innerHTML = '';
-            
-            if (playlist.length === 0) {
-                musicList.innerHTML = '<p class="no-content-message">Paylaşılacak müzik bulunamadı. Önce müzik arayın.</p>';
-                return;
-            }
-            
-            playlist.slice(0, 10).forEach(song => {
+            songs.forEach(song => {
+                if (!song.videoId) return;
                 const item = document.createElement('div');
                 item.className = 'friend-item';
-                item.style.cursor = 'pointer';
+                item.style.cssText = 'cursor:pointer;padding:10px;';
                 item.innerHTML = `
-                    <div class="friend-info">
-                        <img src="${song.thumbnail}" style="width: 50px; height: 50px; border-radius: 8px; margin-right: 15px;">
-                        <div class="friend-status">
-                            <div class="friend-name">${song.title}</div>
-                            <div class="friend-activity">Müzik</div>
+                    <div class="friend-info" style="flex:1;min-width:0;">
+                        <img src="${song.thumbnail}" onerror="handleThumbnailError(this)" style="width:45px;height:45px;border-radius:6px;margin-right:12px;object-fit:cover;flex-shrink:0;">
+                        <div class="friend-status" style="min-width:0;">
+                            <div class="friend-name" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${song.title}</div>
+                            <div class="friend-activity" style="font-size:11px;">${song.artist || ''}</div>
                         </div>
                     </div>
-                    <div class="friend-actions">
-                        <button class="friend-btn chat-btn" onclick="shareMusic('${song.videoId}', '${song.title.replace(/'/g, "\\'")}', '${song.thumbnail}')">
-                            <i class="fas fa-share"></i> Paylaş
-                        </button>
-                    </div>
+                    <button class="friend-btn chat-btn" style="flex-shrink:0;"
+                        onclick="shareMusic('${song.videoId}','${song.title.replace(/'/g,"\\'")}','${song.thumbnail}')">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 `;
                 musicList.appendChild(item);
             });
