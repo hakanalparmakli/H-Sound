@@ -2804,27 +2804,32 @@
             searchContainer.classList.add('hidden');
             clearContentArea();
 
-            // Önce veriyi yükle, sonra render et
             loadLocalData();
-
-            // Firebase'den de gelen istekleri çek
             const currentUser = localStorage.getItem('h_sound_username');
+
             if (window.db && location.protocol !== 'file:') {
-                window.db.collection('friendRequests')
-                    .where('to', '==', currentUser)
-                    .where('status', '==', 'pending')
-                    .get()
-                    .then(snap => {
+                // Firebase'den gelen istekleri çek
+                const p1 = window.db.collection('friendRequests')
+                    .where('to', '==', currentUser).where('status', '==', 'pending')
+                    .get().then(snap => {
                         snap.forEach(doc => {
                             const from = doc.data().from;
-                            if (!friendRequests.includes(from)) {
-                                friendRequests.push(from);
-                            }
+                            if (!friendRequests.includes(from)) friendRequests.push(from);
                         });
                         localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
-                        renderFriendsPage();
-                    })
-                    .catch(() => renderFriendsPage());
+                    }).catch(() => {});
+
+                // Firebase'den arkadaş listesini çek
+                const p2 = window.db.collection('userFriends').doc(currentUser).get()
+                    .then(doc => {
+                        if (doc.exists && doc.data().friends) {
+                            const fbFriends = doc.data().friends;
+                            fbFriends.forEach(f => { if (!friends.includes(f)) friends.push(f); });
+                            localStorage.setItem(`h_sound_friends_${currentUser}`, JSON.stringify(friends));
+                        }
+                    }).catch(() => {});
+
+                Promise.all([p1, p2]).then(() => renderFriendsPage());
             } else {
                 renderFriendsPage();
             }
@@ -4977,7 +4982,7 @@
         function acceptFriendRequest(requesterName, index) {
             const currentUser = localStorage.getItem('h_sound_username');
 
-            friends.push(requesterName);
+            if (!friends.includes(requesterName)) friends.push(requesterName);
             localStorage.setItem(`h_sound_friends_${currentUser}`, JSON.stringify(friends));
 
             const requesterFriends = JSON.parse(localStorage.getItem(`h_sound_friends_${requesterName}`) || '[]');
@@ -4987,16 +4992,28 @@
             friendRequests.splice(index, 1);
             localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
 
-            // Firebase'de isteği güncelle
             if (window.db && location.protocol !== 'file:') {
+                // İsteği kabul edildi olarak işaretle
                 window.db.collection('friendRequests')
-                    .where('from', '==', requesterName).where('to', '==', currentUser)
+                    .where('from', '==', requesterName).where('to', '==', currentUser).where('status', '==', 'pending')
                     .get().then(snap => snap.forEach(doc => doc.ref.update({ status: 'accepted' })))
                     .catch(() => {});
-                // Karşı tarafın arkadaş listesine de Firebase'de ekle
-                window.db.collection('friends').doc(`${currentUser}_${requesterName}`).set({
-                    user1: currentUser, user2: requesterName, since: new Date().toISOString()
+
+                // Her iki kullanıcının arkadaş listesini Firebase'e yaz
+                const chatId = getChatId(currentUser, requesterName);
+                window.db.collection('friendships').doc(chatId).set({
+                    users: [currentUser, requesterName],
+                    since: new Date().toISOString()
                 }).catch(() => {});
+
+                // Karşı tarafın arkadaş listesine de ekle (Firebase üzerinden)
+                window.db.collection('userFriends').doc(requesterName).set({
+                    friends: requesterFriends
+                }, { merge: true }).catch(() => {});
+
+                window.db.collection('userFriends').doc(currentUser).set({
+                    friends: friends
+                }, { merge: true }).catch(() => {});
             }
 
             showNotification(`${requesterName} arkadaş olarak eklendi!`, 'success');
@@ -5152,93 +5169,121 @@
         }
 
         // Sohbet aç
+        // Aktif chat listener'ı temizlemek için
+        let chatUnsubscribe = null;
+
         function openChat(friendName) {
             if (!privacyAccepted) {
                 openModal('privacy-modal');
                 return;
             }
-            
-            // Arkadaşlık kontrolü - sadece arkadaşlarla mesajlaşma
-            const currentUser = localStorage.getItem('h_sound_username');
-            const userFriends = JSON.parse(localStorage.getItem(`h_sound_friends_${currentUser}`) || '[]');
-            
-            if (!userFriends.includes(friendName)) {
-                showNotification(`${friendName} ile mesajlaşmak için önce arkadaş olmanız gerekiyor!`, 'warning');
-                return;
-            }
-            
             currentChatFriend = friendName;
             document.getElementById('chat-friend-name').textContent = friendName;
             openModal('chat-modal');
-            
             loadMessages(friendName);
         }
 
-        // Mesajları yükle (Gerçek hesaplar arası)
+        function getChatId(user1, user2) {
+            // Her iki kullanıcı için aynı chat ID üret
+            return [user1, user2].sort().join('_');
+        }
+
         function loadMessages(friendName) {
             const currentUser = localStorage.getItem('h_sound_username');
-            const chatKey = `h_sound_chat_${currentUser}_${friendName}`;
-            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
-            
             const chatMessages = document.getElementById('chat-messages');
+            if (!chatMessages) return;
+
+            // Önceki listener'ı kapat
+            if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
+
+            chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:20px;">Yükleniyor...</div>';
+
+            if (window.db && location.protocol !== 'file:') {
+                // Firebase realtime listener
+                const chatId = getChatId(currentUser, friendName);
+                chatUnsubscribe = window.db.collection('chats').doc(chatId)
+                    .collection('messages')
+                    .orderBy('timestamp', 'asc')
+                    .onSnapshot(snap => {
+                        chatMessages.innerHTML = '';
+                        snap.forEach(doc => renderMessage(doc.data(), currentUser, chatMessages));
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, () => {
+                        // Fallback: localStorage
+                        loadMessagesLocal(currentUser, friendName, chatMessages);
+                    });
+            } else {
+                loadMessagesLocal(currentUser, friendName, chatMessages);
+            }
+        }
+
+        function loadMessagesLocal(currentUser, friendName, chatMessages) {
+            const chatId = getChatId(currentUser, friendName);
+            const messages = JSON.parse(localStorage.getItem(`h_sound_chat_${chatId}`) || '[]');
             chatMessages.innerHTML = '';
-            
-            messages.forEach(message => {
-                const messageEl = document.createElement('div');
-                messageEl.className = `message ${message.sender === currentUser ? 'sent' : 'received'}`;
-                
-                if (message.type === 'music') {
-                    messageEl.classList.add('music');
-                    messageEl.innerHTML = `
-                        <i class="fas fa-music"></i>
-                        <div>
-                            <div>${message.musicTitle}</div>
-                            <div style="font-size: 12px; opacity: 0.8;">Müzik paylaşıldı</div>
-                        </div>
-                    `;
-                    messageEl.onclick = () => {
-                        if (message.musicVideoId) {
-                            playSong(message.musicVideoId, message.musicTitle, message.musicThumbnail || 'https://placehold.co/50x50/3498DB/ffffff?text=M');
-                            closeModal('chat-modal');
-                        }
-                    };
-                } else {
-                    messageEl.textContent = message.text;
-                }
-                
-                const timeEl = document.createElement('div');
-                timeEl.className = 'message-time';
-                timeEl.textContent = new Date(message.timestamp).toLocaleTimeString('tr-TR', {hour: '2-digit', minute: '2-digit'});
-                messageEl.appendChild(timeEl);
-                
-                chatMessages.appendChild(messageEl);
-            });
-            
+            messages.forEach(msg => renderMessage(msg, currentUser, chatMessages));
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Mesaj gönder
-        function sendMessage() {
+        function renderMessage(message, currentUser, container) {
+            const el = document.createElement('div');
+            el.className = `message ${message.sender === currentUser ? 'sent' : 'received'}`;
+
+            if (message.type === 'music') {
+                el.classList.add('music');
+                el.innerHTML = `<i class="fas fa-music"></i><div><div>${message.musicTitle}</div><div style="font-size:12px;opacity:0.8;">Müzik paylaşıldı</div></div>`;
+                el.onclick = () => {
+                    if (message.musicVideoId) {
+                        playSong(message.musicVideoId, message.musicTitle, message.musicThumbnail || '');
+                        closeModal('chat-modal');
+                    }
+                };
+            } else {
+                el.textContent = message.text;
+            }
+
+            const timeEl = document.createElement('div');
+            timeEl.className = 'message-time';
+            timeEl.textContent = new Date(message.timestamp).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+            el.appendChild(timeEl);
+            container.appendChild(el);
+        }
+
+        async function sendMessage() {
             const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            
+            const text = input?.value.trim();
             if (!text || !currentChatFriend) return;
-            
-            const chatKey = `h_sound_chat_${currentChatFriend}`;
-            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
-            
-            const newMessage = {
-                text: text,
-                sender: 'me',
+
+            const currentUser = localStorage.getItem('h_sound_username');
+            const chatId = getChatId(currentUser, currentChatFriend);
+            const msg = {
+                text,
+                sender: currentUser,
                 type: 'text',
                 timestamp: new Date().toISOString()
             };
-            
-            messages.push(newMessage);
-            localStorage.setItem(chatKey, JSON.stringify(messages));
-            
+
             input.value = '';
-            loadMessages(currentChatFriend);
+
+            if (window.db && location.protocol !== 'file:') {
+                try {
+                    await window.db.collection('chats').doc(chatId)
+                        .collection('messages').add(msg);
+                } catch(e) {
+                    // Fallback localStorage
+                    saveMessageLocal(chatId, msg);
+                    loadMessages(currentChatFriend);
+                }
+            } else {
+                saveMessageLocal(chatId, msg);
+                loadMessages(currentChatFriend);
+            }
+        }
+
+        function saveMessageLocal(chatId, msg) {
+            const msgs = JSON.parse(localStorage.getItem(`h_sound_chat_${chatId}`) || '[]');
+            msgs.push(msg);
+            localStorage.setItem(`h_sound_chat_${chatId}`, JSON.stringify(msgs));
         }
 
         // Müzik paylaşma modalını göster
@@ -5278,27 +5323,31 @@
         }
 
         // Müzik paylaş
-        function shareMusic(videoId, title, thumbnail) {
+        async function shareMusic(videoId, title, thumbnail) {
             if (!currentChatFriend) return;
-            
-            const chatKey = `h_sound_chat_${currentChatFriend}`;
-            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
-            
-            const musicMessage = {
+            const currentUser = localStorage.getItem('h_sound_username');
+            const chatId = getChatId(currentUser, currentChatFriend);
+            const msg = {
                 text: `🎵 ${title}`,
-                sender: 'me',
+                sender: currentUser,
                 type: 'music',
                 musicVideoId: videoId,
                 musicTitle: title,
                 musicThumbnail: thumbnail,
                 timestamp: new Date().toISOString()
             };
-            
-            messages.push(musicMessage);
-            localStorage.setItem(chatKey, JSON.stringify(messages));
-            
+
+            if (window.db && location.protocol !== 'file:') {
+                try {
+                    await window.db.collection('chats').doc(chatId).collection('messages').add(msg);
+                } catch(e) { saveMessageLocal(chatId, msg); }
+            } else {
+                saveMessageLocal(chatId, msg);
+            }
+
             closeModal('music-share-modal');
             loadMessages(currentChatFriend);
+            showNotification(`${title} paylaşıldı!`, 'success');
         }
 
         // Gizlilik politikasını kabul et
@@ -5427,8 +5476,13 @@
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById(modalId)?.classList.add('hidden');
+            document.getElementById('overlay')?.classList.add('hidden');
+            // Chat kapatılınca Firebase listener'ı temizle
+            if (modalId === 'chat-modal' && chatUnsubscribe) {
+                chatUnsubscribe();
+                chatUnsubscribe = null;
+            }
         }
 
 
