@@ -5728,6 +5728,10 @@
                 showNotification('Bu kullanıcı zaten arkadaşınız!', 'warning');
                 return;
             }
+
+            // sentRequests'i taze oku (removeFriend sonrası güncel olsun)
+            sentRequests = JSON.parse(localStorage.getItem(`h_sound_sent_requests_${currentUser}`) || '[]');
+
             if (sentRequests.includes(username)) {
                 showNotification('Bu kullanıcıya zaten istek gönderdiniz!', 'warning');
                 return;
@@ -5753,6 +5757,11 @@
             // Firebase'e de yaz (varsa)
             if (window.db && location.protocol !== 'file:') {
                 try {
+                    // Önce eski pending isteği temizle
+                    const oldReqs = await window.db.collection('friendRequests')
+                        .where('from', '==', currentUser).where('to', '==', username).get();
+                    oldReqs.forEach(doc => doc.ref.delete());
+
                     await window.db.collection('friendRequests').add({
                         from: currentUser,
                         to: username,
