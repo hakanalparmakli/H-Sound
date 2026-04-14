@@ -5188,8 +5188,38 @@
             loadMessages(friendName);
         }
 
+        // Firebase'deki mevcut sohbet document'ini bul veya yeni oluştur
+        async function getOrCreateChatDoc(user1, user2) {
+            if (!window.db || location.protocol === 'file:') return null;
+            try {
+                // Önce mevcut sohbeti ara
+                const snap = await window.db.collection('mesajlar')
+                    .where('katılımcılar', 'array-contains', user1)
+                    .get();
+                for (const doc of snap.docs) {
+                    const data = doc.data();
+                    const participants = data.katılımcılar || [];
+                    if (participants.includes(user2)) return doc.id;
+                }
+                // Yoksa yeni oluştur
+                const newDoc = await window.db.collection('mesajlar').add({
+                    sonMesaj: '',
+                    sonMesajGönderen: user1,
+                    sonMesajZamanı: new Date(),
+                    katılımcılar: [user1, user2],
+                    'Katılımcı İsimleri': [user1, user2]
+                });
+                return newDoc.id;
+            } catch(e) {
+                console.error('getOrCreateChatDoc error:', e);
+                return null;
+            }
+        }
+
+        // Aktif chat doc ID'sini cache'le
+        let activeChatDocId = null;
+
         function getChatId(user1, user2) {
-            // Her iki kullanıcı için aynı chat ID üret
             return [user1, user2].sort().join('_');
         }
 
@@ -5199,27 +5229,33 @@
             if (!chatMessages) return;
 
             if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
-
-            chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:20px;">Yükleniyor...</div>';
-
-            const chatId = getChatId(currentUser, friendName);
+            activeChatDocId = null;
 
             if (window.db && location.protocol !== 'file:') {
-                // orderBy olmadan - index gerektirmez
-                chatUnsubscribe = window.db.collection('chats').doc(chatId)
-                    .collection('messages')
-                    .onSnapshot(snap => {
-                        // timestamp'e göre client-side sırala
-                        const msgs = [];
-                        snap.forEach(doc => msgs.push(doc.data()));
-                        msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                        chatMessages.innerHTML = '';
-                        msgs.forEach(msg => renderMessage(msg, currentUser, chatMessages));
-                        chatMessages.scrollTop = chatMessages.scrollHeight;
-                    }, (err) => {
-                        console.log('Firebase chat error:', err);
-                        loadMessagesLocal(currentUser, friendName, chatMessages);
-                    });
+                chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:20px;font-size:13px;">Bağlanıyor...</div>';
+
+                getOrCreateChatDoc(currentUser, friendName).then(docId => {
+                    if (!docId) { loadMessagesLocal(currentUser, friendName, chatMessages); return; }
+                    activeChatDocId = docId;
+
+                    chatUnsubscribe = window.db.collection('mesajlar').doc(docId)
+                        .collection('sohbet')
+                        .onSnapshot(snap => {
+                            const msgs = [];
+                            snap.forEach(doc => msgs.push(doc.data()));
+                            msgs.sort((a, b) => new Date(a.timestamp || a.zaman) - new Date(b.timestamp || b.zaman));
+                            chatMessages.innerHTML = '';
+                            if (msgs.length === 0) {
+                                chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:30px;font-size:14px;">Henüz mesaj yok. İlk mesajı sen gönder!</div>';
+                            } else {
+                                msgs.forEach(msg => renderMessage(msg, currentUser, chatMessages));
+                            }
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }, err => {
+                            console.error('onSnapshot error:', err);
+                            loadMessagesLocal(currentUser, friendName, chatMessages);
+                        });
+                });
             } else {
                 loadMessagesLocal(currentUser, friendName, chatMessages);
             }
@@ -5240,11 +5276,13 @@
 
         function renderMessage(message, currentUser, container) {
             const el = document.createElement('div');
-            el.className = `message ${message.sender === currentUser ? 'sent' : 'received'}`;
+            // sender veya gonderen field'ını destekle
+            const senderName = message.sender || message.gonderen || '';
+            el.className = `message ${senderName === currentUser ? 'sent' : 'received'}`;
 
             if (message.type === 'music') {
                 el.classList.add('music');
-                el.innerHTML = `<i class="fas fa-music"></i><div><div>${message.musicTitle}</div><div style="font-size:12px;opacity:0.8;">Müzik paylaşıldı</div></div>`;
+                el.innerHTML = `<i class="fas fa-music"></i><div><div>${message.musicTitle || message.icerik || ''}</div><div style="font-size:12px;opacity:0.8;">Müzik paylaşıldı</div></div>`;
                 el.onclick = () => {
                     if (message.musicVideoId) {
                         playSong(message.musicVideoId, message.musicTitle, message.musicThumbnail || '');
@@ -5252,12 +5290,13 @@
                     }
                 };
             } else {
-                el.textContent = message.text;
+                el.textContent = message.text || message.icerik || '';
             }
 
             const timeEl = document.createElement('div');
             timeEl.className = 'message-time';
-            timeEl.textContent = new Date(message.timestamp).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+            const ts = message.timestamp || message.zaman;
+            timeEl.textContent = ts ? new Date(ts).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}) : '';
             el.appendChild(timeEl);
             container.appendChild(el);
         }
@@ -5268,28 +5307,50 @@
             if (!text || !currentChatFriend) return;
 
             const currentUser = localStorage.getItem('h_sound_username');
-            const chatId = getChatId(currentUser, currentChatFriend);
             const msg = {
                 text,
                 sender: currentUser,
+                gonderen: currentUser,
                 type: 'text',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                zaman: new Date().toISOString()
             };
 
             input.value = '';
 
-            // Her zaman localStorage'a yaz (anlık görünüm için)
-            saveMessageLocal(chatId, msg);
-
             if (window.db && location.protocol !== 'file:') {
-                // Firebase'e de yaz (diğer kullanıcıya gitmesi için)
-                window.db.collection('chats').doc(chatId)
-                    .collection('messages').add(msg)
-                    .catch(() => {});
+                try {
+                    // activeChatDocId yoksa bul
+                    if (!activeChatDocId) {
+                        activeChatDocId = await getOrCreateChatDoc(currentUser, currentChatFriend);
+                    }
+                    if (activeChatDocId) {
+                        await window.db.collection('mesajlar').doc(activeChatDocId)
+                            .collection('sohbet').add(msg);
+                        // Son mesaj bilgisini güncelle
+                        window.db.collection('mesajlar').doc(activeChatDocId).update({
+                            sonMesaj: text,
+                            sonMesajGönderen: currentUser,
+                            sonMesajZamanı: new Date()
+                        }).catch(() => {});
+                    }
+                } catch(e) {
+                    console.error('Send error:', e);
+                    const chatId = getChatId(currentUser, currentChatFriend);
+                    saveMessageLocal(chatId, msg);
+                    const chatMessages = document.getElementById('chat-messages');
+                    if (chatMessages) { renderMessage(msg, currentUser, chatMessages); chatMessages.scrollTop = chatMessages.scrollHeight; }
+                }
             } else {
-                // Firebase yoksa localStorage'dan yenile
+                const chatId = getChatId(currentUser, currentChatFriend);
+                saveMessageLocal(chatId, msg);
                 const chatMessages = document.getElementById('chat-messages');
-                if (chatMessages) loadMessagesLocal(currentUser, currentChatFriend, chatMessages);
+                if (chatMessages) {
+                    const empty = chatMessages.querySelector('div');
+                    if (empty?.textContent.includes('Henüz')) empty.remove();
+                    renderMessage(msg, currentUser, chatMessages);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
             }
         }
 
