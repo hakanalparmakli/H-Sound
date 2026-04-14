@@ -5151,26 +5151,76 @@
         }
 
         // Arkadaş kaldır
-        function removeFriend(index) {
+        async function removeFriend(index) {
             const friendName = friends[index];
             const currentUser = localStorage.getItem('h_sound_username');
-            
+
             if (!confirm(`${friendName} adlı arkadaşı kaldırmak istediğinizden emin misiniz?`)) return;
-            
+
             // Kendi listesinden kaldır
             friends.splice(index, 1);
             localStorage.setItem(`h_sound_friends_${currentUser}`, JSON.stringify(friends));
-            
-            // Karşı tarafın listesinden de kaldır
-            const friendFriends = JSON.parse(localStorage.getItem(`h_sound_friends_${friendName}`) || '[]');
-            const friendIndex = friendFriends.indexOf(currentUser);
-            if (friendIndex > -1) {
-                friendFriends.splice(friendIndex, 1);
-                localStorage.setItem(`h_sound_friends_${friendName}`, JSON.stringify(friendFriends));
+
+            // Gönderilen isteklerden de temizle (tekrar istek atabilsin)
+            sentRequests = sentRequests.filter(r => r !== friendName);
+            localStorage.setItem(`h_sound_sent_requests_${currentUser}`, JSON.stringify(sentRequests));
+
+            if (window.db && location.protocol !== 'file:') {
+                try {
+                    // Firebase'den arkadaşlık kaydını sil
+                    const chatId = getChatId(currentUser, friendName);
+                    await window.db.collection('friendships').doc(chatId).delete().catch(() => {});
+
+                    // Karşı tarafın Firebase listesinden kaldır
+                    const friendDoc = await window.db.collection('userFriends').doc(friendName).get();
+                    if (friendDoc.exists) {
+                        const fbFriends = (friendDoc.data().friends || []).filter(f => f !== currentUser);
+                        await window.db.collection('userFriends').doc(friendName).set({ friends: fbFriends });
+                    }
+
+                    // Kendi Firebase listesini güncelle
+                    await window.db.collection('userFriends').doc(currentUser).set({ friends });
+
+                    // Karşı tarafın sentRequests'inden de temizle
+                    const friendSentDoc = await window.db.collection('sentRequests').doc(friendName).get();
+                    if (friendSentDoc.exists) {
+                        const fbSent = (friendSentDoc.data().requests || []).filter(r => r !== currentUser);
+                        await window.db.collection('sentRequests').doc(friendName).set({ requests: fbSent });
+                    }
+
+                    // friendRequests'ten de temizle (her iki taraf)
+                    const reqSnap = await window.db.collection('friendRequests')
+                        .where('from', 'in', [currentUser, friendName])
+                        .get();
+                    reqSnap.forEach(doc => {
+                        const d = doc.data();
+                        if ((d.from === currentUser && d.to === friendName) ||
+                            (d.from === friendName && d.to === currentUser)) {
+                            doc.ref.delete().catch(() => {});
+                        }
+                    });
+                } catch(e) {
+                    console.error('removeFriend Firebase error:', e);
+                }
+            } else {
+                // localStorage'da karşı tarafın listesinden kaldır
+                const friendFriends = JSON.parse(localStorage.getItem(`h_sound_friends_${friendName}`) || '[]');
+                const fi = friendFriends.indexOf(currentUser);
+                if (fi > -1) {
+                    friendFriends.splice(fi, 1);
+                    localStorage.setItem(`h_sound_friends_${friendName}`, JSON.stringify(friendFriends));
+                }
+                // Karşı tarafın sentRequests'inden temizle
+                const friendSent = JSON.parse(localStorage.getItem(`h_sound_sent_requests_${friendName}`) || '[]');
+                const fsi = friendSent.indexOf(currentUser);
+                if (fsi > -1) {
+                    friendSent.splice(fsi, 1);
+                    localStorage.setItem(`h_sound_sent_requests_${friendName}`, JSON.stringify(friendSent));
+                }
             }
-            
-            displayFriends();
+
             showNotification(`${friendName} arkadaş listesinden kaldırıldı`, 'info');
+            showFriendsPage();
         }
 
         // Sohbet aç
@@ -5183,9 +5233,10 @@
                 return;
             }
             currentChatFriend = friendName;
+            activeChatDocId = null;
             document.getElementById('chat-friend-name').textContent = friendName;
             openModal('chat-modal');
-            loadMessages(friendName);
+            loadMessages(friendName); // async, kendi içinde halleder
         }
 
         // Firebase'deki mevcut sohbet document'ini bul veya yeni oluştur
@@ -5317,10 +5368,11 @@
             }
 
             try {
-                // activeChatDocId henüz set edilmediyse bekle (loadMessages async)
+                // activeChatDocId henüz set edilmediyse kısa bekle
                 if (!activeChatDocId) {
-                    await loadMessages(currentChatFriend);
+                    await new Promise(r => setTimeout(r, 2000));
                 }
+                if (!activeChatDocId) throw new Error('Chat doc not ready');
                 await window.db.collection('mesajlar').doc(activeChatDocId)
                     .collection('sohbet').add(msg);
                 window.db.collection('mesajlar').doc(activeChatDocId)
