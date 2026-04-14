@@ -1739,7 +1739,7 @@
         <div id="main-app" class="main-app">
         
         <nav id="sidebar">
-            <div class="brand"><img src="logo.png" alt="H-Sound" style="width:120px;height:auto;display:block;margin:0 auto;"></div>
+            <div class="brand">H-Sound</div>
             <ul>
                 <li><a href="#" id="home-link" class="active"><i class="fas fa-home"></i> Ana Sayfa</a></li>
                 <li><a href="#" id="search-link"><i class="fas fa-search"></i> Ara</a></li>
@@ -5198,23 +5198,26 @@
             const chatMessages = document.getElementById('chat-messages');
             if (!chatMessages) return;
 
-            // Önceki listener'ı kapat
             if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
 
             chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:20px;">Yükleniyor...</div>';
 
+            const chatId = getChatId(currentUser, friendName);
+
             if (window.db && location.protocol !== 'file:') {
-                // Firebase realtime listener
-                const chatId = getChatId(currentUser, friendName);
+                // orderBy olmadan - index gerektirmez
                 chatUnsubscribe = window.db.collection('chats').doc(chatId)
                     .collection('messages')
-                    .orderBy('timestamp', 'asc')
                     .onSnapshot(snap => {
+                        // timestamp'e göre client-side sırala
+                        const msgs = [];
+                        snap.forEach(doc => msgs.push(doc.data()));
+                        msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                         chatMessages.innerHTML = '';
-                        snap.forEach(doc => renderMessage(doc.data(), currentUser, chatMessages));
+                        msgs.forEach(msg => renderMessage(msg, currentUser, chatMessages));
                         chatMessages.scrollTop = chatMessages.scrollHeight;
-                    }, () => {
-                        // Fallback: localStorage
+                    }, (err) => {
+                        console.log('Firebase chat error:', err);
                         loadMessagesLocal(currentUser, friendName, chatMessages);
                     });
             } else {
@@ -5225,7 +5228,12 @@
         function loadMessagesLocal(currentUser, friendName, chatMessages) {
             const chatId = getChatId(currentUser, friendName);
             const messages = JSON.parse(localStorage.getItem(`h_sound_chat_${chatId}`) || '[]');
+            messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             chatMessages.innerHTML = '';
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:30px;font-size:14px;">Henüz mesaj yok. İlk mesajı sen gönder!</div>';
+                return;
+            }
             messages.forEach(msg => renderMessage(msg, currentUser, chatMessages));
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -5270,18 +5278,18 @@
 
             input.value = '';
 
+            // Her zaman localStorage'a yaz (anlık görünüm için)
+            saveMessageLocal(chatId, msg);
+
             if (window.db && location.protocol !== 'file:') {
-                try {
-                    await window.db.collection('chats').doc(chatId)
-                        .collection('messages').add(msg);
-                } catch(e) {
-                    // Fallback localStorage
-                    saveMessageLocal(chatId, msg);
-                    loadMessages(currentChatFriend);
-                }
+                // Firebase'e de yaz (diğer kullanıcıya gitmesi için)
+                window.db.collection('chats').doc(chatId)
+                    .collection('messages').add(msg)
+                    .catch(() => {});
             } else {
-                saveMessageLocal(chatId, msg);
-                loadMessages(currentChatFriend);
+                // Firebase yoksa localStorage'dan yenile
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) loadMessagesLocal(currentUser, currentChatFriend, chatMessages);
             }
         }
 
