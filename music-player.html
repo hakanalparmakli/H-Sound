@@ -178,7 +178,7 @@
 
         .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             gap: 20px;
         }
 
@@ -342,6 +342,18 @@
             color: var(--primary-color);
         }
 
+        .mode-btn.active {
+            color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.15);
+            border-radius: 50%;
+        }
+
+        .mode-btn.active-orange {
+            color: #e67e22;
+            background-color: rgba(230, 126, 34, 0.15);
+            border-radius: 50%;
+        }
+
         .progress-container {
             flex: 1;
             max-width: 30%;
@@ -490,8 +502,8 @@
             }
 
             .results-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                gap: 15px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
             }
 
             .item-title {
@@ -1776,6 +1788,7 @@
                 <button id="prev-btn" class="control-btn"><i class="fas fa-step-backward"></i></button>
                 <button id="play-pause-btn" class="control-btn"><i class="fas fa-play"></i></button>
                 <button id="next-btn" class="control-btn"><i class="fas fa-step-forward"></i></button>
+                <button id="mode-btn" class="control-btn mode-btn" onclick="cyclePlayMode()" title="Normal"></button>
             </div>
             
             <div class="progress-container">
@@ -1904,16 +1917,18 @@
     <script>
         // Thumbnail error handling functions
         function handleThumbnailError(img) {
-            console.log('🖼️ Thumbnail failed to load, using fallback');
-            img.onerror = null; // Prevent infinite loop
-            img.src = 'https://via.placeholder.com/320x180/3498DB/ffffff?text=H-Sound';
-            img.style.backgroundColor = '#3498DB';
-            img.style.color = 'white';
-            img.style.display = 'flex';
-            img.style.alignItems = 'center';
-            img.style.justifyContent = 'center';
-            img.style.fontSize = '14px';
-            img.style.fontWeight = 'bold';
+            img.onerror = null;
+            // Şarkı adından kısa metin al
+            const alt = img.alt || 'H-Sound';
+            const initials = alt.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'HS';
+            // Inline SVG placeholder - dış bağlantı gerektirmez
+            const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='320' height='180'>
+                <rect width='320' height='180' fill='%231C1C1C'/>
+                <rect width='320' height='180' fill='%233498DB' opacity='0.15'/>
+                <text x='50%25' y='42%25' font-family='Arial' font-size='48' fill='%233498DB' text-anchor='middle' dominant-baseline='middle'>${initials}</text>
+                <text x='50%25' y='68%25' font-family='Arial' font-size='13' fill='%23A9A9A9' text-anchor='middle' dominant-baseline='middle'>${encodeURIComponent(alt.substring(0, 30))}</text>
+            </svg>`;
+            img.src = `data:image/svg+xml,${svg}`;
         }
 
         function handleThumbnailLoad(img) {
@@ -2010,6 +2025,8 @@
         let progressInterval = null;
         let player = null;
         let playerReady = false;
+        // Çalma modu: 'normal' | 'repeat-one' | 'repeat-all' | 'shuffle'
+        let playMode = 'normal';
         
         // Language and infinite scroll variables
         let currentLanguage = localStorage.getItem('h_sound_language') || 'turkish';
@@ -2059,31 +2076,31 @@
         // Yerel müzik veritabanı (Gerçek YouTube şarkıları - Doğrulanmış ID'ler)
         const localMusicDatabase = {
             'popular music': [
-                // YouTube'da milyarlarca izlenmeye ulaşmış gerçek popüler şarkılar
-                { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito ft. Daddy Yankee', artist: 'Luis Fonsi', thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/mqdefault.jpg' },
+                // Türkçe Rap / Trap + Popüler - doğrulanmış thumbnail ID'leri
+                { id: 'YnopHCL1Jk8', title: 'Lvbel C5 - Janti', artist: 'Lvbel C5', thumbnail: 'https://i.ytimg.com/vi/YnopHCL1Jk8/mqdefault.jpg' },
+                { id: 'HgzGwKwLmgM', title: 'Tarkan - Şımarık', artist: 'Tarkan', thumbnail: 'https://i.ytimg.com/vi/HgzGwKwLmgM/mqdefault.jpg' },
+                { id: 'naQr0uTrH_s', title: 'Tarkan - Kuzu Kuzu', artist: 'Tarkan', thumbnail: 'https://i.ytimg.com/vi/naQr0uTrH_s/mqdefault.jpg' },
+                { id: 'hqJ8hFgYwVg', title: 'Demet Akalın - Afedersin', artist: 'Demet Akalın', thumbnail: 'https://i.ytimg.com/vi/hqJ8hFgYwVg/mqdefault.jpg' },
+                { id: 'Kb24RrHIbFk', title: 'Sezen Aksu - Şarkı Söylemek Lazım', artist: 'Sezen Aksu', thumbnail: 'https://i.ytimg.com/vi/Kb24RrHIbFk/mqdefault.jpg' },
+                { id: 'rY0WxgSXdEE', title: 'Cem Karaca - Tamirci Çırağı', artist: 'Cem Karaca', thumbnail: 'https://i.ytimg.com/vi/rY0WxgSXdEE/mqdefault.jpg' },
+                { id: 'CD-E-LDc384', title: 'Kenan Doğulu - Çakkıdı', artist: 'Kenan Doğulu', thumbnail: 'https://i.ytimg.com/vi/CD-E-LDc384/mqdefault.jpg' },
+                { id: 'pIgZ7gMze7A', title: 'Hadise - Düm Tek Tek', artist: 'Hadise', thumbnail: 'https://i.ytimg.com/vi/pIgZ7gMze7A/mqdefault.jpg' },
+                { id: 'tbU3zdAgiX8', title: 'Ajda Pekkan - Petrol', artist: 'Ajda Pekkan', thumbnail: 'https://i.ytimg.com/vi/tbU3zdAgiX8/mqdefault.jpg' },
+                { id: 'hT_nvWreIhg', title: 'The Weeknd - Blinding Lights', artist: 'The Weeknd', thumbnail: 'https://i.ytimg.com/vi/hT_nvWreIhg/mqdefault.jpg' },
+                { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito', artist: 'Luis Fonsi', thumbnail: 'https://i.ytimg.com/vi/kJQP7kiw5Fk/mqdefault.jpg' },
                 { id: 'JGwWNGJdvx8', title: 'Ed Sheeran - Shape of You', artist: 'Ed Sheeran', thumbnail: 'https://i.ytimg.com/vi/JGwWNGJdvx8/mqdefault.jpg' },
-                { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again ft. Charlie Puth', artist: 'Wiz Khalifa', thumbnail: 'https://i.ytimg.com/vi/RgKAFK5djSk/mqdefault.jpg' },
+                { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again', artist: 'Wiz Khalifa', thumbnail: 'https://i.ytimg.com/vi/RgKAFK5djSk/mqdefault.jpg' },
                 { id: '2Vv-BfVoq4g', title: 'PSY - Gangnam Style', artist: 'PSY', thumbnail: 'https://i.ytimg.com/vi/2Vv-BfVoq4g/mqdefault.jpg' },
                 { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk ft. Bruno Mars', artist: 'Mark Ronson', thumbnail: 'https://i.ytimg.com/vi/OPf0YbXqDm0/mqdefault.jpg' },
-                { id: 'hT_nvWreIhg', title: 'The Weeknd - Blinding Lights', artist: 'The Weeknd', thumbnail: 'https://i.ytimg.com/vi/hT_nvWreIhg/mqdefault.jpg' },
+                { id: '60ItHLz5WEA', title: 'Alan Walker - Faded', artist: 'Alan Walker', thumbnail: 'https://i.ytimg.com/vi/60ItHLz5WEA/mqdefault.jpg' },
                 { id: 'ZbZSe6N_BXs', title: 'Pharrell Williams - Happy', artist: 'Pharrell Williams', thumbnail: 'https://i.ytimg.com/vi/ZbZSe6N_BXs/mqdefault.jpg' },
                 { id: 'YQHsXMglC9A', title: 'Adele - Hello', artist: 'Adele', thumbnail: 'https://i.ytimg.com/vi/YQHsXMglC9A/mqdefault.jpg' },
                 { id: 'CevxZvSJLk8', title: 'Katy Perry - Roar', artist: 'Katy Perry', thumbnail: 'https://i.ytimg.com/vi/CevxZvSJLk8/mqdefault.jpg' },
-                { id: '60ItHLz5WEA', title: 'Alan Walker - Faded', artist: 'Alan Walker', thumbnail: 'https://i.ytimg.com/vi/60ItHLz5WEA/mqdefault.jpg' },
                 { id: 'fJ9rUzIMcZQ', title: 'Queen - Bohemian Rhapsody', artist: 'Queen Official', thumbnail: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/mqdefault.jpg' },
                 { id: 'IcrbM1l_BoI', title: 'Avicii - Wake Me Up', artist: 'Avicii', thumbnail: 'https://i.ytimg.com/vi/IcrbM1l_BoI/mqdefault.jpg' },
                 { id: 'DyDfgMOUjCI', title: 'Billie Eilish - bad guy', artist: 'Billie Eilish', thumbnail: 'https://i.ytimg.com/vi/DyDfgMOUjCI/mqdefault.jpg' },
-                { id: 'TUVcZfQe-Kw', title: 'Dua Lipa - Levitating', artist: 'Dua Lipa', thumbnail: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/mqdefault.jpg' },
-                { id: 'gAh9NRGNhUU', title: 'Marshmello ft. Bastille - Happier', artist: 'Marshmello', thumbnail: 'https://i.ytimg.com/vi/gAh9NRGNhUU/mqdefault.jpg' },
-                { id: 'nfWlot6h_JM', title: 'Taylor Swift - Shake It Off', artist: 'Taylor Swift', thumbnail: 'https://i.ytimg.com/vi/nfWlot6h_JM/mqdefault.jpg' },
-                { id: 'LjhCEhWiKXk', title: 'Bruno Mars - Just The Way You Are', artist: 'Bruno Mars', thumbnail: 'https://i.ytimg.com/vi/LjhCEhWiKXk/mqdefault.jpg' },
                 { id: '7wtfhZwyrcc', title: 'Imagine Dragons - Believer', artist: 'Imagine Dragons', thumbnail: 'https://i.ytimg.com/vi/7wtfhZwyrcc/mqdefault.jpg' },
-                { id: 'ApXoWvfEYVU', title: 'Post Malone ft. Swae Lee - Sunflower', artist: 'Post Malone', thumbnail: 'https://i.ytimg.com/vi/ApXoWvfEYVU/mqdefault.jpg' },
-                { id: '_Yhyp-_hX2s', title: 'Eminem - Lose Yourself', artist: 'Eminem', thumbnail: 'https://i.ytimg.com/vi/_Yhyp-_hX2s/mqdefault.jpg' },
-                { id: 'v2AC41dglnM', title: 'AC/DC - Thunderstruck', artist: 'AC/DC', thumbnail: 'https://i.ytimg.com/vi/v2AC41dglnM/mqdefault.jpg' },
-                { id: '1w7OgIMMRc4', title: 'Guns N\' Roses - Sweet Child O\' Mine', artist: 'Guns N\' Roses', thumbnail: 'https://i.ytimg.com/vi/1w7OgIMMRc4/mqdefault.jpg' },
-                { id: 'lp-EO5I60KA', title: 'Billie Eilish - Ocean Eyes', artist: 'Billie Eilish', thumbnail: 'https://i.ytimg.com/vi/lp-EO5I60KA/mqdefault.jpg' },
-                { id: 'nfs8NYg7yQM', title: 'Dua Lipa - Physical', artist: 'Dua Lipa', thumbnail: 'https://i.ytimg.com/vi/nfs8NYg7yQM/mqdefault.jpg' }
+                { id: 'ApXoWvfEYVU', title: 'Post Malone - Sunflower', artist: 'Post Malone', thumbnail: 'https://i.ytimg.com/vi/ApXoWvfEYVU/mqdefault.jpg' }
             ],
             'turkish': [
                 // Gerçek Türkçe Popüler Şarkılar (Gömülü oynatmaya izin veren)
@@ -2444,40 +2461,27 @@
         function displayHomeResults(items) {
             const homeContent = document.getElementById('home-content');
             if (!homeContent) return;
-            
-            let html = `
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h3 style="color: var(--primary-color); margin-bottom: 10px;">
-                        <i class="fas fa-fire"></i> Popüler Müzikler
-                    </h3>
-                    <p style="color: var(--secondary-text-color); font-size: 14px;">
-                        En çok dinlenen şarkıları keşfedin
-                    </p>
-                </div>
-                <div class="results-grid">
-            `;
-            
+
+            // home-content zaten results-grid — içine tekrar grid koyma, direkt kartları ekle
+            let html = '';
+
             items.forEach(item => {
                 const videoId = item.id.videoId;
                 const title = item.snippet.title;
-                const thumbnail = item.snippet.thumbnails.medium.url;
+                const thumbnail = item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '';
                 const channelTitle = item.snippet.channelTitle;
-                
+
                 html += `
                     <div class="result-item" onclick="playSong('${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${channelTitle.replace(/'/g, "\\'")}')">
-                        <img src="${thumbnail}" alt="${title}">
+                        <img src="${thumbnail}" alt="${title}" onerror="handleThumbnailError(this)">
                         <div class="item-title">${title}</div>
                         <button class="add-to-playlist-btn" onclick="event.stopPropagation(); addToPlaylist('${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${channelTitle.replace(/'/g, "\\'")}')">
                             <i class="fas fa-plus"></i>
                         </button>
-                        <button class="download-song-btn" onclick="event.stopPropagation(); downloadSong('${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${channelTitle.replace(/'/g, "\\'")}')">
-                            <i class="fas fa-download"></i> İndir
-                        </button>
                     </div>
                 `;
             });
-            
-            html += '</div>';
+
             homeContent.innerHTML = html;
         }
 
@@ -2526,46 +2530,51 @@
             loadLocalHomeMusic();
         }
 
-        // Ana sayfa için yerel müzik yükle
-        function loadLocalHomeMusic() {
+        // Ana sayfa için müzik yükle - önce YouTube API, başarısız olursa yerel liste
+        // Sonraki sayfa token'ını tut
+        let homeNextPageToken = null;
+
+        async function loadLocalHomeMusic() {
             const homeContent = document.getElementById('home-content');
             if (!homeContent) return;
 
             homeContent.innerHTML = '<div class="loading-spinner"></div>';
+            homeNextPageToken = null;
 
             try {
-                // Sadece popular music listesini sırayla göster
-                const popularMusic = localMusicDatabase['popular music'];
-
+                const apiResults = await getYouTubePopularMusic(24, '');
                 homeContent.innerHTML = '';
 
-                const header = document.createElement('div');
-                header.style.cssText = 'text-align:center;margin-bottom:20px;';
-                header.innerHTML = `
-                    <h3 style="color:var(--primary-color);margin-bottom:8px;">
-                        <i class="fas fa-fire"></i> En Popüler Şarkılar
-                    </h3>
-                    <p style="color:var(--secondary-text-color);font-size:14px;">
-                        Tüm zamanların en çok dinlenen ${popularMusic.length} şarkısı
-                    </p>
-                `;
-                homeContent.appendChild(header);
-
-                displayResults(popularMusic, false);
+                if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
+                    homeNextPageToken = apiResults._nextPageToken || null;
+                    const items = apiResults.map(song => ({
+                        id: { videoId: song.videoId },
+                        snippet: {
+                            title: song.title,
+                            channelTitle: song.artist || song.channelTitle,
+                            thumbnails: { medium: { url: song.thumbnail } }
+                        }
+                    }));
+                    displayHomeResults(items);
+                    showNotification(`${items.length} popüler şarkı yüklendi!`, 'success');
+                } else {
+                    displayResults(localMusicDatabase['popular music'], false);
+                }
                 setupInfiniteScroll();
-
             } catch (error) {
-                console.error('❌ Home music loading error:', error);
-                homeContent.innerHTML = '<div class="error-message">Müzik yüklenirken hata oluştu</div>';
+                homeContent.innerHTML = '';
+                displayResults(localMusicDatabase['popular music'], false);
+                setupInfiniteScroll();
             }
         }
 
         // Ana sayfayı yenile
         function refreshHomePage() {
-            console.log('🔄 Refreshing home page...');
             homeScrollPage = 0;
             isLoadingMore = false;
             hasMoreHomeContent = true;
+            homeNextPageToken = null;
+            regionIndex++; // Her yenilemede farklı bölge
             loadLocalHomeMusic();
         }
 
@@ -2639,45 +2648,69 @@
 
         async function loadMoreHomeContent() {
             if (isLoadingMore || !hasMoreHomeContent) return;
-            
             isLoadingMore = true;
             homeScrollPage++;
-            
-            console.log(`📜 Loading more content... Page ${homeScrollPage + 1}`);
-            
+
+            // Yükleniyor göstergesi ekle
+            const homeContent = document.getElementById('home-content');
+            const loader = document.createElement('div');
+            loader.id = 'home-load-more';
+            loader.innerHTML = '<div class="loading-spinner" style="margin:20px auto;"></div>';
+            if (homeContent) homeContent.appendChild(loader);
+
             try {
-                // Farklı dil müzikleri yükle
-                let newContent = [];
-                
-                if (homeScrollPage % 2 === 0) {
-                    // Çift sayfalarda farklı dil müzikleri - Tüm Dünya Dilleri
-                    const allLanguages = [
-                        'english', 'spanish', 'french', 'korean', 'german', 'arabic',
-                        'italian', 'portuguese', 'portuguese_br', 'russian', 'japanese',
-                        'chinese', 'hindi', 'thai', 'vietnamese', 'indonesian', 'dutch', 'polish'
-                    ];
-                    const randomLang = allLanguages[Math.floor(Math.random() * allLanguages.length)];
-                    newContent = getLanguageSongs(randomLang, 8);
-                    console.log(`🌍 Loading ${randomLang} music...`);
+                if (homeNextPageToken) {
+                    // API'den sonraki sayfayı çek
+                    const apiResults = await getYouTubePopularMusic(24, homeNextPageToken);
+                    document.getElementById('home-load-more')?.remove();
+
+                    if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
+                        homeNextPageToken = apiResults._nextPageToken || null;
+                        if (!homeNextPageToken) hasMoreHomeContent = false;
+
+                        const items = apiResults.map(song => ({
+                            id: { videoId: song.videoId },
+                            snippet: {
+                                title: song.title,
+                                channelTitle: song.artist || song.channelTitle,
+                                thumbnails: { medium: { url: song.thumbnail } }
+                            }
+                        }));
+                        // Mevcut grid'e ekle
+                        const grid = homeContent?.querySelector('.results-grid') || homeContent;
+                        items.forEach(item => {
+                            const videoId = item.id.videoId;
+                            const title = item.snippet.title;
+                            const thumbnail = item.snippet.thumbnails.medium.url;
+                            const channelTitle = item.snippet.channelTitle;
+                            const div = document.createElement('div');
+                            div.className = 'result-item';
+                            div.onclick = () => playSong(videoId, title, thumbnail, channelTitle);
+                            div.innerHTML = `
+                                <img src="${thumbnail}" alt="${title}" onerror="handleThumbnailError(this)">
+                                <div class="item-title">${title}</div>
+                                <button class="add-to-playlist-btn" onclick="event.stopPropagation();addToPlaylist('${videoId}','${title.replace(/'/g,"\\'")}','${thumbnail}','${channelTitle.replace(/'/g,"\\'")}')"><i class="fas fa-plus"></i></button>
+                            `;
+                            grid.appendChild(div);
+                        });
+                    } else {
+                        hasMoreHomeContent = false;
+                    }
                 } else {
-                    // Tek sayfalarda yerel popüler müzik
-                    const allPopular = getLocalPopularMusic();
-                    const startIndex = (homeScrollPage - 1) * 8;
-                    newContent = allPopular.slice(startIndex, startIndex + 8);
-                    console.log(`🎵 Loading more popular music...`);
+                    // API token yok, arama API'siyle farklı şarkılar çek
+                    const queries = ['türkçe pop 2024', 'türkçe rap 2024', 'en çok dinlenen 2024', 'yeni çıkan şarkılar', 'türkçe müzik'];
+                    const q = queries[homeScrollPage % queries.length];
+                    const results = await searchYouTubeMusic(q, 12);
+                    document.getElementById('home-load-more')?.remove();
+
+                    if (results && results.length > 0) {
+                        displayResults(results, true);
+                    } else {
+                        hasMoreHomeContent = false;
+                    }
                 }
-                
-                if (newContent && newContent.length > 0) {
-                    // Yeni içeriği ekle
-                    displayResults(newContent, true);
-                    showNotification(`${newContent.length} yeni şarkı yüklendi`, 'info');
-                } else {
-                    hasMoreHomeContent = false;
-                    showNotification('Tüm müzikler yüklendi', 'info');
-                }
-                
             } catch (error) {
-                console.error('❌ Error loading more content:', error);
+                document.getElementById('home-load-more')?.remove();
                 hasMoreHomeContent = false;
             } finally {
                 isLoadingMore = false;
@@ -3201,31 +3234,52 @@
         function addToPlaylist(videoId, title, thumbnail, artist) {
             const currentUser = localStorage.getItem('h_sound_username');
             const userPlaylists = JSON.parse(localStorage.getItem(`h_sound_playlists_${currentUser}`) || '[]');
-            
+
             if (userPlaylists.length === 0) {
-                showNotification('Önce bir çalma listesi oluşturun!', 'warning');
+                // Liste yoksa hızlıca oluştur ve ekle
+                const name = prompt('Çalma listesi adı girin:');
+                if (!name) return;
+                const newPlaylist = { name, songs: [{ videoId, title, thumbnail, artist }] };
+                userPlaylists.push(newPlaylist);
+                localStorage.setItem(`h_sound_playlists_${currentUser}`, JSON.stringify(userPlaylists));
+                showNotification(`"${title}" yeni liste "${name}"e eklendi!`, 'success');
                 return;
             }
-            
-            // Show playlist selection modal
+
+            // Mevcut listelerden seç
             const modal = document.createElement('div');
             modal.className = 'modal';
             modal.innerHTML = `
                 <div class="modal-content">
                     <button class="modal-close-btn" onclick="this.parentElement.parentElement.remove()">&times;</button>
                     <h3 style="margin-top: 0; color: var(--primary-color);"><i class="fas fa-plus"></i> Çalma Listesine Ekle</h3>
-                    <p><strong>${title}</strong> - ${artist}</p>
-                    <div style="max-height: 300px; overflow-y: auto;">
-                        ${userPlaylists.map((playlist, index) => `
-                            <button class="btn" onclick="addSongToPlaylist(${index}, '${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${artist.replace(/'/g, "\\'")}'); this.parentElement.parentElement.parentElement.remove();" 
-                                    style="width: 100%; margin: 5px 0; text-align: left;">
-                                <i class="fas fa-compact-disc"></i> ${playlist.name} (${playlist.songs.length} şarkı)
+                    <p style="color:var(--secondary-text-color);margin-bottom:15px;"><strong>${title}</strong></p>
+                    <div style="max-height: 300px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
+                        ${userPlaylists.map((pl, index) => `
+                            <button class="btn" onclick="addSongToPlaylist(${index}, '${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${artist.replace(/'/g, "\\'")}'); this.closest('.modal').remove();"
+                                    style="width:100%;text-align:left;">
+                                <i class="fas fa-compact-disc"></i> ${pl.name} <span style="opacity:0.6;font-size:12px;">(${pl.songs.length} şarkı)</span>
                             </button>
                         `).join('')}
+                        <button class="btn btn-secondary" onclick="
+                            const n=prompt('Yeni liste adı:');
+                            if(n){addSongToNewPlaylist('${videoId}','${title.replace(/'/g, "\\'")}','${thumbnail}','${artist.replace(/'/g, "\\'")}',n);}
+                            this.closest('.modal').remove();"
+                            style="width:100%;text-align:left;">
+                            <i class="fas fa-plus"></i> Yeni Liste Oluştur
+                        </button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
+        }
+
+        function addSongToNewPlaylist(videoId, title, thumbnail, artist, name) {
+            const currentUser = localStorage.getItem('h_sound_username');
+            const userPlaylists = JSON.parse(localStorage.getItem(`h_sound_playlists_${currentUser}`) || '[]');
+            userPlaylists.push({ name, songs: [{ videoId, title, thumbnail, artist }] });
+            localStorage.setItem(`h_sound_playlists_${currentUser}`, JSON.stringify(userPlaylists));
+            showNotification(`"${title}" yeni liste "${name}"e eklendi!`, 'success');
         }
 
         function addSongToPlaylist(playlistIndex, videoId, title, thumbnail, artist) {
@@ -3587,6 +3641,7 @@
             
             // Show player
             playerFooter.classList.remove('hidden');
+            initModeBtn();
             
             // Mevcut görünümdeki tüm şarkıları playlist'e ekle
             updatePlaylistFromCurrentView();
@@ -3949,15 +4004,15 @@
                     console.log('🔚 YouTube music ended:', title);
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     isPlaying = false;
-                    
-                    // Sonraki şarkıya geç
-                    if (currentSongIndex < playlist.length - 1) {
-                        showNotification('Sonraki şarkıya geçiliyor...', 'info');
+
+                    if (playMode === 'repeat-one') {
+                        // Aynı şarkıyı tekrar çal
                         setTimeout(() => {
-                            playNextSong();
-                        }, 1000);
+                            const cur = playlist[currentSongIndex];
+                            if (cur) playSong(cur.videoId, cur.title, cur.thumbnail, cur.artist);
+                        }, 500);
                     } else {
-                        showNotification('Çalma listesi tamamlandı', 'info');
+                        setTimeout(() => playNextSong(), 1000);
                     }
                     break;
                     
@@ -4040,38 +4095,31 @@
             return searchLocalMusic(query, maxResults);
         }
 
-        // YouTube API ile popüler müzikleri getir - Çoklu API Key
-        async function getYouTubePopularMusic(maxResults = 12) {
-            // Tüm API keylerini dene
+        // Her yenilemede farklı bölge - şarkılar değişsin
+        const REGION_ROTATION = ['TR', 'US', 'GB', 'DE', 'FR', 'KR', 'JP', 'BR'];
+        let regionIndex = 0;
+
+        // YouTube API ile popüler müzikleri getir - pageToken ile sayfalama desteği
+        async function getYouTubePopularMusic(maxResults = 24, pageToken = '') {
             for (let attempt = 0; attempt < YOUTUBE_API_KEYS.length; attempt++) {
                 try {
                     const apiKey = getNextApiKey();
-                    console.log(`�n YouTube API ile popüler müzikler getiriliyor... (API Key ${currentApiKeyIndex + 1})`);
-                    
-                    const popularUrl = `${YOUTUBE_API_BASE_URL}/videos?` +
+                    const region = REGION_ROTATION[regionIndex % REGION_ROTATION.length];
+                    let popularUrl = `${YOUTUBE_API_BASE_URL}/videos?` +
                         `part=snippet&` +
                         `chart=mostPopular&` +
-                        `videoCategoryId=10&` + // Music category
-                        `regionCode=TR&` + // Turkey region
+                        `videoCategoryId=10&` +
+                        `regionCode=${region}&` +
                         `maxResults=${maxResults}&` +
                         `key=${apiKey}`;
+                    if (pageToken) popularUrl += `&pageToken=${pageToken}`;
 
                     const response = await fetch(popularUrl);
-                    
-                    if (response.status === 403) {
-                        console.log(`⚠️ API Key ${currentApiKeyIndex + 1} quota exceeded, trying next...`);
-                        rotateApiKey();
-                        continue; // Try next API key
-                    }
-                    
-                    if (!response.ok) {
-                        console.log(`⚠️ YouTube API returned ${response.status}, trying next key...`);
-                        rotateApiKey();
-                        continue;
-                    }
+
+                    if (response.status === 403) { rotateApiKey(); continue; }
+                    if (!response.ok) { rotateApiKey(); continue; }
 
                     const data = await response.json();
-                    console.log(`✅ YouTube Popular Music Response (Key ${currentApiKeyIndex + 1}):`, data);
 
                     if (data.items && data.items.length > 0) {
                         const results = data.items.map(item => ({
@@ -4079,30 +4127,17 @@
                             title: cleanTitle(item.snippet.title),
                             artist: extractArtist(item.snippet.title, item.snippet.channelTitle),
                             thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                            channelTitle: item.snippet.channelTitle,
-                            publishedAt: item.snippet.publishedAt,
-                            description: item.snippet.description
+                            channelTitle: item.snippet.channelTitle
                         }));
-
-                        console.log(`🎵 Found ${results.length} popular YouTube music`);
+                        results._nextPageToken = data.nextPageToken || null;
                         return results;
                     } else {
-                        console.log('❌ No popular music found, trying next key...');
-                        rotateApiKey();
-                        continue;
+                        rotateApiKey(); continue;
                     }
-
                 } catch (error) {
-                    console.log(`❌ YouTube Popular Music API Error (Key ${currentApiKeyIndex + 1}):`, error.message);
-                    if (attempt < YOUTUBE_API_KEYS.length - 1) {
-                        rotateApiKey();
-                        continue; // Try next API key
-                    }
+                    if (attempt < YOUTUBE_API_KEYS.length - 1) { rotateApiKey(); continue; }
                 }
             }
-            
-            // All API keys failed, use local popular music
-            console.log('🔄 All YouTube API keys failed, using local popular music...');
             return getLocalPopularMusic();
         }
 
@@ -4432,6 +4467,36 @@
                     showNotification('Duraklatıldı', 'info');
                 }
             }
+        }
+
+        // Mod sırası: normal → repeat-all → repeat-one → shuffle → normal
+        const PLAY_MODES = [
+            { key: 'normal',     icon: '<i class="fas fa-list-ul"></i>',  label: 'Sırayla',         cls: '' },
+            { key: 'repeat-all', icon: '<i class="fas fa-redo"></i>',     label: 'Tümünü Tekrarla', cls: 'active' },
+            { key: 'repeat-one', icon: '<i class="fas fa-redo"></i><span style="font-size:9px;position:absolute;bottom:1px;right:1px;font-weight:900;line-height:1">1</span>', label: 'Şarkıyı Tekrarla', cls: 'active-orange' },
+            { key: 'shuffle',    icon: '<i class="fas fa-random"></i>',   label: 'Karışık',         cls: 'active' }
+        ];
+
+        function cyclePlayMode() {
+            const btn = document.getElementById('mode-btn');
+            const currentIdx = PLAY_MODES.findIndex(m => m.key === playMode);
+            const next = PLAY_MODES[(currentIdx + 1) % PLAY_MODES.length];
+            playMode = next.key;
+            btn.innerHTML = next.icon;
+            btn.className = `control-btn mode-btn ${next.cls}`;
+            btn.style.position = 'relative';
+            btn.title = next.label;
+            showNotification(next.label, 'info');
+        }
+
+        function initModeBtn() {
+            const btn = document.getElementById('mode-btn');
+            if (!btn) return;
+            const m = PLAY_MODES.find(m => m.key === playMode) || PLAY_MODES[0];
+            btn.innerHTML = m.icon;
+            btn.className = `control-btn mode-btn ${m.cls}`;
+            btn.style.position = 'relative';
+            btn.title = m.label;
         }
 
         function playNextSong() {
@@ -5285,18 +5350,6 @@
 
 
         // Playlist'e ekle (basit versiyon)
-        function addToPlaylist(videoId, title, thumbnail, artist) {
-            // Şu an için sadece mevcut playlist'e ekle
-            playlist.push({
-                videoId: videoId,
-                title: title,
-                thumbnail: thumbnail,
-                artist: artist
-            });
-            
-            showNotification(`"${title}" çalma listesine eklendi!`, 'success');
-        }
-
         // Bildirim sistemi
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
