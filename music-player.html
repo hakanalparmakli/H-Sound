@@ -2551,44 +2551,40 @@
             isLoadingMore = false;
             hasMoreHomeContent = true;
 
-            // İlk yüklemede TR popüler, yenilemede arama sorgusu kullan
-            let apiResults;
-            if (refreshQueryIndex > 0) {
-                const q = REFRESH_QUERIES[(refreshQueryIndex - 1) % REFRESH_QUERIES.length];
-                apiResults = await searchYouTubeMusic(q, 24);
-                // searchYouTubeMusic farklı format döndürüyor, normalize et
-                if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
-                    apiResults = apiResults.map(s => ({ ...s, _nextPageToken: null }));
-                }
-            } else {
-                apiResults = await getYouTubePopularMusic(24, '');
-            }
-
-            homeContent.innerHTML = '';
-
-            if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
-                homeNextPageToken = apiResults._nextPageToken || null;
-                const items = apiResults.map(song => ({
-                    id: { videoId: song.videoId },
-                    snippet: {
-                        title: song.title,
-                        channelTitle: song.artist || song.channelTitle,
-                        thumbnails: { medium: { url: song.thumbnail } }
+            try {
+                let apiResults;
+                if (refreshQueryIndex > 0) {
+                    const q = REFRESH_QUERIES[(refreshQueryIndex - 1) % REFRESH_QUERIES.length];
+                    apiResults = await searchYouTubeMusic(q, 24);
+                    if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
+                        apiResults = apiResults.map(s => ({ ...s, _nextPageToken: null }));
                     }
-                }));
-                displayHomeResults(items);
-                showNotification(`${items.length} şarkı yüklendi!`, 'success');
-            } else {
-                homeContent.innerHTML = `
-                    <div class="no-content-message" style="grid-column:1/-1;">
-                        <i class="fas fa-wifi" style="font-size:48px;color:var(--primary-color);margin-bottom:20px;"></i>
-                        <h3>Şarkılar yüklenemedi</h3>
-                        <p>Lütfen uygulamayı bir HTTP sunucusu üzerinden açın veya internet bağlantınızı kontrol edin.</p>
-                        <button class="btn" onclick="refreshHomePage()" style="margin-top:15px;">
-                            <i class="fas fa-sync-alt"></i> Tekrar Dene
-                        </button>
-                    </div>`;
+                } else {
+                    apiResults = await getYouTubePopularMusic(24, '');
+                }
+
+                homeContent.innerHTML = '';
+
+                if (apiResults && apiResults.length > 0 && apiResults[0].videoId) {
+                    homeNextPageToken = apiResults._nextPageToken || null;
+                    const items = apiResults.map(song => ({
+                        id: { videoId: song.videoId },
+                        snippet: {
+                            title: song.title,
+                            channelTitle: song.artist || song.channelTitle,
+                            thumbnails: { medium: { url: song.thumbnail } }
+                        }
+                    }));
+                    displayHomeResults(items);
+                    showNotification(`${items.length} şarkı yüklendi!`, 'success');
+                } else {
+                    displayResults(localMusicDatabase['popular music'], false);
+                }
+            } catch(e) {
+                homeContent.innerHTML = '';
+                displayResults(localMusicDatabase['popular music'], false);
             }
+
             setupInfiniteScroll();
         }
 
