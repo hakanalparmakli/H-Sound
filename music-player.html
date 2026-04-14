@@ -5368,9 +5368,11 @@
             }
 
             try {
-                // activeChatDocId henüz set edilmediyse kısa bekle
-                if (!activeChatDocId) {
-                    await new Promise(r => setTimeout(r, 2000));
+                // activeChatDocId hazır olana kadar bekle (max 5 saniye)
+                let waited = 0;
+                while (!activeChatDocId && waited < 5000) {
+                    await new Promise(r => setTimeout(r, 200));
+                    waited += 200;
                 }
                 if (!activeChatDocId) throw new Error('Chat doc not ready');
                 await window.db.collection('mesajlar').doc(activeChatDocId)
@@ -5380,7 +5382,7 @@
                     .catch(() => {});
             } catch(e) {
                 console.error('sendMessage:', e);
-                // Fallback: anlık göster
+                // Fallback: mesajı anlık göster
                 const chatMessages = document.getElementById('chat-messages');
                 if (chatMessages) {
                     const empty = chatMessages.querySelector('div');
@@ -5388,6 +5390,7 @@
                     renderMessage(msg, currentUser, chatMessages);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
+                showNotification('Mesaj gönderilemedi, tekrar deneyin', 'error');
             }
         }
 
@@ -5806,39 +5809,6 @@
             closeModal('music-share-modal');
             loadMessages(currentChatFriend);
             showNotification(`Müzik ${currentChatFriend} ile paylaşıldı!`, 'success');
-        }
-
-        // Mesaj gönder (Gerçek hesaplar arası)
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            const currentUser = localStorage.getItem('h_sound_username');
-            
-            if (!text || !currentChatFriend || !currentUser) return;
-            
-            const chatKey = `h_sound_chat_${currentUser}_${currentChatFriend}`;
-            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
-            
-            const newMessage = {
-                text: text,
-                sender: currentUser,
-                type: 'text',
-                timestamp: new Date().toISOString()
-            };
-            
-            messages.push(newMessage);
-            localStorage.setItem(chatKey, JSON.stringify(messages));
-            
-            // Arkadaşın sohbet geçmişine de ekle (karşılıklı sohbet için)
-            const friendChatKey = `h_sound_chat_${currentChatFriend}_${currentUser}`;
-            const friendMessages = JSON.parse(localStorage.getItem(friendChatKey) || '[]');
-            friendMessages.push(newMessage);
-            localStorage.setItem(friendChatKey, JSON.stringify(friendMessages));
-            
-            input.value = '';
-            loadMessages(currentChatFriend);
-            
-            showNotification(`Mesaj ${currentChatFriend} kullanıcısına gönderildi`, 'success');
         }
 
         // CSS animasyonu ekle
