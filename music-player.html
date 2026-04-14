@@ -5509,10 +5509,10 @@
         async function shareMusic(videoId, title, thumbnail) {
             if (!currentChatFriend) return;
             const currentUser = localStorage.getItem('h_sound_username');
-            const chatId = getChatId(currentUser, currentChatFriend);
             const msg = {
                 text: `🎵 ${title}`,
                 sender: currentUser,
+                gonderen: currentUser,
                 type: 'music',
                 musicVideoId: videoId,
                 musicTitle: title,
@@ -5520,17 +5520,36 @@
                 timestamp: new Date().toISOString()
             };
 
+            closeModal('music-share-modal');
+
             if (window.db && location.protocol !== 'file:') {
                 try {
-                    await window.db.collection('chats').doc(chatId).collection('messages').add(msg);
-                } catch(e) { saveMessageLocal(chatId, msg); }
+                    // activeChatDocId hazır olana kadar bekle
+                    let waited = 0;
+                    while (!activeChatDocId && waited < 5000) {
+                        await new Promise(r => setTimeout(r, 200));
+                        waited += 200;
+                    }
+                    if (activeChatDocId) {
+                        await window.db.collection('mesajlar').doc(activeChatDocId)
+                            .collection('sohbet').add(msg);
+                        window.db.collection('mesajlar').doc(activeChatDocId)
+                            .update({ sonMesaj: `🎵 ${title}`, sonMesajGönderen: currentUser, sonMesajZamanı: new Date() })
+                            .catch(() => {});
+                        showNotification(`${title} paylaşıldı!`, 'success');
+                    } else {
+                        throw new Error('no doc');
+                    }
+                } catch(e) {
+                    const chatId = getChatId(currentUser, currentChatFriend);
+                    saveMessageLocal(chatId, msg);
+                    showNotification(`${title} paylaşıldı!`, 'success');
+                }
             } else {
+                const chatId = getChatId(currentUser, currentChatFriend);
                 saveMessageLocal(chatId, msg);
+                showNotification(`${title} paylaşıldı!`, 'success');
             }
-
-            closeModal('music-share-modal');
-            loadMessages(currentChatFriend);
-            showNotification(`${title} paylaşıldı!`, 'success');
         }
 
         // Gizlilik politikasını kabul et
