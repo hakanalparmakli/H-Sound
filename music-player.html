@@ -5223,7 +5223,7 @@
             return [user1, user2].sort().join('_');
         }
 
-        function loadMessages(friendName) {
+        async function loadMessages(friendName) {
             const currentUser = localStorage.getItem('h_sound_username');
             const chatMessages = document.getElementById('chat-messages');
             if (!chatMessages) return;
@@ -5231,33 +5231,111 @@
             if (chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
             activeChatDocId = null;
 
-            if (window.db && location.protocol !== 'file:') {
-                chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:20px;font-size:13px;">Bağlanıyor...</div>';
+            chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:20px;">Yükleniyor...</div>';
 
-                getOrCreateChatDoc(currentUser, friendName).then(docId => {
-                    if (!docId) { loadMessagesLocal(currentUser, friendName, chatMessages); return; }
-                    activeChatDocId = docId;
-
-                    chatUnsubscribe = window.db.collection('mesajlar').doc(docId)
-                        .collection('sohbet')
-                        .onSnapshot(snap => {
-                            const msgs = [];
-                            snap.forEach(doc => msgs.push(doc.data()));
-                            msgs.sort((a, b) => new Date(a.timestamp || a.zaman) - new Date(b.timestamp || b.zaman));
-                            chatMessages.innerHTML = '';
-                            if (msgs.length === 0) {
-                                chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:30px;font-size:14px;">Henüz mesaj yok. İlk mesajı sen gönder!</div>';
-                            } else {
-                                msgs.forEach(msg => renderMessage(msg, currentUser, chatMessages));
-                            }
-                            chatMessages.scrollTop = chatMessages.scrollHeight;
-                        }, err => {
-                            console.error('onSnapshot error:', err);
-                            loadMessagesLocal(currentUser, friendName, chatMessages);
-                        });
-                });
-            } else {
+            if (!window.db || location.protocol === 'file:') {
                 loadMessagesLocal(currentUser, friendName, chatMessages);
+                return;
+            }
+
+            try {
+                // Mevcut sohbeti bul
+                const snap = await window.db.collection('mesajlar')
+                    .where('katılımcılar', 'array-contains', currentUser).get();
+
+                let docId = null;
+                snap.forEach(doc => {
+                    if ((doc.data().katılımcılar || []).includes(friendName)) docId = doc.id;
+                });
+
+                // Yoksa oluştur
+                if (!docId) {
+                    const ref = await window.db.collection('mesajlar').add({
+                        sonMesaj: '',
+                        katılımcılar: [currentUser, friendName],
+                        'Katılımcı İsimleri': [currentUser, friendName],
+                        sonMesajZamanı: new Date()
+                    });
+                    docId = ref.id;
+                }
+
+                activeChatDocId = docId;
+
+                // Gerçek zamanlı dinle
+                chatUnsubscribe = window.db.collection('mesajlar').doc(docId)
+                    .collection('sohbet')
+                    .onSnapshot(snap => {
+                        const msgs = [];
+                        snap.forEach(d => msgs.push(d.data()));
+                        msgs.sort((a, b) => new Date(a.timestamp || a.zaman || 0) - new Date(b.timestamp || b.zaman || 0));
+                        chatMessages.innerHTML = '';
+                        if (msgs.length === 0) {
+                            chatMessages.innerHTML = '<div style="text-align:center;color:var(--secondary-text-color);padding:30px;">Henüz mesaj yok. İlk mesajı sen gönder!</div>';
+                        } else {
+                            msgs.forEach(msg => renderMessage(msg, currentUser, chatMessages));
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    }, err => {
+                        console.error('onSnapshot:', err);
+                        loadMessagesLocal(currentUser, friendName, chatMessages);
+                    });
+
+            } catch(err) {
+                console.error('loadMessages:', err);
+                loadMessagesLocal(currentUser, friendName, chatMessages);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input?.value.trim();
+            if (!text || !currentChatFriend) return;
+
+            const currentUser = localStorage.getItem('h_sound_username');
+            input.value = '';
+
+            const msg = {
+                text,
+                sender: currentUser,
+                gonderen: currentUser,
+                type: 'text',
+                timestamp: new Date().toISOString(),
+                zaman: new Date().toISOString()
+            };
+
+            if (!window.db || location.protocol === 'file:') {
+                const chatId = getChatId(currentUser, currentChatFriend);
+                saveMessageLocal(chatId, msg);
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    const empty = chatMessages.querySelector('div');
+                    if (empty?.textContent.includes('Henüz')) empty.remove();
+                    renderMessage(msg, currentUser, chatMessages);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+                return;
+            }
+
+            try {
+                // activeChatDocId henüz set edilmediyse bekle (loadMessages async)
+                if (!activeChatDocId) {
+                    await loadMessages(currentChatFriend);
+                }
+                await window.db.collection('mesajlar').doc(activeChatDocId)
+                    .collection('sohbet').add(msg);
+                window.db.collection('mesajlar').doc(activeChatDocId)
+                    .update({ sonMesaj: text, sonMesajGönderen: currentUser, sonMesajZamanı: new Date() })
+                    .catch(() => {});
+            } catch(e) {
+                console.error('sendMessage:', e);
+                // Fallback: anlık göster
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    const empty = chatMessages.querySelector('div');
+                    if (empty?.textContent.includes('Henüz')) empty.remove();
+                    renderMessage(msg, currentUser, chatMessages);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
             }
         }
 
@@ -5299,59 +5377,6 @@
             timeEl.textContent = ts ? new Date(ts).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}) : '';
             el.appendChild(timeEl);
             container.appendChild(el);
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const text = input?.value.trim();
-            if (!text || !currentChatFriend) return;
-
-            const currentUser = localStorage.getItem('h_sound_username');
-            const msg = {
-                text,
-                sender: currentUser,
-                gonderen: currentUser,
-                type: 'text',
-                timestamp: new Date().toISOString(),
-                zaman: new Date().toISOString()
-            };
-
-            input.value = '';
-
-            if (window.db && location.protocol !== 'file:') {
-                try {
-                    // activeChatDocId yoksa bul
-                    if (!activeChatDocId) {
-                        activeChatDocId = await getOrCreateChatDoc(currentUser, currentChatFriend);
-                    }
-                    if (activeChatDocId) {
-                        await window.db.collection('mesajlar').doc(activeChatDocId)
-                            .collection('sohbet').add(msg);
-                        // Son mesaj bilgisini güncelle
-                        window.db.collection('mesajlar').doc(activeChatDocId).update({
-                            sonMesaj: text,
-                            sonMesajGönderen: currentUser,
-                            sonMesajZamanı: new Date()
-                        }).catch(() => {});
-                    }
-                } catch(e) {
-                    console.error('Send error:', e);
-                    const chatId = getChatId(currentUser, currentChatFriend);
-                    saveMessageLocal(chatId, msg);
-                    const chatMessages = document.getElementById('chat-messages');
-                    if (chatMessages) { renderMessage(msg, currentUser, chatMessages); chatMessages.scrollTop = chatMessages.scrollHeight; }
-                }
-            } else {
-                const chatId = getChatId(currentUser, currentChatFriend);
-                saveMessageLocal(chatId, msg);
-                const chatMessages = document.getElementById('chat-messages');
-                if (chatMessages) {
-                    const empty = chatMessages.querySelector('div');
-                    if (empty?.textContent.includes('Henüz')) empty.remove();
-                    renderMessage(msg, currentUser, chatMessages);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-            }
         }
 
         function saveMessageLocal(chatId, msg) {
