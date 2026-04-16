@@ -5708,38 +5708,6 @@
             closeModal('add-friend-modal');
         }
 
-        // Müzik paylaş (Gerçek hesaplar arası)
-        function shareMusic(videoId, title, thumbnail) {
-            const currentUser = localStorage.getItem('h_sound_username');
-            if (!currentChatFriend || !currentUser) return;
-            
-            const chatKey = `h_sound_chat_${currentUser}_${currentChatFriend}`;
-            const messages = JSON.parse(localStorage.getItem(chatKey) || '[]');
-            
-            const musicMessage = {
-                text: `🎵 ${title}`,
-                sender: currentUser,
-                type: 'music',
-                musicVideoId: videoId,
-                musicTitle: title,
-                musicThumbnail: thumbnail,
-                timestamp: new Date().toISOString()
-            };
-            
-            messages.push(musicMessage);
-            localStorage.setItem(chatKey, JSON.stringify(messages));
-            
-            // Arkadaşın sohbet geçmişine de ekle
-            const friendChatKey = `h_sound_chat_${currentChatFriend}_${currentUser}`;
-            const friendMessages = JSON.parse(localStorage.getItem(friendChatKey) || '[]');
-            friendMessages.push(musicMessage);
-            localStorage.setItem(friendChatKey, JSON.stringify(friendMessages));
-            
-            closeModal('music-share-modal');
-            loadMessages(currentChatFriend);
-            showNotification(`Müzik ${currentChatFriend} ile paylaşıldı!`, 'success');
-        }
-
         // CSS animasyonu ekle
         const style = document.createElement('style');
         style.textContent = `
