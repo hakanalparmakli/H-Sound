@@ -4119,7 +4119,54 @@
         // YouTube Player kontrollerini ayarla
         function setupYouTubePlayerControls(player, title) {
             console.log('🎛️ Setting up YouTube player controls for:', title);
-            
+
+            // ── MediaSession API - Arka plan müzik kontrolü ──────────────
+            if ('mediaSession' in navigator) {
+                const currentSong = playlist[currentSongIndex] || {};
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: title,
+                    artist: currentSong.artist || 'H-Sound',
+                    album: 'H-Sound',
+                    artwork: currentSong.thumbnail ? [
+                        { src: currentSong.thumbnail, sizes: '300x300', type: 'image/jpeg' }
+                    ] : []
+                });
+                navigator.mediaSession.setActionHandler('play', () => {
+                    try { player.playVideo(); } catch(e) {}
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    try { player.pauseVideo(); } catch(e) {}
+                });
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    playPrevSong();
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    playNextSong();
+                });
+                navigator.mediaSession.setActionHandler('seekto', (details) => {
+                    try { player.seekTo(details.seekTime, true); } catch(e) {}
+                });
+                console.log('🎵 MediaSession API aktif - arka plan müzik kontrolü hazır');
+            }
+
+            // ── Sayfa gizlenince müziği durdurma - arka planda çalmaya devam et ──
+            document.removeEventListener('visibilitychange', window._visibilityHandler);
+            window._visibilityHandler = () => {
+                // Sayfa gizlenince hiçbir şey yapma - müzik çalmaya devam etsin
+                if (document.hidden) {
+                    console.log('📱 Sayfa arka plana geçti - müzik devam ediyor');
+                    // MediaSession state'i güncelle
+                    if ('mediaSession' in navigator) {
+                        try {
+                            const state = player.getPlayerState();
+                            navigator.mediaSession.playbackState = (state === YT.PlayerState.PLAYING) ? 'playing' : 'paused';
+                        } catch(e) {}
+                    }
+                }
+            };
+            document.addEventListener('visibilitychange', window._visibilityHandler);
+            // ─────────────────────────────────────────────────────────────
+
             // Play/Pause buton kontrolü
             const playPauseBtn = document.getElementById('play-pause-btn');
             
@@ -4200,6 +4247,7 @@
                     console.log('🎵 YouTube music playing:', title);
                     playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     isPlaying = true;
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                     showNotification(`"${title}" çalıyor`, 'success');
                     break;
                     
@@ -4207,15 +4255,16 @@
                     console.log('⏸️ YouTube music paused:', title);
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     isPlaying = false;
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                     break;
                     
                 case YT.PlayerState.ENDED:
                     console.log('🔚 YouTube music ended:', title);
                     playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     isPlaying = false;
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none';
 
                     if (playMode === 'repeat-one') {
-                        // Aynı şarkıyı tekrar çal
                         setTimeout(() => {
                             const cur = playlist[currentSongIndex];
                             if (cur) playSong(cur.videoId, cur.title, cur.thumbnail, cur.artist);
