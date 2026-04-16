@@ -356,6 +356,31 @@
             border-radius: 50%;
         }
 
+        /* Benzer Şarkılar butonu */
+        .similar-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(155, 89, 182, 0.9);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(5px);
+        }
+        .result-item:hover .similar-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        @media (max-width: 768px) {
+            .similar-btn { opacity: 1; transform: translateY(0); position: static; margin: 3px; display: inline-block; }
+        }
+
         .progress-container {
             flex: 1;
             max-width: 30%;
@@ -2034,6 +2059,28 @@
         let playerReady = false;
         // Çalma modu: 'normal' | 'repeat-one' | 'repeat-all' | 'shuffle'
         let playMode = 'normal';
+
+        // Sayfa geçmişi stack
+        const pageHistory = [];
+
+        function navigateTo(fn) {
+            pageHistory.push(currentView);
+            fn();
+        }
+
+        function goBack() {
+            const prev = pageHistory.pop();
+            if (!prev) { showHomePage(); return; }
+            switch(prev) {
+                case 'home': showHomePage(); break;
+                case 'search': showSearchPage(); break;
+                case 'playlists': showPlaylistsPage(); break;
+                case 'friends': showFriendsPage(); break;
+                case 'downloads': showDownloadsPage(); break;
+                case 'settings': showSettingsPage(); break;
+                default: showHomePage();
+            }
+        }
         
         // Language and infinite scroll variables
         let currentLanguage = localStorage.getItem('h_sound_language') || 'turkish';
@@ -2485,6 +2532,9 @@
                         <button class="add-to-playlist-btn" onclick="event.stopPropagation(); addToPlaylist('${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${channelTitle.replace(/'/g, "\\'")}')">
                             <i class="fas fa-plus"></i>
                         </button>
+                        <button class="similar-btn" onclick="event.stopPropagation(); showSimilarSongs('${title.replace(/'/g, "\\'")}', '${channelTitle.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
                 `;
             });
@@ -2708,13 +2758,16 @@
 
                 if (items.length > 0) {
                     items.forEach(song => {
+                        const safeT = (song.title||'').replace(/'/g,"\\'");
+                        const safeA = (song.artist||'').replace(/'/g,"\\'");
                         const div = document.createElement('div');
                         div.className = 'result-item';
-                        div.onclick = () => playSong(song.videoId, song.title, song.thumbnail, song.artist);
+                        div.setAttribute('onclick', `playSong('${song.videoId}','${safeT}','${song.thumbnail}','${safeA}')`);
                         div.innerHTML = `
                             <img src="${song.thumbnail}" alt="${song.title}" onerror="handleThumbnailError(this)">
                             <div class="item-title">${song.title}</div>
-                            <button class="add-to-playlist-btn" onclick="event.stopPropagation();addToPlaylist('${song.videoId}','${song.title.replace(/'/g,"\\'")}','${song.thumbnail}','${song.artist.replace(/'/g,"\\'")}')"><i class="fas fa-plus"></i></button>
+                            <button class="add-to-playlist-btn" onclick="event.stopPropagation();addToPlaylist('${song.videoId}','${safeT}','${song.thumbnail}','${safeA}')"><i class="fas fa-plus"></i></button>
+                            <button class="similar-btn" onclick="event.stopPropagation();showSimilarSongs('${safeT}','${safeA}')"><i class="fas fa-magic"></i></button>
                         `;
                         homeContent.appendChild(div);
                     });
@@ -3705,6 +3758,9 @@
                         <button class="download-song-btn" onclick="event.stopPropagation(); downloadSong('${videoId}', '${safeTitle}', '${thumbnail}', '${safeArtist}')">
                             <i class="fas fa-download"></i> İndir
                         </button>
+                        <button class="similar-btn" onclick="event.stopPropagation(); showSimilarSongs('${safeTitle}', '${safeArtist}')" title="Benzer Şarkılar">
+                            <i class="fas fa-magic"></i>
+                        </button>
                     </div>
                 `;
             });
@@ -3724,7 +3780,105 @@
             }
         }
 
-        // Music player functions - Gelişmiş Playlist Sistemi
+        // Benzer Şarkılar
+        async function showSimilarSongs(title, artist) {
+            // Önceki sayfayı kaydet
+            pageHistory.push(currentView);
+
+            currentView = 'similar';
+            setActiveLink(null);
+            searchContainer.classList.add('hidden');
+            clearContentArea();
+
+            contentArea.innerHTML = `
+                <div class="content-header">
+                    <h2><i class="fas fa-magic" style="color:#9b59b6;"></i> Benzer Şarkılar</h2>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span style="color:var(--secondary-text-color);font-size:13px;">"${title}" için</span>
+                        <button onclick="goBack()" class="search-btn" style="font-size:13px;">
+                            <i class="fas fa-arrow-left"></i> Geri
+                        </button>
+                    </div>
+                </div>
+                <div id="similar-loading" style="text-align:center;padding:40px;">
+                    <div class="loading-spinner"></div>
+                    <p style="color:var(--secondary-text-color);margin-top:15px;">Benzer şarkılar aranıyor...</p>
+                </div>
+                <div class="results-grid" id="similar-results"></div>
+            `;
+
+            // Şarkı tarzını tespit et
+            const lowerTitle = title.toLowerCase();
+            const lowerArtist = artist.toLowerCase();
+            let genre = 'türkçe müzik';
+            if (lowerArtist.match(/blok3|çakal|lvbel|ezhel|uzi|murda|ceza|şanışer|norm ender|ben fero|sagopa|contra|khontkar|joker|allame|hidra/)) {
+                genre = 'türkçe rap';
+            } else if (lowerTitle.match(/slow|hüzün|ağla|özlem|ayrılık/)) {
+                genre = 'türkçe slow';
+            } else if (lowerTitle.match(/dans|party|eğlen|gece/)) {
+                genre = 'türkçe pop';
+            }
+
+            // Tarz bazlı sorgular - playlist/compilation değil tek şarkılar
+            const queries = [
+                `${genre} official video`,
+                `${genre} official audio`,
+                `${genre} official music video`
+            ];
+
+            try {
+                const [r1, r2, r3] = await Promise.all([
+                    invidiousSearch(queries[0], 10),
+                    invidiousSearch(queries[1], 10),
+                    invidiousSearch(queries[2], 8)
+                ]);
+
+                const combined = [...r1, ...r2, ...r3]
+                    .filter((s, i, arr) => {
+                        if (!s.videoId) return false;
+                        // Playlist/compilation filtrele
+                        const t = (s.title || '').toLowerCase();
+                        if (t.match(/playlist|compilation|mix.*saat|non.?stop|karışık|full album|en iyi.*şarkı/)) return false;
+                        // Tekrar eden videoId'leri filtrele
+                        return arr.findIndex(x => x.videoId === s.videoId) === i;
+                    })
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 24);
+
+                document.getElementById('similar-loading')?.remove();
+                const grid = document.getElementById('similar-results');
+                if (!grid) return;
+
+                if (combined.length === 0) {
+                    grid.innerHTML = '<div class="no-content-message" style="grid-column:1/-1;">Benzer şarkı bulunamadı.</div>';
+                    return;
+                }
+
+                combined.forEach(song => {
+                    const safeTitle = (song.title || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                    const safeArtist = (song.artist || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    // onclick attribute olarak ekle - updatePlaylistFromCurrentView okuyabilsin
+                    div.setAttribute('onclick', `playSong('${song.videoId}','${safeTitle}','${song.thumbnail}','${safeArtist}')`);
+                    div.innerHTML = `
+                        <img src="${song.thumbnail}" alt="${song.title}" onerror="handleThumbnailError(this)">
+                        <div class="item-title">${song.title}</div>
+                        <button class="add-to-playlist-btn" onclick="event.stopPropagation();addToPlaylist('${song.videoId}','${safeTitle}','${song.thumbnail}','${safeArtist}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="similar-btn" onclick="event.stopPropagation();showSimilarSongs('${safeTitle}','${safeArtist}')" title="Benzer Şarkılar">
+                            <i class="fas fa-magic"></i>
+                        </button>
+                    `;
+                    grid.appendChild(div);
+                });
+
+            } catch(e) {
+                document.getElementById('similar-loading')?.remove();
+                contentArea.innerHTML += '<div class="no-content-message">Arama sırasında hata oluştu.</div>';
+            }
+        }
         function playSong(videoId, title, thumbnail, artist = 'Bilinmeyen Sanatçı') {
             console.log(`🎵 Playing song: ${title} by ${artist} (ID: ${videoId})`);
             
