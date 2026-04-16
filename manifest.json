@@ -2,7 +2,7 @@
   "name": "H-Sound",
   "short_name": "H-Sound",
   "description": "Müzik dinleme ve paylaşma platformu",
-  "start_url": "music-player.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0a0a1a",
   "theme_color": "#00bcd4",

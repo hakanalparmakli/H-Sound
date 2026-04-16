@@ -249,6 +249,13 @@
                 }
 
                 const userData = usersSnapshot.docs[0].data();
+                
+                // Banlı veya silinmiş kullanıcı kontrolü
+                if (userData.banned || userData.deleted) {
+                    alert('❌ Hesabınız askıya alınmış veya silinmiş. Lütfen yönetici ile iletişime geçin.');
+                    return;
+                }
+                
                 const userCredential = await auth.signInWithEmailAndPassword(userData.email, password);
                 const userDocRef = await db.collection('users').doc(userCredential.user.uid).get();
                 const userRole = userDocRef.exists ? userDocRef.data().role : 'user';

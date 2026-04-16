@@ -6200,8 +6200,8 @@
                 loginScreen.classList.add('hidden');
                 mainApp.style.display = 'flex';
             } else {
-                loginScreen.classList.remove('hidden');
-                mainApp.style.display = 'none';
+                // login.html'e yönlendir
+                window.location.replace('login.html');
             }
         }
 
