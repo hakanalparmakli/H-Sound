@@ -5878,12 +5878,43 @@
                     deferredInstallPrompt = null;
                 });
             } else {
-                // Tarayıcı install prompt desteklemiyorsa manuel talimat ver
                 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
                 if (isIOS) {
-                    alert('iPhone/iPad için:\nSafari\'de aç → Alt menüden "Paylaş" → "Ana Ekrana Ekle"');
+                    // iOS için modal göster
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.style.zIndex = '9999';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="max-width:360px;text-align:center;">
+                            <button class="modal-close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+                            <i class="fas fa-mobile-alt" style="font-size:48px;color:var(--primary-color);margin-bottom:15px;display:block;"></i>
+                            <h3 style="margin-top:0;">iPhone/iPad'e Ekle</h3>
+                            <p style="color:var(--secondary-text-color);font-size:14px;line-height:1.6;">
+                                1. Alttaki <strong style="color:white;">Paylaş</strong> butonuna bas <i class="fas fa-share-square" style="color:var(--primary-color);"></i><br>
+                                2. <strong style="color:white;">"Ana Ekrana Ekle"</strong> seçeneğine bas<br>
+                                3. <strong style="color:white;">"Ekle"</strong> butonuna bas
+                            </p>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
                 } else {
-                    alert('Tarayıcı adres çubuğundaki ⊕ veya ⬇ ikonuna tıklayarak yükleyebilirsiniz.\n\nNot: Uygulama zaten yüklü olabilir.');
+                    // Android/Desktop - adres çubuğundaki ikona yönlendir
+                    const modal = document.createElement('div');
+                    modal.className = 'modal';
+                    modal.style.zIndex = '9999';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="max-width:360px;text-align:center;">
+                            <button class="modal-close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+                            <i class="fas fa-download" style="font-size:48px;color:var(--primary-color);margin-bottom:15px;display:block;"></i>
+                            <h3 style="margin-top:0;">Uygulamayı Yükle</h3>
+                            <p style="color:var(--secondary-text-color);font-size:14px;line-height:1.6;">
+                                Tarayıcı adres çubuğunun sağındaki<br>
+                                <strong style="color:white;">⊕ veya ⬇ ikonuna</strong> tıkla<br>
+                                ve <strong style="color:white;">"Yükle"</strong> seçeneğini seç.
+                            </p>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
                 }
             }
         }

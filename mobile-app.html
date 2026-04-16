@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>H-Sound Mobile</title>
+    <script>
+        // Zaten giriş yapılmışsa direkt music-player'a git
+        if (localStorage.getItem('h_sound_logged_in') === 'true' && localStorage.getItem('h_sound_username')) {
+            window.location.replace('music-player.html');
+        }
+    </script>
     
     <!-- Mobile-First CSS Framework -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
@@ -218,9 +224,17 @@
                 return;
             }
             
-            // Firebase login işlemi
-            console.log('Giriş yapılıyor:', username);
-            window.location.href = 'music-player.html';
+            // Kullanıcıyı kontrol et
+            const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+            if (savedUsers[username] && savedUsers[username].password === password) {
+                // Giriş başarılı - localStorage'a yaz
+                localStorage.setItem('h_sound_logged_in', 'true');
+                localStorage.setItem('h_sound_username', username);
+                localStorage.setItem('h_sound_user_role', savedUsers[username].role || 'Kullanıcı');
+                window.location.href = 'music-player.html';
+            } else {
+                showNativeAlert('Kullanıcı adı veya şifre hatalı!');
+            }
         }
         
         function showNativeAlert(message) {
