@@ -2551,14 +2551,21 @@
             isLoadingMore = false;
             hasMoreHomeContent = true;
 
-            const q = TR_MUSIC_QUERIES[trQueryIndex % TR_MUSIC_QUERIES.length];
+            // 2 farklı sanatçiyi paralel ara, karıştır
+            const q1 = TR_MUSIC_QUERIES[trQueryIndex % TR_MUSIC_QUERIES.length];
+            const q2 = TR_MUSIC_QUERIES[(trQueryIndex + 1) % TR_MUSIC_QUERIES.length];
 
             try {
-                const apiResults = await searchYouTubeMusic(q, 24);
+                const [r1, r2] = await Promise.all([
+                    searchYouTubeMusic(q1, 12),
+                    searchYouTubeMusic(q2, 12)
+                ]);
+
+                const combined = [...r1, ...r2].filter(s => s.videoId);
                 homeContent.innerHTML = '';
 
-                if (apiResults && apiResults.length > 0) {
-                    const items = apiResults.map(song => ({
+                if (combined.length > 0) {
+                    const items = combined.map(song => ({
                         id: { videoId: song.videoId },
                         snippet: {
                             title: song.title,
@@ -2590,7 +2597,7 @@
             isLoadingMore = false;
             hasMoreHomeContent = true;
             homeNextPageToken = null;
-            trQueryIndex++; // Her yenilemede farklı sanatçi
+            trQueryIndex += 2; // Her yenilemede 2 sanatçi ilerle
             loadLocalHomeMusic();
         }
 
@@ -4117,12 +4124,12 @@
             return await invidiousSearch(query, maxResults);
         }
 
-        // Bilinen Türkçe rap/trap/pop sanatçileri
+        // Tanınmış Türkçe rap/trap/pop sanatçileri
         const TR_MUSIC_QUERIES = [
-            'Blok3', 'Lvbel C5', 'Çakal', 'Ezhel', 'Uzi', 'Murda',
-            'Ceza', 'Şanışer', 'Norm Ender', 'Hidra', 'Ege Çubukçu',
-            'Semicenk', 'Reynmen', 'Sagopa Kajmer', 'Contra',
-            'Ben Fero', 'Khontkar', 'Joker', 'Allame', 'Fuat Ergin'
+            'Lvbel C5', 'Blok3', 'Çakal', 'Ezhel', 'Uzi',
+            'Murda', 'Ceza', 'Şanışer', 'Norm Ender', 'Ben Fero',
+            'Sagopa Kajmer', 'Contra', 'Khontkar', 'Joker', 'Allame',
+            'Hidra', 'Ege Çubukçu', 'Semicenk', 'Reynmen', 'Jabbar'
         ];
         // Her açılışta rastgele başla
         let trQueryIndex = Math.floor(Math.random() * TR_MUSIC_QUERIES.length);
