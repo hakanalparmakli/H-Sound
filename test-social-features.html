@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Sound Social Features Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1A1A1A;
+            color: white;
+            padding: 20px;
+        }
+        .test-section {
+            background: #2C2C2C;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #3498DB;
+        }
+        .test-button {
+            background: #3498DB;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #5DADE2;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #27AE60; }
+        .error { background: #E74C3C; }
+        .info { background: #3498DB; }
+    </style>
+</head>
+<body>
+    <h1>🎵 H-Sound Pro v14.4 - Sosyal Özellikler Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Listesi</h2>
+        <div id="test-results">
+            <div class="status info">Test başlatılıyor...</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Manuel Testler</h2>
+        <button class="test-button" onclick="window.open('music-player.html', '_blank')">
+            Ana Uygulamayı Aç
+        </button>
+        <button class="test-button" onclick="testLocalStorage()">
+            LocalStorage Test
+        </button>
+        <button class="test-button" onclick="testNotifications()">
+            Bildirim Sistemi Test
+        </button>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Adımları</h2>
+        <ol>
+            <li><strong>Ana Sayfayı Aç:</strong> music-player.html dosyasını tarayıcıda açın</li>
+            <li><strong>Özellikler Sekmesi:</strong> Sol menüden "Özellikler" sekmesine tıklayın</li>
+            <li><strong>Arkadaş Ekleme:</strong> "Arkadaşlar" kartına tıklayın ve "Arkadaş Ekle" butonunu kullanın</li>
+            <li><strong>Mesajlaşma:</strong> "Mesajlaşma" kartına tıklayın - gizlilik politikasını kabul edin</li>
+            <li><strong>Sohbet:</strong> Eklediğiniz arkadaşla sohbet edin</li>
+            <li><strong>Müzik Paylaşma:</strong> Sohbet sırasında müzik paylaş butonunu kullanın</li>
+            <li><strong>İndirme:</strong> Müzik arayın ve indirme butonunu test edin</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Beklenen Sonuçlar</h2>
+        <ul>
+            <li>✅ Arkadaş ekleme çalışmalı</li>
+            <li>✅ Mesajlaşma modalı açılmalı</li>
+            <li>✅ Gizlilik politikası sadece bir kez sorulmalı</li>
+            <li>✅ Mesajlar gönderilmeli ve otomatik cevap gelmeli</li>
+            <li>✅ Müzik paylaşma çalışmalı</li>
+            <li>✅ İndirme sistemi çalışmalı</li>
+            <li>✅ Bildirimler görünmeli</li>
+        </ul>
+    </div>
+
+    <script>
+        function testLocalStorage() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '';
+            
+            try {
+                // Test localStorage
+                localStorage.setItem('test_key', 'test_value');
+                const value = localStorage.getItem('test_key');
+                localStorage.removeItem('test_key');
+                
+                if (value === 'test_value') {
+                    results.innerHTML += '<div class="status success">✅ LocalStorage çalışıyor</div>';
+                } else {
+                    results.innerHTML += '<div class="status error">❌ LocalStorage hatası</div>';
+                }
+                
+                // Test H-Sound data
+                const friends = JSON.parse(localStorage.getItem('h_sound_friends') || '[]');
+                const downloads = JSON.parse(localStorage.getItem('h_sound_downloads') || '[]');
+                const privacy = localStorage.getItem('h_sound_privacy_accepted');
+                
+                results.innerHTML += `<div class="status info">📊 Mevcut Veriler:</div>`;
+                results.innerHTML += `<div class="status info">👥 Arkadaşlar: ${friends.length}</div>`;
+                results.innerHTML += `<div class="status info">📱 İndirilenler: ${downloads.length}</div>`;
+                results.innerHTML += `<div class="status info">🔒 Gizlilik: ${privacy || 'Kabul edilmemiş'}</div>`;
+                
+            } catch (error) {
+                results.innerHTML += `<div class="status error">❌ Test hatası: ${error.message}</div>`;
+            }
+        }
+        
+        function testNotifications() {
+            // Test notification system
+            if (typeof showNotification === 'function') {
+                showNotification('Test bildirimi!', 'success');
+            } else {
+                alert('Bildirim sistemi test edilecek - ana uygulamayı açın');
+            }
+        }
+        
+        // Otomatik test başlat
+        window.onload = function() {
+            setTimeout(testLocalStorage, 1000);
+        };
+    </script>
+</body>
+</html>
+</html>

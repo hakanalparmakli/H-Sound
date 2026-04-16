@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Music Fix Test - H-Sound</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #2980b9;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        .success { background: #27ae60; }
+        .error { background: #e74c3c; }
+        .warning { background: #f39c12; }
+        .player-controls {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .control-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 YouTube Music Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>🔧 Yapılan Düzeltmeler</h2>
+        <ul>
+            <li>✅ <strong>YouTube IFrame API</strong> - Gerçek müzik çalma sistemi</li>
+            <li>✅ <strong>Gizli Player</strong> - Görünmez ama ses çıkışı var</li>
+            <li>✅ <strong>Doğru Şarkı</strong> - Tıklanan şarkı çalıyor</li>
+            <li>✅ <strong>Player Kontrolleri</strong> - Play/Pause/Next/Previous</li>
+            <li>✅ <strong>Progress Bar</strong> - Gerçek zamanlı ilerleme</li>
+            <li>✅ <strong>Playlist Sistemi</strong> - Sıralı çalma</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Test Şarkıları</h2>
+        <p>Bu şarkılar gerçek YouTube müzik olarak çalacak:</p>
+        
+        <button class="test-btn" onclick="testYouTubeMusic('dQw4w9WgXcQ', 'Rick Astley - Never Gonna Give You Up')">
+            🎵 Rick Astley - Never Gonna Give You Up
+        </button>
+        
+        <button class="test-btn" onclick="testYouTubeMusic('kJQP7kiw5Fk', 'Luis Fonsi - Despacito')">
+            🎵 Luis Fonsi - Despacito
+        </button>
+        
+        <button class="test-btn" onclick="testYouTubeMusic('fJ9rUzIMcZQ', 'Queen - Bohemian Rhapsody')">
+            🎵 Queen - Bohemian Rhapsody
+        </button>
+        
+        <button class="test-btn" onclick="testYouTubeMusic('HgzGwKwLmgM', 'Tarkan - Şımarık')">
+            🎵 Tarkan - Şımarık
+        </button>
+    </div>
+
+    <div class="player-controls">
+        <h3>🎛️ Player Kontrolleri</h3>
+        <button class="control-btn" onclick="togglePlayPause()">⏯️ Play/Pause</button>
+        <button class="control-btn" onclick="stopMusic()">⏹️ Stop</button>
+        <div id="current-song" style="margin-top: 10px; font-style: italic;">Şarkı seçilmedi</div>
+    </div>
+
+    <div id="test-results" class="test-section">
+        <h2>📊 Test Sonuçları</h2>
+        <div id="results-list">
+            <p>Test yapmak için yukarıdaki şarkılardan birini seçin.</p>
+        </div>
+    </div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        let currentPlayer = null;
+        let isPlaying = false;
+        let currentSong = '';
+
+        // YouTube IFrame API hazır olduğunda
+        function onYouTubeIframeAPIReady() {
+            console.log('🎵 YouTube IFrame API ready!');
+            addTestResult('YouTube IFrame API yüklendi', 'success');
+        }
+
+        // YouTube müzik test et
+        async function testYouTubeMusic(videoId, title) {
+            console.log(`🎵 Testing: ${title} (${videoId})`);
+            addTestResult(`Testing: ${title}`, 'warning');
+            
+            try {
+                // Önceki player'ı temizle
+                if (currentPlayer) {
+                    currentPlayer.destroy();
+                }
+
+                // Gizli player container oluştur
+                let playerContainer = document.getElementById('youtube-player');
+                if (playerContainer) {
+                    playerContainer.remove();
+                }
+
+                playerContainer = document.createElement('div');
+                playerContainer.id = 'youtube-player';
+                playerContainer.style.position = 'fixed';
+                playerContainer.style.top = '-1000px';
+                playerContainer.style.left = '-1000px';
+                playerContainer.style.width = '1px';
+                playerContainer.style.height = '1px';
+                playerContainer.style.opacity = '0';
+                document.body.appendChild(playerContainer);
+
+                // YouTube Player oluştur
+                currentPlayer = new YT.Player('youtube-player', {
+                    height: '1',
+                    width: '1',
+                    videoId: videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        controls: 0,
+                        disablekb: 1,
+                        fs: 0,
+                        modestbranding: 1,
+                        rel: 0,
+                        showinfo: 0,
+                        iv_load_policy: 3,
+                        cc_load_policy: 0,
+                        playsinline: 1
+                    },
+                    events: {
+                        onReady: (event) => {
+                            console.log('🎵 Player ready, starting playback...');
+                            event.target.playVideo();
+                            currentSong = title;
+                            document.getElementById('current-song').textContent = `Çalıyor: ${title}`;
+                            addTestResult(`${title} - Player hazır, çalmaya başladı`, 'success');
+                        },
+                        onStateChange: (event) => {
+                            handleStateChange(event, title);
+                        },
+                        onError: (event) => {
+                            console.error('❌ Player error:', event.data);
+                            addTestResult(`${title} - Hata: ${event.data}`, 'error');
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('❌ Test error:', error);
+                addTestResult(`${title} - Test hatası: ${error.message}`, 'error');
+            }
+        }
+
+        // Player state değişikliklerini handle et
+        function handleStateChange(event, title) {
+            switch (event.data) {
+                case YT.PlayerState.PLAYING:
+                    console.log('🎵 Playing:', title);
+                    isPlaying = true;
+                    addTestResult(`${title} - ÇALıYOR! 🎵`, 'success');
+                    break;
+                    
+                case YT.PlayerState.PAUSED:
+                    console.log('⏸️ Paused:', title);
+                    isPlaying = false;
+                    addTestResult(`${title} - Duraklatıldı`, 'warning');
+                    break;
+                    
+                case YT.PlayerState.ENDED:
+                    console.log('🔚 Ended:', title);
+                    isPlaying = false;
+                    addTestResult(`${title} - Bitti`, 'warning');
+                    break;
+                    
+                case YT.PlayerState.BUFFERING:
+                    console.log('⏳ Buffering:', title);
+                    addTestResult(`${title} - Yükleniyor...`, 'warning');
+                    break;
+            }
+        }
+
+        // Play/Pause toggle
+        function togglePlayPause() {
+            if (!currentPlayer) {
+                addTestResult('Önce bir şarkı seçin', 'error');
+                return;
+            }
+
+            try {
+                const state = currentPlayer.getPlayerState();
+                if (state === YT.PlayerState.PLAYING) {
+                    currentPlayer.pauseVideo();
+                    addTestResult('Müzik duraklatıldı', 'warning');
+                } else {
+                    currentPlayer.playVideo();
+                    addTestResult('Müzik devam ediyor', 'success');
+                }
+            } catch (error) {
+                addTestResult(`Kontrol hatası: ${error.message}`, 'error');
+            }
+        }
+
+        // Stop music
+        function stopMusic() {
+            if (currentPlayer) {
+                try {
+                    currentPlayer.stopVideo();
+                    addTestResult('Müzik durduruldu', 'warning');
+                    document.getElementById('current-song').textContent = 'Şarkı seçilmedi';
+                } catch (error) {
+                    addTestResult(`Stop hatası: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Test sonucu ekle
+        function addTestResult(message, type) {
+            const resultsList = document.getElementById('results-list');
+            const time = new Date().toLocaleTimeString();
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${type}`;
+            resultDiv.innerHTML = `<strong>${time}</strong> - ${message}`;
+            
+            if (resultsList.innerHTML.includes('Test yapmak için')) {
+                resultsList.innerHTML = '';
+            }
+            
+            resultsList.appendChild(resultDiv);
+            
+            // Scroll to bottom
+            resultsList.scrollTop = resultsList.scrollHeight;
+        }
+    </script>
+</body>
+</html>

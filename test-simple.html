@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Sound Navigation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #1A1A1A; color: white; }
+        .sidebar { background: #0D0D0D; width: 200px; height: 100vh; position: fixed; padding: 20px; }
+        .sidebar a { color: #A9A9A9; text-decoration: none; display: block; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .sidebar a:hover, .sidebar a.active { background: #1C1C1C; color: white; }
+        .content { margin-left: 240px; padding: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 style="color: #3498DB;">H-Sound</h2>
+        <a href="#" id="home-link" class="active">🏠 Ana Sayfa</a>
+        <a href="#" id="search-link">🔍 Arama</a>
+        <a href="#" id="friends-link">👥 Arkadaşlar</a>
+        <a href="#" id="downloads-link">📱 İndirilenler</a>
+        <a href="#" id="playlists-link">🎵 Çalma Listeleri</a>
+    </div>
+    
+    <div class="content">
+        <div id="content-area">
+            <h1>Ana Sayfa</h1>
+            <p>Navigation test sayfası</p>
+        </div>
+    </div>
+
+    <script>
+        // Element'leri al
+        const homeLink = document.getElementById('home-link');
+        const searchLink = document.getElementById('search-link');
+        const friendsLink = document.getElementById('friends-link');
+        const downloadsLink = document.getElementById('downloads-link');
+        const playlistsLink = document.getElementById('playlists-link');
+        const contentArea = document.getElementById('content-area');
+        
+        let currentView = 'home';
+        
+        // Aktif link'i ayarla
+        function setActiveLink(activeLink) {
+            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+            activeLink.classList.add('active');
+        }
+        
+        // İçeriği temizle
+        function clearContentArea() {
+            contentArea.innerHTML = '';
+        }
+        
+        // Sayfa fonksiyonları
+        function showHomePage() {
+            console.log('🏠 Ana sayfa açılıyor...');
+            currentView = 'home';
+            setActiveLink(homeLink);
+            contentArea.innerHTML = '<h1>🏠 Ana Sayfa</h1><p>Hoş geldiniz! Popüler müzikler burada görünecek.</p>';
+        }
+        
+        function showSearchPage() {
+            console.log('🔍 Arama sayfası açılıyor...');
+            currentView = 'search';
+            setActiveLink(searchLink);
+            contentArea.innerHTML = '<h1>🔍 Arama</h1><p>Müzik arayın...</p><input type="text" placeholder="Şarkı ara..." style="padding: 10px; width: 300px; margin-top: 10px;">';
+        }
+        
+        function showFriendsPage() {
+            console.log('👥 Arkadaşlar sayfası açılıyor...');
+            currentView = 'friends';
+            setActiveLink(friendsLink);
+            contentArea.innerHTML = `
+                <h1>👥 Arkadaşlar</h1>
+                <p>Arkadaş listesi ve mesajlaşma...</p>
+                <button onclick="alert('Arkadaş ekleme modalı açılacak')" style="padding: 10px 20px; background: #3498DB; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Arkadaş Ekle
+                </button>
+            `;
+        }
+        
+        function showDownloadsPage() {
+            console.log('📱 İndirilenler sayfası açılıyor...');
+            currentView = 'downloads';
+            setActiveLink(downloadsLink);
+            contentArea.innerHTML = '<h1>📱 İndirilenler</h1><p>İndirilen müzikler burada görünecek...</p>';
+        }
+        
+        function showPlaylistsPage() {
+            console.log('🎵 Çalma listeleri sayfası açılıyor...');
+            currentView = 'playlists';
+            setActiveLink(playlistsLink);
+            contentArea.innerHTML = '<h1>🎵 Çalma Listeleri</h1><p>Çalma listeleriniz burada...</p>';
+        }
+        
+        // Event listener'ları ekle
+        homeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showHomePage();
+        });
+        
+        searchLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSearchPage();
+        });
+        
+        friendsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showFriendsPage();
+        });
+        
+        downloadsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showDownloadsPage();
+        });
+        
+        playlistsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showPlaylistsPage();
+        });
+        
+        console.log('✅ Navigation test hazır! Sidebar linklerine tıklayın.');
+        console.log('📋 Mevcut elementler:', {
+            homeLink: !!homeLink,
+            searchLink: !!searchLink,
+            friendsLink: !!friendsLink,
+            downloadsLink: !!downloadsLink,
+            playlistsLink: !!playlistsLink,
+            contentArea: !!contentArea
+        });
+    </script>
+</body>
+</html>

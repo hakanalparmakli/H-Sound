@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Sound Splash Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-hue-primary: 185;
+            --color-hue-secondary: 300;
+            --color-primary: hsl(var(--color-hue-primary), 100%, 50%);
+            --color-secondary: hsl(var(--color-hue-secondary), 100%, 50%);
+            --bg-color: #000008;
+            --text-color: #f0f0f0;
+            --logo-size: 120px;
+            --h-line-width: 15px;
+            --h-line-height: 50px;
+            --h-cross-width: 40px;
+            --h-cross-height: 8px;
+            --h-line-offset: 35px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+        }
+
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #splash-logo-anchor {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            animation: fadeIn 0.6s ease-out 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        #splash-h-logo-container {
+            position: relative;
+            width: var(--logo-size);
+            height: var(--logo-size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+        }
+
+        #splash-logo-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid var(--color-primary);
+            box-shadow: 0 0 20px var(--color-primary);
+            animation: ringPulse 2s infinite;
+        }
+
+        @keyframes ringPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .splash-h-line {
+            position: absolute;
+            width: var(--h-line-width);
+            height: var(--h-line-height);
+            background: var(--color-primary);
+            border-radius: 6px;
+            box-shadow: 0 0 10px var(--color-primary);
+            animation: lineGlow 1.5s infinite alternate;
+        }
+
+        .splash-line-left { left: var(--h-line-offset); }
+        .splash-line-right { right: var(--h-line-offset); }
+
+        #splash-h-cross {
+            position: absolute;
+            width: var(--h-cross-width);
+            height: var(--h-cross-height);
+            background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+            border-radius: 3px;
+            box-shadow: 0 0 10px var(--color-secondary);
+            animation: crossGlow 1.5s infinite alternate;
+        }
+
+        @keyframes lineGlow {
+            from { box-shadow: 0 0 10px var(--color-primary); }
+            to { box-shadow: 0 0 20px var(--color-primary), 0 0 30px var(--color-primary); }
+        }
+
+        @keyframes crossGlow {
+            from { box-shadow: 0 0 10px var(--color-secondary); }
+            to { box-shadow: 0 0 20px var(--color-secondary), 0 0 30px var(--color-secondary); }
+        }
+
+        #splash-main-text {
+            font-size: 3.2em;
+            font-weight: 900;
+            letter-spacing: 6px;
+            margin-top: 20px;
+            color: var(--color-primary);
+            text-shadow: 0 0 20px var(--color-primary);
+            animation: textPulse 2s infinite;
+        }
+
+        #splash-sub-text {
+            font-size: 1.3em;
+            color: #aaffff;
+            margin-top: -8px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #aaffff;
+        }
+
+        @keyframes textPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            animation: float 3s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="splash-screen">
+        <div id="splash-logo-anchor">
+            <div id="splash-h-logo-container">
+                <div id="splash-logo-ring"></div>
+                <div class="splash-h-line splash-line-left"></div>
+                <div class="splash-h-line splash-line-right"></div>
+                <div id="splash-h-cross"></div>
+            </div>
+            
+            <h1 id="splash-main-text">H-SOUND</h1>
+            <p id="splash-sub-text">MUSIC STUDIO</p>
+        </div>
+    </div>
+
+    <script>
+        // Basit parçacık efekti
+        function createParticles() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 3 + 's';
+                    document.body.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 3000);
+                }, i * 100);
+            }
+        }
+
+        // Sayfa yüklendiğinde başlat
+        window.addEventListener('load', () => {
+            createParticles();
+            
+            // 5 saniye sonra index.html'e yönlendir
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 5000);
+        });
+
+        console.log('🎵 H-Sound Splash Test Başlatıldı!');
+    </script>
+</body>
+</html>

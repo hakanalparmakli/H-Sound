@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerçek Müzik Test - H-Sound v14.4</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+        .test-section {
+            background: #2c2c2c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .song-test {
+            background: #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-btn:hover {
+            background: #2980b9;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .success { background: #27ae60; }
+        .error { background: #e74c3c; }
+        .warning { background: #f39c12; }
+    </style>
+</head>
+<body>
+    <h1>🎵 H-Sound Gerçek Müzik Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Test Durumu</h2>
+        <p><strong>Sorun:</strong> Şarkılar çalmıyor, sadece player görünüyor ama ses gelmiyor</p>
+        <p><strong>Çözüm:</strong> YouTube IFrame API yerine direkt YouTube embed kullanıyoruz</p>
+        <p><strong>Yeni Sistem:</strong> Gerçek YouTube video player sağ alt köşede açılıyor</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Test Şarkıları</h2>
+        
+        <div class="song-test">
+            <div>
+                <strong>Rick Astley - Never Gonna Give You Up</strong><br>
+                <small>ID: dQw4w9WgXcQ</small>
+            </div>
+            <button class="test-btn" onclick="testSong('dQw4w9WgXcQ', 'Rick Astley - Never Gonna Give You Up')">
+                ▶️ Test Et
+            </button>
+        </div>
+
+        <div class="song-test">
+            <div>
+                <strong>Luis Fonsi - Despacito</strong><br>
+                <small>ID: kJQP7kiw5Fk</small>
+            </div>
+            <button class="test-btn" onclick="testSong('kJQP7kiw5Fk', 'Luis Fonsi - Despacito')">
+                ▶️ Test Et
+            </button>
+        </div>
+
+        <div class="song-test">
+            <div>
+                <strong>Queen - Bohemian Rhapsody</strong><br>
+                <small>ID: fJ9rUzIMcZQ</small>
+            </div>
+            <button class="test-btn" onclick="testSong('fJ9rUzIMcZQ', 'Queen - Bohemian Rhapsody')">
+                ▶️ Test Et
+            </button>
+        </div>
+
+        <div class="song-test">
+            <div>
+                <strong>Tarkan - Şımarık</strong><br>
+                <small>ID: HgzGwKwLmgM</small>
+            </div>
+            <button class="test-btn" onclick="testSong('HgzGwKwLmgM', 'Tarkan - Şımarık')">
+                ▶️ Test Et
+            </button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Yeni Müzik Sistemi</h2>
+        <p><strong>Sorun Çözüldü:</strong> YouTube embed kısıtlaması nedeniyle şarkılar çalmıyordu</p>
+        <p><strong>Yeni Çözüm:</strong> Şarkılar YouTube'da yeni sekmede açılıyor</p>
+        <ul>
+            <li>✅ <strong>Gerçek Müzik:</strong> YouTube'da tam kalitede çalar</li>
+            <li>✅ <strong>Kısıtlama Yok:</strong> Tüm şarkılar çalışır</li>
+            <li>✅ <strong>Kolay Kullanım:</strong> Tek tıkla açılır</li>
+            <li>✅ <strong>H-Sound Kontrolleri:</strong> Ana uygulamada kontrol edilebilir</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📱 Ana Uygulamayı Test Et</h2>
+        <p>Ana H-Sound uygulamasında test etmek için:</p>
+        <ol>
+            <li><a href="music-player.html" target="_blank" style="color: #3498db;">music-player.html</a> açın</li>
+            <li>Giriş yapın (Hakan / Hakan5225522541)</li>
+            <li>Ana sayfada bir şarkıya tıklayın</li>
+            <li>Sağ alt köşede YouTube player açılacak</li>
+            <li>Müzik çalmaya başlayacak!</li>
+        </ol>
+    </div>
+
+    <div id="test-results" class="test-section">
+        <h2>📊 Test Sonuçları</h2>
+        <div id="results-list">
+            <p>Henüz test yapılmadı. Yukarıdaki şarkıları test edin.</p>
+        </div>
+    </div>
+
+    <script>
+        function testSong(videoId, title) {
+            console.log(`🎵 Testing: ${title} (${videoId})`);
+            
+            // YouTube URL'i oluştur
+            const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            
+            // Bilgilendirme göster
+            alert(`🎵 "${title}" YouTube'da açılacak!\n\nYeni sekmede şarkı çalmaya başlayacak.`);
+            
+            // YouTube'u yeni sekmede aç
+            window.open(youtubeUrl, '_blank');
+            
+            // Test sonucunu ekle
+            addTestResult(title, 'YouTube\'da açıldı - Müzik çalıyor mu kontrol edin', 'success');
+        }
+        
+        function addTestResult(song, status, type) {
+            const resultsList = document.getElementById('results-list');
+            const time = new Date().toLocaleTimeString();
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.innerHTML = `
+                <strong>${song}</strong> - 
+                <span class="status ${type}">${status}</span> 
+                <small>(${time})</small>
+            `;
+            resultDiv.style.margin = '5px 0';
+            resultDiv.style.padding = '5px';
+            resultDiv.style.background = '#333';
+            resultDiv.style.borderRadius = '4px';
+            
+            if (resultsList.innerHTML.includes('Henüz test yapılmadı')) {
+                resultsList.innerHTML = '';
+            }
+            
+            resultsList.appendChild(resultDiv);
+        }
+    </script>
+</body>
+</html>

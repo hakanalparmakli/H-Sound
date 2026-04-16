@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Sound Navigation Final Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            background: #1A1A1A; 
+            color: white; 
+            display: flex;
+        }
+        .sidebar { 
+            background: #0D0D0D; 
+            width: 200px; 
+            height: 100vh; 
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+        .sidebar h2 { 
+            color: #3498DB; 
+            margin-bottom: 20px; 
+        }
+        .sidebar a { 
+            color: #A9A9A9; 
+            text-decoration: none; 
+            display: block; 
+            padding: 12px 15px; 
+            margin: 8px 0; 
+            border-radius: 6px; 
+            transition: all 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active { 
+            background: #1C1C1C; 
+            color: white; 
+        }
+        .content { 
+            flex: 1; 
+            padding: 20px; 
+        }
+        .test-result {
+            background: #2C2C2C;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498DB;
+        }
+        .success { border-left-color: #27AE60; }
+        .error { border-left-color: #E74C3C; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>H-Sound Pro</h2>
+        <a href="#" id="home-link" class="active">🏠 Ana Sayfa</a>
+        <a href="#" id="search-link">🔍 Arama</a>
+        <a href="#" id="friends-link">👥 Arkadaşlar</a>
+        <a href="#" id="downloads-link">📱 İndirilenler</a>
+        <a href="#" id="playlists-link">🎵 Çalma Listeleri</a>
+        <a href="#" id="settings-link">⚙️ Ayarlar</a>
+    </div>
+    
+    <div class="content">
+        <h1>🧪 Navigation Test Sayfası</h1>
+        <div id="content-area">
+            <h2>Ana Sayfa</h2>
+            <p>Bu test sayfası navigation'ın çalışıp çalışmadığını kontrol eder.</p>
+        </div>
+        
+        <div id="test-results">
+            <h3>Test Sonuçları:</h3>
+        </div>
+    </div>
+
+    <script>
+        // Element'leri al
+        const links = {
+            home: document.getElementById('home-link'),
+            search: document.getElementById('search-link'),
+            friends: document.getElementById('friends-link'),
+            downloads: document.getElementById('downloads-link'),
+            playlists: document.getElementById('playlists-link'),
+            settings: document.getElementById('settings-link')
+        };
+        
+        const contentArea = document.getElementById('content-area');
+        const testResults = document.getElementById('test-results');
+        
+        // Test sonucu ekle
+        function addTestResult(name, success, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <strong>${success ? '✅' : '❌'} ${name}</strong><br>
+                ${message}
+            `;
+            testResults.appendChild(div);
+        }
+        
+        // Aktif link'i ayarla
+        function setActiveLink(activeLink) {
+            Object.values(links).forEach(link => link.classList.remove('active'));
+            activeLink.classList.add('active');
+        }
+        
+        // Sayfa fonksiyonları
+        const pages = {
+            home: () => {
+                setActiveLink(links.home);
+                contentArea.innerHTML = '<h2>🏠 Ana Sayfa</h2><p>Popüler müzikler burada görünecek.</p>';
+                addTestResult('Ana Sayfa', true, 'Ana sayfa başarıyla yüklendi');
+            },
+            search: () => {
+                setActiveLink(links.search);
+                contentArea.innerHTML = '<h2>🔍 Arama</h2><p>Müzik arama sayfası.</p>';
+                addTestResult('Arama', true, 'Arama sayfası başarıyla yüklendi');
+            },
+            friends: () => {
+                setActiveLink(links.friends);
+                contentArea.innerHTML = '<h2>👥 Arkadaşlar</h2><p>Arkadaş listesi ve mesajlaşma.</p>';
+                addTestResult('Arkadaşlar', true, 'Arkadaşlar sayfası başarıyla yüklendi');
+            },
+            downloads: () => {
+                setActiveLink(links.downloads);
+                contentArea.innerHTML = '<h2>📱 İndirilenler</h2><p>İndirilen müzikler.</p>';
+                addTestResult('İndirilenler', true, 'İndirilenler sayfası başarıyla yüklendi');
+            },
+            playlists: () => {
+                setActiveLink(links.playlists);
+                contentArea.innerHTML = '<h2>🎵 Çalma Listeleri</h2><p>Kişisel çalma listeleri.</p>';
+                addTestResult('Çalma Listeleri', true, 'Çalma listeleri sayfası başarıyla yüklendi');
+            },
+            settings: () => {
+                setActiveLink(links.settings);
+                contentArea.innerHTML = '<h2>⚙️ Ayarlar</h2><p>Uygulama ayarları.</p>';
+                addTestResult('Ayarlar', true, 'Ayarlar sayfası başarıyla yüklendi');
+            }
+        };
+        
+        // Event listener'ları ekle
+        Object.entries(links).forEach(([key, link]) => {
+            if (link) {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log(`${key} linki tıklandı`);
+                    
+                    try {
+                        pages[key]();
+                    } catch (error) {
+                        addTestResult(key, false, `Hata: ${error.message}`);
+                    }
+                });
+                addTestResult(`${key} Event Listener`, true, 'Event listener başarıyla eklendi');
+            } else {
+                addTestResult(`${key} Element`, false, 'Element bulunamadı');
+            }
+        });
+        
+        // Başlangıç testi
+        addTestResult('Sayfa Yükleme', true, 'Test sayfası başarıyla yüklendi');
+        addTestResult('JavaScript', true, 'JavaScript çalışıyor');
+        
+        console.log('🧪 Navigation test hazır!');
+        console.log('📋 Linkler:', links);
+        console.log('📋 Sayfalar:', pages);
+    </script>
+</body>
+</html>

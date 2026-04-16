@@ -548,39 +548,6 @@
                 width: auto;
             }
         }
-
-        /* Şifre Göster/Gizle Butonu */
-        .btn-icon {
-            background: none;
-            border: none;
-            color: #A9A9A9;
-            cursor: pointer;
-            padding: 5px 10px;
-            font-size: 16px;
-            transition: all 0.3s;
-            border-radius: 4px;
-            margin-left: 8px;
-        }
-
-        .btn-icon:hover {
-            color: #3498DB;
-            background: rgba(52, 152, 219, 0.1);
-        }
-
-        .btn-icon.active {
-            color: #E74C3C;
-        }
-
-        .password-cell {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .password-text {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
     </style>
 </head>
 <body>
@@ -651,14 +618,9 @@
             <div class="users-table">
                 <div class="table-header">
                     <h2><i class="fas fa-list"></i> Kullanıcı Yönetimi</h2>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button class="refresh-btn" onclick="loadUsers()">
-                            <i class="fas fa-sync-alt"></i> Yenile
-                        </button>
-                        <button class="refresh-btn" style="background:#E67E22;color:white;" onclick="toggleMaintenanceMode()">
-                            <i class="fas fa-tools"></i> <span id="maintenance-btn-text">Bakım Modunu Aç</span>
-                        </button>
-                    </div>
+                    <button class="refresh-btn" onclick="loadUsers()">
+                        <i class="fas fa-sync-alt"></i> Yenile
+                    </button>
                 </div>
                 <div id="tableContent">
                     <div class="loading">
@@ -670,27 +632,8 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE",
-            authDomain: "h-sound-b2391.firebaseapp.com",
-            projectId: "h-sound-b2391",
-            storageBucket: "h-sound-b2391.firebasestorage.app",
-            messagingSenderId: "2853371644",
-            appId: "1:2853371644:web:a2a6509e238c4f4a8aa179",
-            measurementId: "G-MZPSZN23QT"
-        };
-
-        // Firebase'i başlat
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const API_URL = 'https://h-sound.onrender.com';
 
         let adminCredentials = null;
         let users = []; // Global users array
@@ -717,7 +660,8 @@
                 
                 // Kullanıcıları yükle
                 loadUsers();
-                checkMaintenanceStatus();
+                
+                console.log('✅ Otomatik admin girişi başarılı!');
                 
                 // Session token'ı temizle (tek kullanımlık)
                 if (sessionToken) {
@@ -750,47 +694,21 @@
             const errorDiv = document.getElementById('loginError');
 
             try {
-                // Firestore'dan kullanıcı adına göre e-posta bul
-                const usersSnapshot = await db.collection('users')
-                    .where('username', '==', username)
-                    .limit(1)
-                    .get();
-                
-                if (usersSnapshot.empty) {
-                    errorDiv.textContent = 'Kullanıcı bulunamadı!';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                
-                const userDoc = usersSnapshot.docs[0];
-                const userData = userDoc.data();
-                
-                // Sadece admin veya superadmin girişine izin ver
-                if (userData.role !== 'admin' && userData.role !== 'superadmin') {
-                    errorDiv.textContent = 'Bu panele erişim yetkiniz yok!';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                
-                const email = userData.email;
-                
-                // Firebase Authentication ile giriş yap
-                await auth.signInWithEmailAndPassword(email, password);
-                
-                adminCredentials = { username, password, role: userData.role };
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                document.getElementById('adminName').textContent = username;
-                
-                // LocalStorage'a kaydet
-                localStorage.setItem('h_sound_admin_session', 'true');
-                localStorage.setItem('h_sound_username', username);
-                localStorage.setItem('h_sound_role', userData.role);
-                
-                loadUsers();
-                checkMaintenanceStatus();
-                
-                if (false) {
+                const response = await fetch(`${API_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    adminCredentials = { username, password };
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    document.getElementById('adminName').textContent = username;
+                    loadUsers();
+                } else {
                     errorDiv.innerHTML = `<div class="error-message">${data.message}</div>`;
                 }
             } catch (error) {
@@ -826,39 +744,33 @@
             if (!adminCredentials) return;
 
             try {
-                console.log('🔄 Kullanıcılar Firebase\'den yükleniyor...');
+                console.log('🔄 Kullanıcılar yükleniyor...');
                 
-                // Firestore'dan tüm kullanıcıları al
-                const usersSnapshot = await db.collection('users').get();
-                
-                const usersData = [];
-                usersSnapshot.forEach(doc => {
-                    const userData = doc.data();
-                    // Silinen kullanıcıları gösterme (isteğe bağlı - görmek istersen kaldır)
-                    if (userData.deleted) return;
-                    usersData.push({
-                        uid: doc.id,
-                        username: userData.username,
-                        email: userData.email,
-                        password: userData.password || '', // Şifreyi ekle
-                        role: userData.role || 'user',
-                        createdAt: userData.createdAt ? 
-                            (typeof userData.createdAt.toDate === 'function' ? 
-                                userData.createdAt.toDate().toLocaleString('tr-TR') : 
-                                userData.createdAt) : 
-                            'Bilinmiyor',
-                        banned: userData.banned || false
-                    });
+                const response = await fetch(`${API_URL}/api/admin/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminUsername: adminCredentials.username,
+                        adminPassword: adminCredentials.password
+                    })
                 });
-                
-                users = usersData; // Global array'e kaydet
-                displayUsers(usersData);
-                updateStats(usersData);
-                console.log('✅ Kullanıcılar yüklendi:', usersData.length);
-                
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Render sunucusu uyuyor olabilir, 1 dakika bekleyin.`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayUsers(data.users);
+                    updateStats(data.users);
+                    console.log('✅ Kullanıcılar yüklendi');
+                } else {
+                    alert('❌ ' + data.message);
+                }
             } catch (error) {
                 console.error('❌ Hata:', error);
-                alert('❌ Kullanıcılar yüklenemedi: ' + error.message);
+                alert('❌ Kullanıcılar yüklenemedi!\n\nRender sunucusu uyuyor olabilir.\n\n1. https://h-sound.onrender.com adresini tarayıcıda aç\n2. 1 dakika bekle\n3. Tekrar yenile');
             }
         }
 
@@ -921,14 +833,7 @@
                         <td>${index + 1}</td>
                         <td><i class="fas fa-user"></i> ${user.username}</td>
                         <td><i class="fas fa-envelope"></i> ${user.email}</td>
-                        <td class="password-cell">
-                            <span class="password-text" data-password="${user.password || ''}" style="display: inline-block; min-width: 100px;">••••••••</span>
-                            ${isSuperAdmin && user.password ? `
-                                <button class="btn-icon toggle-password-btn" onclick="togglePassword(this)" title="Şifreyi Göster/Gizle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            ` : ''}
-                        </td>
+                        <td class="password-cell">${isSuperAdmin ? user.password : '••••••••'}</td>
                         <td>
                             <span class="badge ${roleBadge}">
                                 ${roleText}
@@ -981,50 +886,26 @@
             if (!confirm(`${username} kullanıcısını ${banned ? 'banlamak' : 'ban kaldırmak'} istediğinize emin misiniz?`)) return;
 
             try {
-                // Kullanıcıyı bul
-                const user = users.find(u => u.username === username);
-                if (!user) {
-                    alert('Kullanıcı bulunamadı!');
-                    return;
-                }
-                
-                // Firestore'da güncelle
-                await db.collection('users').doc(user.uid).update({
-                    banned: banned
+                const response = await fetch(`${API_URL}/api/admin/ban-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminUsername: adminCredentials.username,
+                        adminPassword: adminCredentials.password,
+                        targetUsername: username,
+                        banned
+                    })
                 });
-                
-                alert(`✅ ${username} ${banned ? 'banlandı' : 'ban kaldırıldı'}!`);
-                loadUsers();
+
+                const data = await response.json();
+                alert(data.message);
+                if (data.success) loadUsers();
             } catch (error) {
-                console.error('❌ Ban işlemi hatası:', error);
-                alert('❌ İşlem başarısız: ' + error.message);
+                alert('İşlem başarısız!');
             }
         }
 
         async function deleteUser(username) {
-            const currentUserRole = localStorage.getItem('h_sound_role') || 'user';
-            
-            // Hakan kullanıcısı silinemez
-            if (username === 'Hakan') {
-                alert('❌ Sistem sahibi (Hakan) silinemez!');
-                return;
-            }
-            
-            // Hedef kullanıcının rolünü kontrol et
-            const targetUser = users.find(u => u.username === username);
-            if (!targetUser) {
-                alert('❌ Kullanıcı bulunamadı!');
-                return;
-            }
-            
-            // Sadece superadmin admin/superadmin kullanıcılarını silebilir
-            if (currentUserRole !== 'superadmin') {
-                if (targetUser.role === 'admin' || targetUser.role === 'superadmin') {
-                    alert('❌ Sadece süper admin diğer adminleri silebilir!');
-                    return;
-                }
-            }
-            
             // İlk onay
             const firstConfirm = confirm(
                 `⚠️ UYARI: ${username} kullanıcısını silmek üzeresiniz!\n\n` +
@@ -1037,6 +918,21 @@
             
             if (!firstConfirm) return;
             
+            // Şifre onayı
+            const password = prompt(
+                `🔐 Güvenlik Onayı\n\n` +
+                `${username} kullanıcısını silmek için kendi şifrenizi girin:\n\n` +
+                `(Admin: ${adminCredentials.username})`
+            );
+            
+            if (!password) return;
+            
+            // Şifre kontrolü
+            if (password !== adminCredentials.password) {
+                alert('❌ Hatalı şifre! İşlem iptal edildi.');
+                return;
+            }
+            
             // Son onay
             const finalConfirm = confirm(
                 `🚨 SON ONAY 🚨\n\n` +
@@ -1047,33 +943,26 @@
             if (!finalConfirm) return;
 
             try {
-                const user = users.find(u => u.username === username);
-                if (!user) {
-                    alert('❌ Kullanıcı bulunamadı!');
-                    return;
+                const response = await fetch(`${API_URL}/api/admin/delete-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminUsername: adminCredentials.username,
+                        adminPassword: adminCredentials.password,
+                        targetUsername: username
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    loadUsers();
+                } else {
+                    alert('❌ ' + data.message);
                 }
-                
-                // Önce Firestore dökümanını silmeyi dene
-                try {
-                    await db.collection('users').doc(user.uid).delete();
-                    alert(`✅ ${username} kullanıcısı başarıyla silindi!`);
-                } catch (deleteError) {
-                    // Firestore güvenlik kuralları izin vermiyorsa, kullanıcıyı devre dışı bırak
-                    console.warn('Firestore silme başarısız, devre dışı bırakılıyor:', deleteError.message);
-                    await db.collection('users').doc(user.uid).update({
-                        banned: true,
-                        deleted: true,
-                        deletedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        deletedBy: localStorage.getItem('h_sound_username') || 'superadmin'
-                    });
-                    alert(`✅ ${username} kullanıcısı devre dışı bırakıldı ve giriş yapamaz hale getirildi.\n\n⚠️ Not: Firebase Auth kaydını silmek için Firebase Console'u kullanın.`);
-                }
-                
-                loadUsers();
-                
             } catch (error) {
-                console.error('❌ Silme hatası:', error);
-                alert('❌ İşlem başarısız: ' + error.message + '\n\nFirebase Console\'dan manuel olarak silebilirsiniz.');
+                alert('❌ İşlem başarısız: ' + error.message);
             }
         }
 
@@ -1112,29 +1001,30 @@
             }
 
             try {
-                // Kullanıcıyı bul
-                const user = users.find(u => u.username === username);
-                if (!user) {
-                    alert('❌ Kullanıcı bulunamadı!');
-                    return;
-                }
-                
-                // Firestore'da rolü güncelle
-                await db.collection('users').doc(user.uid).update({
-                    role: newRole
+                const response = await fetch(`${API_URL}/api/admin/change-role`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminUsername: adminCredentials.username,
+                        adminPassword: adminCredentials.password,
+                        targetUsername: username,
+                        newRole
+                    })
                 });
-                
-                alert(`✅ ${username} kullanıcısının rolü "${newRole}" olarak değiştirildi!`);
-                loadUsers();
-                
+
+                const data = await response.json();
+                alert(data.message);
+                if (data.success) loadUsers();
             } catch (error) {
-                console.error('❌ Rol değiştirme hatası:', error);
-                alert('❌ İşlem başarısız: ' + error.message);
+                alert('İşlem başarısız!');
             }
         }
 
         async function changePassword(username) {
             const currentUserRole = localStorage.getItem('h_sound_role') || 'user';
+            
+            // Hedef kullanıcının rolünü kontrol et
+            const targetUser = users.find(u => u.username === username);
             
             // Sadece superadmin herkesin şifresini değiştirebilir
             if (currentUserRole !== 'superadmin') {
@@ -1148,104 +1038,34 @@
                 return;
             }
             
-            const newPassword = prompt(`${username} için yeni şifre:\n\n(En az 6 karakter)`);
+            const newPassword = prompt(`${username} için yeni şifre:`);
             if (!newPassword) return;
-            
-            if (newPassword.length < 6) {
-                alert('❌ Şifre en az 6 karakter olmalıdır!');
-                return;
-            }
 
             try {
-                // Kullanıcıyı bul
-                const user = users.find(u => u.username === username);
-                if (!user) {
-                    alert('❌ Kullanıcı bulunamadı!');
-                    return;
-                }
-                
-                // Firestore'da şifreyi direkt güncelle
-                await db.collection('users').doc(user.uid).update({
-                    password: newPassword
+                const response = await fetch(`${API_URL}/api/admin/change-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        adminUsername: adminCredentials.username,
+                        adminPassword: adminCredentials.password,
+                        targetUsername: username,
+                        newPassword
+                    })
                 });
+
+                const data = await response.json();
                 
-                console.log(`✅ ${username} kullanıcısının şifresi güncellendi`);
-                
-                alert(`✅ ${username} kullanıcısının şifresi başarıyla değiştirildi!\n\nYeni Şifre: ${newPassword}\n\n⚠️ Not: Kullanıcı bir sonraki girişinde yeni şifreyi kullanmalıdır.`);
-                
-                // Kullanıcı listesini yenile
-                await loadUsers();
-                
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    loadUsers();
+                } else {
+                    alert('❌ ' + data.message);
+                }
             } catch (error) {
-                console.error('❌ Şifre değiştirme hatası:', error);
                 alert('❌ İşlem başarısız: ' + error.message);
             }
         }
 
-        // Şifre Göster/Gizle
-        function togglePassword(button) {
-            const passwordSpan = button.previousElementSibling;
-            const icon = button.querySelector('i');
-            const actualPassword = passwordSpan.getAttribute('data-password');
-            
-            if (passwordSpan.textContent === '••••••••') {
-                passwordSpan.textContent = actualPassword;
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-                button.classList.add('active');
-                button.title = 'Şifreyi Gizle';
-            } else {
-                passwordSpan.textContent = '••••••••';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-                button.classList.remove('active');
-                button.title = 'Şifreyi Göster';
-            }
-        }
-
-        async function toggleMaintenanceMode() {
-            const currentRole = localStorage.getItem('h_sound_role');
-            if (currentRole !== 'superadmin') {
-                alert('❌ Bu işlem sadece süper admin tarafından yapılabilir!');
-                return;
-            }
-
-            try {
-                const doc = await db.collection('settings').doc('maintenance').get();
-                const isCurrentlyOn = doc.exists && doc.data().enabled === true;
-                const newState = !isCurrentlyOn;
-
-                await db.collection('settings').doc('maintenance').set({
-                    enabled: newState,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedBy: localStorage.getItem('h_sound_username') || 'superadmin'
-                });
-
-                updateMaintenanceBtn(newState);
-                alert(newState
-                    ? '🔧 Bakım modu AKTİF! Sadece süper admin giriş yapabilir.'
-                    : '✅ Bakım modu KAPANDI! Site normal çalışıyor.'
-                );
-            } catch (error) {
-                console.error('❌ Bakım modu hatası:', error);
-                alert('❌ Hata: ' + error.message);
-            }
-        }
-
-        function updateMaintenanceBtn(isOn) {
-            const btn = document.getElementById('maintenance-btn-text');
-            const btnEl = btn ? btn.closest('button') : null;
-            if (btn) btn.textContent = isOn ? 'Bakım Modunu Kapat' : 'Bakım Modunu Aç';
-            if (btnEl) btnEl.style.background = isOn ? '#27AE60' : '#E67E22';
-        }
-
-        async function checkMaintenanceStatus() {
-            try {
-                const doc = await db.collection('settings').doc('maintenance').get();
-                const isOn = doc.exists && doc.data().enabled === true;
-                updateMaintenanceBtn(isOn);
-            } catch(e) {}
-        }
 
     </script>
 </body>

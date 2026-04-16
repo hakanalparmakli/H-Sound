@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlify Edge Functions Test - H-Sound</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #2d5016; }
+        .error { background: #5c1a1a; }
+        .loading { background: #3a3a3a; }
+        .info { background: #1a3a5c; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2980b9; }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .video-item {
+            background: #1a1a1a;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .video-item img {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 H-Sound Netlify Edge Functions Test</h1>
+    
+    <div class="test-section">
+        <div class="test-result info">
+            <strong>ℹ️ Bilgi:</strong> Bu uygulama artık sadece Netlify Edge Functions kullanıyor.<br>
+            Diğer tüm API'ler (Invidious, Piped, YouTube Scraping) kaldırıldı.
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Parametreleri</h2>
+        <input type="text" id="searchQuery" value="popular music 2024" style="width: 300px; padding: 8px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 4px;">
+        <button onclick="testNetlifyAPI()">Netlify Backend'i Test Et</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Netlify Edge Functions Test</h2>
+        <div id="netlifyResults"></div>
+    </div>
+
+    <script>
+        async function testNetlifyAPI() {
+            const resultsDiv = document.getElementById('netlifyResults');
+            resultsDiv.innerHTML = '<div class="test-result loading">Test ediliyor...</div>';
+            
+            const query = document.getElementById('searchQuery').value;
+            
+            try {
+                const startTime = Date.now();
+                const apiUrl = `/api/youtube-search?q=${encodeURIComponent(query)}`;
+                
+                console.log('Testing Netlify Edge Function:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(15000)
+                });
+                
+                const duration = Date.now() - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    let videoList = '';
+                    data.slice(0, 5).forEach((video, i) => {
+                        videoList += `
+                            <div class="video-item">
+                                <img src="${video.thumbnail}" alt="${video.title}">
+                                <div>
+                                    <strong>${i + 1}. ${video.title}</strong><br>
+                                    <small>${video.artist}</small><br>
+                                    <small>Video ID: ${video.videoId}</small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="test-result success">
+                            ✅ Netlify Edge Function BAŞARILI<br>
+                            Süre: ${duration}ms | Sonuç: ${data.length} video<br>
+                            <strong>Backend çalışıyor!</strong>
+                        </div>
+                        <h3>İlk 5 Sonuç:</h3>
+                        ${videoList}
+                        <details>
+                            <summary style="cursor: pointer; margin-top: 10px;">JSON Verisi (Tıklayın)</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    resultsDiv.innerHTML = `
+                        <div class="test-result error">
+                            ❌ HTTP ${response.status}: ${response.statusText}<br>
+                            <pre>${errorText}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="test-result error">
+                        ❌ Netlify Backend Hatası<br>
+                        ${error.message}<br><br>
+                        <strong>Olası Nedenler:</strong><br>
+                        - Edge Function deploy edilmemiş olabilir<br>
+                        - YouTube API key geçersiz olabilir<br>
+                        - Netlify'da environment variable eksik olabilir
+                    </div>
+                `;
+            }
+        }
+
+        // Sayfa yüklendiğinde otomatik test
+        window.onload = () => {
+            console.log('🔍 Netlify Edge Functions Test sayfası hazır');
+            testNetlifyAPI(); // Otomatik test başlat
+        };
+    </script>
+</body>
+</html>

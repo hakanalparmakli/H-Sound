@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .sidebar { background: #333; color: white; padding: 20px; width: 200px; }
+        .sidebar a { color: white; text-decoration: none; display: block; padding: 10px; margin: 5px 0; }
+        .sidebar a:hover, .sidebar a.active { background: #555; }
+        .content { margin-left: 220px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="#" id="home-link" class="active">Ana Sayfa</a>
+        <a href="#" id="search-link">Arama</a>
+        <a href="#" id="friends-link">Arkadaşlar</a>
+        <a href="#" id="downloads-link">İndirilenler</a>
+    </div>
+    
+    <div class="content" id="content-area">
+        <h1>Ana Sayfa</h1>
+        <p>Navigation test sayfası</p>
+    </div>
+
+    <script>
+        // Element'leri al
+        const homeLink = document.getElementById('home-link');
+        const searchLink = document.getElementById('search-link');
+        const friendsLink = document.getElementById('friends-link');
+        const downloadsLink = document.getElementById('downloads-link');
+        const contentArea = document.getElementById('content-area');
+        
+        // Aktif link'i ayarla
+        function setActiveLink(activeLink) {
+            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+            activeLink.classList.add('active');
+        }
+        
+        // Sayfa fonksiyonları
+        function showHomePage() {
+            console.log('Ana sayfa açılıyor...');
+            setActiveLink(homeLink);
+            contentArea.innerHTML = '<h1>Ana Sayfa</h1><p>Hoş geldiniz!</p>';
+        }
+        
+        function showSearchPage() {
+            console.log('Arama sayfası açılıyor...');
+            setActiveLink(searchLink);
+            contentArea.innerHTML = '<h1>Arama</h1><p>Müzik arayın...</p>';
+        }
+        
+        function showFriendsPage() {
+            console.log('Arkadaşlar sayfası açılıyor...');
+            setActiveLink(friendsLink);
+            contentArea.innerHTML = '<h1>Arkadaşlar</h1><p>Arkadaş listesi...</p>';
+        }
+        
+        function showDownloadsPage() {
+            console.log('İndirilenler sayfası açılıyor...');
+            setActiveLink(downloadsLink);
+            contentArea.innerHTML = '<h1>İndirilenler</h1><p>İndirilen müzikler...</p>';
+        }
+        
+        // Event listener'ları ekle
+        homeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showHomePage();
+        });
+        
+        searchLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSearchPage();
+        });
+        
+        friendsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showFriendsPage();
+        });
+        
+        downloadsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showDownloadsPage();
+        });
+        
+        console.log('Navigation test hazır!');
+    </script>
+</body>
+</html>

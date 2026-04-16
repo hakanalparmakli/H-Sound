@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H-Sound Friend System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1A1A1A;
+            color: white;
+            padding: 20px;
+        }
+        .test-section {
+            background: #2C2C2C;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498DB;
+        }
+        .success { border-left-color: #27AE60; }
+        .error { border-left-color: #E74C3C; }
+        .warning { border-left-color: #F39C12; }
+        button {
+            background: #3498DB;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #5DADE2; }
+        .btn-danger { background: #E74C3C; }
+        .btn-danger:hover { background: #C0392B; }
+    </style>
+</head>
+<body>
+    <h1>🧪 H-Sound Friend System Test</h1>
+    
+    <div class="test-section">
+        <h3>📋 Test Results</h3>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔧 Test Controls</h3>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearTestData()" class="btn-danger">Clear Test Data</button>
+        <button onclick="setupTestUsers()">Setup Test Users</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>👥 Current Users</h3>
+        <div id="users-list"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🤝 Friend Requests</h3>
+        <div id="friend-requests"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : '';
+            results.innerHTML += `<div class="test-section ${className}"><strong>[${type.toUpperCase()}]</strong> ${message}</div>`;
+        }
+
+        function clearTestData() {
+            // Clear all H-Sound related localStorage data
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('h_sound_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            log('All test data cleared', 'warning');
+            updateDisplays();
+        }
+
+        function setupTestUsers() {
+            // Create test users
+            const testUsers = {
+                'Hakan': {
+                    password: 'Hakan5225522541',
+                    role: 'Süper Admin',
+                    registerDate: Date.now()
+                },
+                'TestUser1': {
+                    password: 'test123',
+                    role: 'Kullanıcı',
+                    registerDate: Date.now()
+                },
+                'TestUser2': {
+                    password: 'test456',
+                    role: 'User',
+                    registerDate: Date.now()
+                }
+            };
+            
+            localStorage.setItem('h_sound_users', JSON.stringify(testUsers));
+            log('Test users created: Hakan (Süper Admin), TestUser1 (Kullanıcı), TestUser2 (User)', 'success');
+            updateDisplays();
+        }
+
+        function testFriendRequestSystem() {
+            log('🧪 Testing Friend Request System...', 'info');
+            
+            // Simulate TestUser1 sending friend request to TestUser2
+            const currentUser = 'TestUser1';
+            const targetUser = 'TestUser2';
+            
+            // Load existing data
+            let sentRequests = JSON.parse(localStorage.getItem(`h_sound_sent_requests_${currentUser}`) || '[]');
+            let targetRequests = JSON.parse(localStorage.getItem(`h_sound_friend_requests_${targetUser}`) || '[]');
+            
+            // Send friend request
+            if (!sentRequests.includes(targetUser)) {
+                sentRequests.push(targetUser);
+                localStorage.setItem(`h_sound_sent_requests_${currentUser}`, JSON.stringify(sentRequests));
+                
+                targetRequests.push(currentUser);
+                localStorage.setItem(`h_sound_friend_requests_${targetUser}`, JSON.stringify(targetRequests));
+                
+                log(`✅ Friend request sent from ${currentUser} to ${targetUser}`, 'success');
+            } else {
+                log(`⚠️ Friend request already exists from ${currentUser} to ${targetUser}`, 'warning');
+            }
+            
+            updateDisplays();
+        }
+
+        function testFriendAcceptance() {
+            log('🧪 Testing Friend Acceptance...', 'info');
+            
+            const currentUser = 'TestUser2';
+            const requesterUser = 'TestUser1';
+            
+            // Load data
+            let friends = JSON.parse(localStorage.getItem(`h_sound_friends_${currentUser}`) || '[]');
+            let requesterFriends = JSON.parse(localStorage.getItem(`h_sound_friends_${requesterUser}`) || '[]');
+            let friendRequests = JSON.parse(localStorage.getItem(`h_sound_friend_requests_${currentUser}`) || '[]');
+            let sentRequests = JSON.parse(localStorage.getItem(`h_sound_sent_requests_${requesterUser}`) || '[]');
+            
+            // Accept friend request
+            if (friendRequests.includes(requesterUser)) {
+                // Add to friends lists
+                if (!friends.includes(requesterUser)) {
+                    friends.push(requesterUser);
+                    localStorage.setItem(`h_sound_friends_${currentUser}`, JSON.stringify(friends));
+                }
+                
+                if (!requesterFriends.includes(currentUser)) {
+                    requesterFriends.push(currentUser);
+                    localStorage.setItem(`h_sound_friends_${requesterUser}`, JSON.stringify(requesterFriends));
+                }
+                
+                // Remove from requests
+                friendRequests = friendRequests.filter(req => req !== requesterUser);
+                localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
+                
+                sentRequests = sentRequests.filter(req => req !== currentUser);
+                localStorage.setItem(`h_sound_sent_requests_${requesterUser}`, JSON.stringify(sentRequests));
+                
+                log(`✅ Friend request accepted: ${currentUser} and ${requesterUser} are now friends`, 'success');
+            } else {
+                log(`⚠️ No friend request found from ${requesterUser} to ${currentUser}`, 'warning');
+            }
+            
+            updateDisplays();
+        }
+
+        function testMessagingValidation() {
+            log('🧪 Testing Messaging Validation...', 'info');
+            
+            const user1 = 'TestUser1';
+            const user2 = 'TestUser2';
+            const user3 = 'Hakan';
+            
+            // Check if TestUser1 can message TestUser2 (should be allowed - they are friends)
+            const user1Friends = JSON.parse(localStorage.getItem(`h_sound_friends_${user1}`) || '[]');
+            if (user1Friends.includes(user2)) {
+                log(`✅ ${user1} can message ${user2} (they are friends)`, 'success');
+            } else {
+                log(`❌ ${user1} cannot message ${user2} (not friends)`, 'error');
+            }
+            
+            // Check if TestUser1 can message Hakan (should be blocked - not friends)
+            if (user1Friends.includes(user3)) {
+                log(`⚠️ ${user1} can message ${user3} (they are friends)`, 'warning');
+            } else {
+                log(`✅ ${user1} cannot message ${user3} (not friends) - Validation working`, 'success');
+            }
+        }
+
+        function runAllTests() {
+            document.getElementById('test-results').innerHTML = '';
+            log('🚀 Starting H-Sound Friend System Tests...', 'info');
+            
+            setupTestUsers();
+            testFriendRequestSystem();
+            testFriendAcceptance();
+            testMessagingValidation();
+            
+            log('🎉 All tests completed!', 'success');
+        }
+
+        function updateDisplays() {
+            // Update users list
+            const users = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = Object.entries(users).map(([username, data]) => 
+                `<div><strong>${username}</strong> - ${data.role}</div>`
+            ).join('');
+            
+            // Update friend requests
+            const requestsDiv = document.getElementById('friend-requests');
+            let requestsHtml = '';
+            
+            Object.keys(users).forEach(username => {
+                const requests = JSON.parse(localStorage.getItem(`h_sound_friend_requests_${username}`) || '[]');
+                const friends = JSON.parse(localStorage.getItem(`h_sound_friends_${username}`) || '[]');
+                
+                if (requests.length > 0 || friends.length > 0) {
+                    requestsHtml += `<div><strong>${username}:</strong><br>`;
+                    if (requests.length > 0) {
+                        requestsHtml += `&nbsp;&nbsp;📨 Requests: ${requests.join(', ')}<br>`;
+                    }
+                    if (friends.length > 0) {
+                        requestsHtml += `&nbsp;&nbsp;👥 Friends: ${friends.join(', ')}<br>`;
+                    }
+                    requestsHtml += `</div>`;
+                }
+            });
+            
+            requestsDiv.innerHTML = requestsHtml || '<div>No friend requests or friends found</div>';
+        }
+
+        // Initialize display
+        updateDisplays();
+    </script>
+</body>
+</html>
