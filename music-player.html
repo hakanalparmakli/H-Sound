@@ -3461,6 +3461,9 @@
                                 <button class="action-btn btn-edit" onclick="editUserRole('${username}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <button class="action-btn btn-promote" onclick="changeUserPassword('${username}')">
+                                    <i class="fas fa-key"></i>
+                                </button>
                                 <button class="action-btn ${isBanned ? 'btn-promote' : 'btn-delete'}" onclick="toggleBanUser('${username}')">
                                     <i class="fas fa-${isBanned ? 'unlock' : 'ban'}"></i> ${isBanned ? 'Banı Kaldır' : 'Banla'}
                                 </button>
@@ -3499,6 +3502,33 @@
             localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
             showNotification(isBanned ? `${username} banı kaldırıldı` : `${username} banlandı`, isBanned ? 'success' : 'warning');
             showSuperAdminPage();
+        }
+
+        function changeUserPassword(username) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.zIndex = '9999';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width:380px;">
+                    <button class="modal-close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+                    <h3 style="margin-top:0;color:var(--primary-color);"><i class="fas fa-key"></i> Şifre Değiştir - ${username}</h3>
+                    <div class="form-group">
+                        <label class="form-label">Yeni Şifre</label>
+                        <input type="text" id="new-pw-input" class="form-input" placeholder="Yeni şifre girin...">
+                    </div>
+                    <button class="btn" onclick="
+                        const pw = document.getElementById('new-pw-input').value.trim();
+                        if(!pw){return;}
+                        const users = JSON.parse(localStorage.getItem('h_sound_users')||'{}');
+                        if(users['${username}']){users['${username}'].password=pw;localStorage.setItem('h_sound_users',JSON.stringify(users));}
+                        showNotification('${username} şifresi değiştirildi!','success');
+                        this.closest('.modal').remove();
+                        showSuperAdminPage();
+                    "><i class="fas fa-save"></i> Kaydet</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            setTimeout(() => modal.querySelector('#new-pw-input')?.focus(), 100);
         }
 
         // Search function (YouTube API + Local Database)
@@ -3755,27 +3785,6 @@
             }
         }
 
-        // YouTube Data API v3 Configuration - Çoklu API Key Sistemi
-        const YOUTUBE_API_KEYS = [
-            'AIzaSyDtjNMCzvp3WhA-OmJfUcsQtepF_W5tUdI', // Primary API Key
-            'AIzaSyCRbah2q8W7QkIyDaIJlMEirCI2mfPWMS0', // Secondary API Key
-            'AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE'  // Backup API Key
-        ];
-        let currentApiKeyIndex = 0;
-        const YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
-
-        // API key rotation - quota dolduğunda sonrakine geç
-        function getNextApiKey() {
-            const apiKey = YOUTUBE_API_KEYS[currentApiKeyIndex];
-            console.log(`🔑 Using API Key ${currentApiKeyIndex + 1}/${YOUTUBE_API_KEYS.length}: ${apiKey.substring(0, 20)}...`);
-            return apiKey;
-        }
-
-        function rotateApiKey() {
-            currentApiKeyIndex = (currentApiKeyIndex + 1) % YOUTUBE_API_KEYS.length;
-            console.log(`🔄 Rotating to API Key ${currentApiKeyIndex + 1}/${YOUTUBE_API_KEYS.length}`);
-        }
-
         // YouTube API ile gerçek müzik çalma sistemi
         async function playRealAudio(videoId, title) {
             // Mevcut audio player'ı durdur
@@ -3943,29 +3952,6 @@
         }
 
         // Aynı şarkının alternatif YouTube videosunu ara
-        async function searchAlternativeVideo(title) {
-            try {
-                const apiKey = getNextApiKey();
-                const query = encodeURIComponent(title + ' official audio');
-                const url = `${YOUTUBE_API_BASE_URL}/search?part=snippet&q=${query}&type=video&videoCategoryId=10&maxResults=5&key=${apiKey}`;
-                
-                const response = await fetch(url);
-                if (!response.ok) {
-                    rotateApiKey();
-                    return null;
-                }
-                
-                const data = await response.json();
-                if (data.items && data.items.length > 0) {
-                    // İlk sonucu döndür
-                    return data.items[0].id.videoId;
-                }
-            } catch (error) {
-                console.error('❌ Alternative video search error:', error);
-            }
-            return null;
-        }
-
         // YouTube Player kontrollerini ayarla
         function setupYouTubePlayerControls(player, title) {
             console.log('🎛️ Setting up YouTube player controls for:', title);
@@ -4089,136 +4075,126 @@
                     break;
             }
         }
-        async function searchYouTubeMusic(query, maxResults = 12) {
-            // Tüm API keylerini dene
-            for (let attempt = 0; attempt < YOUTUBE_API_KEYS.length; attempt++) {
-                try {
-                    const apiKey = getNextApiKey();
-                    console.log(`🔍 YouTube API ile aranıyor: ${query} (API Key ${currentApiKeyIndex + 1})`);
-                    showNotification(`"${query}" aranıyor...`, 'info');
-                    
-                    const searchUrl = `${YOUTUBE_API_BASE_URL}/search?` +
-                        `part=snippet&` +
-                        `q=${encodeURIComponent(query + ' music')}&` +
-                        `type=video&` +
-                        `videoCategoryId=10&` +
-                        `videoDuration=medium&` +
-                        `maxResults=${maxResults}&` +
-                        `key=${apiKey}`;
+        // ── Invidious API - Ücretsiz & Sınırsız ──────────────────────────
+        const INVIDIOUS_INSTANCES = [
+            'https://inv.thepixora.com'  // cors:true, api:true olan tek instance
+        ];
+        let invidiousIndex = 0;
 
-                    const response = await fetch(searchUrl);
-                    
-                    if (response.status === 403) {
-                        console.log(`⚠️ API Key ${currentApiKeyIndex + 1} quota exceeded, trying next...`);
-                        rotateApiKey();
-                        continue; // Try next API key
-                    }
-                    
-                    if (!response.ok) {
-                        throw new Error(`YouTube API Error: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    console.log(`✅ YouTube API Response (Key ${currentApiKeyIndex + 1}):`, data);
-
-                    if (data.items && data.items.length > 0) {
-                        const results = data.items.map(item => ({
-                            videoId: item.id.videoId,
-                            title: cleanTitle(item.snippet.title),
-                            artist: extractArtist(item.snippet.title, item.snippet.channelTitle),
-                            thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                            channelTitle: item.snippet.channelTitle,
-                            publishedAt: item.snippet.publishedAt,
-                            description: item.snippet.description
-                        }));
-
-                        console.log(`🎵 Found ${results.length} YouTube music results`);
-                        showNotification(`${results.length} şarkı bulundu!`, 'success');
-                        return results;
-                    } else {
-                        console.log('❌ No YouTube results found');
-                        break; // No results, don't try other keys
-                    }
-
-                } catch (error) {
-                    console.log(`❌ YouTube API Error (Key ${currentApiKeyIndex + 1}):`, error.message);
-                    if (attempt < YOUTUBE_API_KEYS.length - 1) {
-                        rotateApiKey();
-                        continue; // Try next API key
-                    }
-                }
-            }
-            
-            // All API keys failed, use local database
-            console.log('🔄 All YouTube API keys failed, using local database...');
-            showNotification('Yerel veritabanında aranıyor...', 'info');
-            return searchLocalMusic(query, maxResults);
+        function getInvidiousBase() {
+            return INVIDIOUS_INSTANCES[invidiousIndex % INVIDIOUS_INSTANCES.length];
         }
 
-        // YouTube API ile popüler müzikleri getir - pageToken ile sayfalama desteği
+        function rotateInvidious() {
+            invidiousIndex = (invidiousIndex + 1) % INVIDIOUS_INSTANCES.length;
+        }
+
+        async function invidiousSearch(query, maxResults = 12) {
+            const base = getInvidiousBase();
+            const url = `${base}/api/v1/search?q=${encodeURIComponent(query)}&type=video&page=1`;
+            try {
+                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+                if (!res.ok) return [];
+                const data = await res.json();
+                if (!Array.isArray(data) || data.length === 0) return [];
+                return data
+                    .filter(v => v.type === 'video' && v.videoId && (v.lengthSeconds || 0) > 60)
+                    .slice(0, maxResults)
+                    .map(v => ({
+                        videoId: v.videoId,
+                        title: v.title,
+                        artist: v.author,
+                        channelTitle: v.author,
+                        thumbnail: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+                        lengthSeconds: v.lengthSeconds
+                    }));
+            } catch(e) {
+                return [];
+            }
+        }
+
+        async function searchYouTubeMusic(query, maxResults = 12) {
+            const results = await invidiousSearch(query, maxResults);
+            if (results.length > 0) return results;
+            // Fallback: YouTube Data API
+            return await youtubeApiSearch(query, maxResults);
+        }
+
+        // YouTube Data API fallback
+        const YT_API_KEYS = [
+            'AIzaSyDtjNMCzvp3WhA-OmJfUcsQtepF_W5tUdI',
+            'AIzaSyCRbah2q8W7QkIyDaIJlMEirCI2mfPWMS0',
+            'AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE'
+        ];
+        let ytKeyIndex = 0;
+
+        async function youtubeApiSearch(query, maxResults = 12) {
+            for (let i = 0; i < YT_API_KEYS.length; i++) {
+                try {
+                    const key = YT_API_KEYS[(ytKeyIndex + i) % YT_API_KEYS.length];
+                    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&videoDuration=medium&maxResults=${maxResults}&key=${key}`;
+                    const res = await fetch(url);
+                    if (res.status === 403) continue;
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (!data.items?.length) continue;
+                    ytKeyIndex = (ytKeyIndex + i + 1) % YT_API_KEYS.length;
+                    return data.items.filter(it => it.id?.videoId).map(it => ({
+                        videoId: it.id.videoId,
+                        title: it.snippet.title,
+                        artist: it.snippet.channelTitle,
+                        channelTitle: it.snippet.channelTitle,
+                        thumbnail: it.snippet.thumbnails.medium?.url || ''
+                    }));
+                } catch(e) {}
+            }
+            return [];
+        }
+
         // Bilinen Türkçe rap/trap/pop sanatçileri - rotasyonlu
         const TR_MUSIC_QUERIES = [
-            'Blok3',
-            'Lvbel C5',
-            'Çakal',
-            'Ezhel',
-            'Uzi',
-            'Murda',
-            'Ceza',
-            'Şanışer',
-            'Norm Ender',
-            'Hidra',
-            'Ege Çubukçu',
-            'Semicenk',
-            'Reynmen',
-            'Sagopa Kajmer',
-            'Contra',
-            'Ben Fero',
-            'Khontkar',
-            'Joker',
-            'Allame',
-            'Fuat Ergin'
+            'Blok3', 'Lvbel C5', 'Çakal', 'Ezhel', 'Uzi', 'Murda',
+            'Ceza', 'Şanışer', 'Norm Ender', 'Hidra', 'Ege Çubukçu',
+            'Semicenk', 'Reynmen', 'Sagopa Kajmer', 'Contra',
+            'Ben Fero', 'Khontkar', 'Joker', 'Allame', 'Fuat Ergin'
         ];
         let trQueryIndex = 0;
 
         async function getYouTubePopularMusic(maxResults = 24, pageToken = '') {
-            // Her zaman Türkçe arama yap - regionCode güvenilir değil
-            const query = TR_MUSIC_QUERIES[trQueryIndex % TR_MUSIC_QUERIES.length];
-
-            for (let attempt = 0; attempt < YOUTUBE_API_KEYS.length; attempt++) {
-                try {
-                    const apiKey = getNextApiKey();
-                    let searchUrl = `${YOUTUBE_API_BASE_URL}/search?` +
-                        `part=snippet&q=${encodeURIComponent(query + ' official')}&type=video` +
-                        `&videoCategoryId=10&videoDuration=medium&maxResults=${maxResults}&key=${apiKey}`;
-                    if (pageToken) searchUrl += `&pageToken=${pageToken}`;
-
-                    const response = await fetch(searchUrl);
-                    if (response.status === 403) { rotateApiKey(); continue; }
-                    if (!response.ok) { rotateApiKey(); continue; }
-
-                    const data = await response.json();
-                    if (data.items && data.items.length > 0) {
-                        const results = data.items
-                            .filter(item => item.id?.videoId)
-                            .map(item => ({
-                                videoId: item.id.videoId,
-                                title: cleanTitle(item.snippet.title),
-                                artist: extractArtist(item.snippet.title, item.snippet.channelTitle),
-                                thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                                channelTitle: item.snippet.channelTitle
-                            }));
-                        results._nextPageToken = data.nextPageToken || null;
-                        return results;
-                    } else {
-                        rotateApiKey(); continue;
+            // Önce trending dene
+            try {
+                const base = getInvidiousBase();
+                const url = `${base}/api/v1/trending?type=music&region=TR`;
+                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        return data.slice(0, maxResults).map(v => ({
+                            videoId: v.videoId,
+                            title: v.title,
+                            artist: v.author,
+                            channelTitle: v.author,
+                            thumbnail: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`
+                        }));
                     }
-                } catch (error) {
-                    if (attempt < YOUTUBE_API_KEYS.length - 1) { rotateApiKey(); continue; }
                 }
-            }
-            return [];
+            } catch(e) {}
+            // Fallback: sanatçi araması
+            const query = TR_MUSIC_QUERIES[trQueryIndex % TR_MUSIC_QUERIES.length];
+            return await searchYouTubeMusic(query, maxResults);
         }
+
+        async function searchAlternativeVideo(title) {
+            const results = await searchYouTubeMusic(title + ' official audio', 3);
+            return results.length > 0 ? results[0].videoId : null;
+        }
+
+        // Eski stub'lar - geriye dönük uyumluluk
+        const YOUTUBE_API_KEYS = [];
+        const YOUTUBE_API_BASE_URL = '';
+        function getNextApiKey() { return ''; }
+        function rotateApiKey() {}
+        // ─────────────────────────────────────────────────────────────────
 
         // YouTube API ile şarkı detaylarını getir - Çoklu API Key
         async function getYouTubeVideoDetails(videoId) {
@@ -4579,94 +4555,50 @@
         }
 
         function playNextSong() {
-            if (playlist.length === 0) {
-                showNotification('Çalma listesi boş', 'warning');
+            if (playlist.length === 0) return;
+
+            if (playMode === 'shuffle') {
+                // Playlist içinden rastgele seç (yerel liste değil)
+                const randomIndex = Math.floor(Math.random() * playlist.length);
+                const randomSong = playlist[randomIndex];
+                currentSongIndex = randomIndex;
+                playSong(randomSong.videoId, randomSong.title, randomSong.thumbnail, randomSong.artist);
                 return;
             }
-            
-            // Karışık çalma modunda tüm müzik veritabanından rastgele şarkı seç
-            if (playMode === 'shuffle') {
-                console.log('🔀 Karışık mod - tüm veritabanından rastgele şarkı seçiliyor');
-                
-                // Tüm müzik veritabanından şarkıları topla
-                const allSongs = [];
-                Object.values(localMusicDatabase).forEach(songs => {
-                    if (Array.isArray(songs)) {
-                        allSongs.push(...songs);
-                    }
-                });
-                
-                if (allSongs.length > 0) {
-                    // Rastgele şarkı seç
-                    const randomIndex = Math.floor(Math.random() * allSongs.length);
-                    const randomSong = allSongs[randomIndex];
-                    
-                    console.log(`🎵 Rastgele şarkı seçildi: ${randomSong.title}`);
-                    playSong(randomSong.id, randomSong.title, randomSong.thumbnail, randomSong.artist);
-                    return;
-                }
-            }
-            
-            // Normal mod - playlist içinde sıralı çal
+
             if (currentSongIndex < playlist.length - 1) {
                 currentSongIndex++;
-                const nextSong = playlist[currentSongIndex];
-                console.log(`⏭️ Playing next song: ${nextSong.title} (${currentSongIndex + 1}/${playlist.length})`);
-                playSong(nextSong.videoId, nextSong.title, nextSong.thumbnail, nextSong.artist);
+            } else if (playMode === 'repeat-all') {
+                currentSongIndex = 0;
             } else {
-                // Liste sonuna gelindi
-                if (playMode === 'repeat-all') {
-                    // Tümünü tekrarla modunda başa dön
-                    currentSongIndex = 0;
-                    const firstSong = playlist[0];
-                    console.log('🔁 Liste başa sarılıyor - tümünü tekrarla modu');
-                    playSong(firstSong.videoId, firstSong.title, firstSong.thumbnail, firstSong.artist);
-                } else {
-                    showNotification('Çalma listesinin sonuna geldiniz', 'info');
-                    console.log('🔚 End of playlist reached');
-                }
+                showNotification('Çalma listesinin sonuna geldiniz', 'info');
+                return;
             }
+            const song = playlist[currentSongIndex];
+            playSong(song.videoId, song.title, song.thumbnail, song.artist);
         }
 
         function playPreviousSong() {
-            if (playlist.length === 0) {
-                showNotification('Çalma listesi boş', 'warning');
+            if (playlist.length === 0) return;
+
+            if (playMode === 'shuffle') {
+                const randomIndex = Math.floor(Math.random() * playlist.length);
+                const randomSong = playlist[randomIndex];
+                currentSongIndex = randomIndex;
+                playSong(randomSong.videoId, randomSong.title, randomSong.thumbnail, randomSong.artist);
                 return;
             }
-            
-            // Karışık çalma modunda tüm müzik veritabanından rastgele şarkı seç
-            if (playMode === 'shuffle') {
-                console.log('🔀 Karışık mod - tüm veritabanından rastgele önceki şarkı seçiliyor');
-                
-                // Tüm müzik veritabanından şarkıları topla
-                const allSongs = [];
-                Object.values(localMusicDatabase).forEach(songs => {
-                    if (Array.isArray(songs)) {
-                        allSongs.push(...songs);
-                    }
-                });
-                
-                if (allSongs.length > 0) {
-                    // Rastgele şarkı seç
-                    const randomIndex = Math.floor(Math.random() * allSongs.length);
-                    const randomSong = allSongs[randomIndex];
-                    
-                    console.log(`🎵 Rastgele önceki şarkı seçildi: ${randomSong.title}`);
-                    playSong(randomSong.id, randomSong.title, randomSong.thumbnail, randomSong.artist);
-                    return;
-                }
-            }
-            
-            // Normal mod - playlist içinde sıralı çal
+
             if (currentSongIndex > 0) {
                 currentSongIndex--;
-                const prevSong = playlist[currentSongIndex];
-                console.log(`⏮️ Playing previous song: ${prevSong.title} (${currentSongIndex + 1}/${playlist.length})`);
-                playSong(prevSong.videoId, prevSong.title, prevSong.thumbnail, prevSong.artist);
+            } else if (playMode === 'repeat-all') {
+                currentSongIndex = playlist.length - 1;
             } else {
                 showNotification('Çalma listesinin başındasınız', 'info');
-                console.log('🔚 Beginning of playlist reached');
+                return;
             }
+            const song = playlist[currentSongIndex];
+            playSong(song.videoId, song.title, song.thumbnail, song.artist);
         }
 
         function formatTime(seconds) {
@@ -5427,6 +5359,12 @@
         // Müzik paylaşma modalını göster
         function showMusicShareModal() {
             if (!currentChatFriend) return;
+            if (!activeChatDocId && window.db && location.protocol !== 'file:') {
+                showNotification('Sohbet yükleniyor, lütfen bekleyin...', 'info');
+                // 1 saniye bekle, sonra aç
+                setTimeout(() => showMusicShareModal(), 1000);
+                return;
+            }
             openModal('music-share-modal');
             const musicList = document.getElementById('music-share-list');
             // Şu an çalınan playlist'i göster
@@ -6042,20 +5980,28 @@
         }
 
         // Kullanıcıyı sil
-        function deleteUser(username) {
+        async function deleteUser(username) {
             if (username === 'Hakan') {
                 showNotification('Hakan hesabı silinemez!', 'error');
                 return;
             }
-            
-            if (confirm(`${username} kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) {
-                const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
-                delete savedUsers[username];
-                localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
-                
-                showNotification(`${username} kullanıcısı silindi!`, 'success');
-                showSuperAdminPage(); // Sayfayı yenile
+            if (!confirm(`${username} kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) return;
+
+            // localStorage'dan sil
+            const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+            delete savedUsers[username];
+            localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
+
+            // Firebase'den sil
+            if (window.db && location.protocol !== 'file:') {
+                try {
+                    await window.db.collection('users').doc(username).delete().catch(() => {});
+                    await window.db.collection('userFriends').doc(username).delete().catch(() => {});
+                } catch(e) {}
             }
+
+            showNotification(`${username} kullanıcısı silindi!`, 'success');
+            showSuperAdminPage();
         }
 
         // GİRİŞ SİSTEMİ FONKSİYONLARI
@@ -6063,10 +6009,11 @@
         // Giriş kontrolü
         function checkLoginStatus() {
             const isLoggedIn = localStorage.getItem('h_sound_logged_in') === 'true';
+            const username = localStorage.getItem('h_sound_username');
             const loginScreen = document.getElementById('login-screen');
             const mainApp = document.getElementById('main-app');
-            
-            if (isLoggedIn) {
+
+            if (isLoggedIn && username) {
                 loginScreen.classList.add('hidden');
                 mainApp.style.display = 'flex';
             } else {
