@@ -3365,15 +3365,19 @@
                     const snap = await window.db.collection('users').get();
                     snap.forEach(doc => {
                         const u = doc.data();
-                        if (u.username && !savedUsers[u.username]) {
-                            savedUsers[u.username] = {
-                                role: u.role || 'Kullanıcı',
-                                registerDate: u.registerDate || new Date().toISOString(),
-                                password: '***'
-                            };
+                        if (u.username) {
+                            if (!savedUsers[u.username]) {
+                                savedUsers[u.username] = {
+                                    role: u.role || 'Kullanıcı',
+                                    registerDate: u.registerDate || new Date().toISOString(),
+                                    password: u.password || '(bilinmiyor)'
+                                };
+                            } else if (!savedUsers[u.username].password && u.password) {
+                                // localStorage'da şifre yoksa Firebase'den al
+                                savedUsers[u.username].password = u.password;
+                            }
                         }
                     });
-                    // Güncel listeyi kaydet
                     localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
                 } catch(e) {}
             }
@@ -5839,10 +5843,11 @@
         function logout() {
             const username = localStorage.getItem('h_sound_username') || 'Kullanıcı';
             
-            if (confirm(`Çıkış yapmak istediğinizden emin misiniz?\n\nHesap: ${username}\n\nVerileriniz korunacak ve tekrar giriş yapabilirsiniz.`)) {
+            if (confirm(`Çıkış yapmak istediğinizden emin misiniz?\n\nHesap: ${username}`)) {
+                localStorage.setItem('h_sound_logged_in', 'false');
                 showNotification('Güvenli çıkış yapıldı! Görüşmek üzere...', 'info');
                 setTimeout(() => {
-                    window.location.reload();
+                    checkLoginStatus();
                 }, 1500);
             }
         }
@@ -5987,14 +5992,36 @@
                 showNotification('Hakan hesabı silinemez!', 'error');
                 return;
             }
-            if (!confirm(`${username} kullanıcısını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`)) return;
 
-            // localStorage'dan sil
+            // confirm() yerine modal kullan (telefonda confirm çalışmayabilir)
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.zIndex = '9999';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width:380px;text-align:center;">
+                    <h3 style="margin-top:0;color:#E74C3C;"><i class="fas fa-trash"></i> Hesabı Sil</h3>
+                    <p style="color:var(--secondary-text-color);">
+                        <strong style="color:white;">${username}</strong> hesabını silmek istediğinden emin misin?<br>
+                        <span style="font-size:12px;">Bu işlem geri alınamaz!</span>
+                    </p>
+                    <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+                        <button class="btn btn-danger" onclick="confirmDeleteUser('${username}');this.closest('.modal').remove();">
+                            <i class="fas fa-trash"></i> Evet, Sil
+                        </button>
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove();">
+                            <i class="fas fa-times"></i> İptal
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function confirmDeleteUser(username) {
             const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
             delete savedUsers[username];
             localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
 
-            // Firebase'den sil
             if (window.db && location.protocol !== 'file:') {
                 try {
                     await window.db.collection('users').doc(username).delete().catch(() => {});
@@ -6002,7 +6029,7 @@
                 } catch(e) {}
             }
 
-            showNotification(`${username} kullanıcısı silindi!`, 'success');
+            showNotification(`${username} silindi!`, 'success');
             showSuperAdminPage();
         }
 
@@ -6010,12 +6037,12 @@
 
         // Giriş kontrolü
         function checkLoginStatus() {
-            const isLoggedIn = localStorage.getItem('h_sound_logged_in') === 'true';
+            const val = localStorage.getItem('h_sound_logged_in');
             const username = localStorage.getItem('h_sound_username');
             const loginScreen = document.getElementById('login-screen');
             const mainApp = document.getElementById('main-app');
 
-            if (isLoggedIn && username) {
+            if (val === 'true' && username) {
                 loginScreen.classList.add('hidden');
                 mainApp.style.display = 'flex';
             } else {
@@ -6114,10 +6141,11 @@
             };
             localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
 
-            // Firebase'e de kaydet (kullanıcı araması için)
+            // Firebase'e de kaydet (şifre dahil - admin paneli için)
             if (window.db && location.protocol !== 'file:') {
                 window.db.collection('users').doc(username).set({
                     username: username,
+                    password: password,
                     role: userRole,
                     registerDate: new Date().toISOString()
                 }).catch(e => console.log('Firebase register error:', e));
@@ -6133,20 +6161,6 @@
             setTimeout(() => {
                 showLoginForm();
             }, 1500);
-        }
-
-        // Çıkış yap (güncellenmiş)
-        function logout() {
-            const username = localStorage.getItem('h_sound_username') || 'Kullanıcı';
-            
-            if (confirm(`Çıkış yapmak istediğinizden emin misiniz?\n\nHesap: ${username}\n\nVerileriniz korunacak ve tekrar giriş yapabilirsiniz.`)) {
-                localStorage.setItem('h_sound_logged_in', 'false');
-                showNotification('Güvenli çıkış yapıldı! Görüşmek üzere...', 'info');
-                
-                setTimeout(() => {
-                    checkLoginStatus();
-                }, 1500);
-            }
         }
 
         // Uygulamayı başlat
