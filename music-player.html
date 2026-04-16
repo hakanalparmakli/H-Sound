@@ -4114,51 +4114,18 @@
         }
 
         async function searchYouTubeMusic(query, maxResults = 12) {
-            const results = await invidiousSearch(query, maxResults);
-            if (results.length > 0) return results;
-            // Fallback: YouTube Data API
-            return await youtubeApiSearch(query, maxResults);
+            return await invidiousSearch(query, maxResults);
         }
 
-        // YouTube Data API fallback
-        const YT_API_KEYS = [
-            'AIzaSyDtjNMCzvp3WhA-OmJfUcsQtepF_W5tUdI',
-            'AIzaSyCRbah2q8W7QkIyDaIJlMEirCI2mfPWMS0',
-            'AIzaSyBmj-JMrsKeXbtIXquKBBmZzqJv8R327fE'
-        ];
-        let ytKeyIndex = 0;
-
-        async function youtubeApiSearch(query, maxResults = 12) {
-            for (let i = 0; i < YT_API_KEYS.length; i++) {
-                try {
-                    const key = YT_API_KEYS[(ytKeyIndex + i) % YT_API_KEYS.length];
-                    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&videoDuration=medium&maxResults=${maxResults}&key=${key}`;
-                    const res = await fetch(url);
-                    if (res.status === 403) continue;
-                    if (!res.ok) continue;
-                    const data = await res.json();
-                    if (!data.items?.length) continue;
-                    ytKeyIndex = (ytKeyIndex + i + 1) % YT_API_KEYS.length;
-                    return data.items.filter(it => it.id?.videoId).map(it => ({
-                        videoId: it.id.videoId,
-                        title: it.snippet.title,
-                        artist: it.snippet.channelTitle,
-                        channelTitle: it.snippet.channelTitle,
-                        thumbnail: it.snippet.thumbnails.medium?.url || ''
-                    }));
-                } catch(e) {}
-            }
-            return [];
-        }
-
-        // Bilinen Türkçe rap/trap/pop sanatçileri - rotasyonlu
+        // Bilinen Türkçe rap/trap/pop sanatçileri
         const TR_MUSIC_QUERIES = [
             'Blok3', 'Lvbel C5', 'Çakal', 'Ezhel', 'Uzi', 'Murda',
             'Ceza', 'Şanışer', 'Norm Ender', 'Hidra', 'Ege Çubukçu',
             'Semicenk', 'Reynmen', 'Sagopa Kajmer', 'Contra',
             'Ben Fero', 'Khontkar', 'Joker', 'Allame', 'Fuat Ergin'
         ];
-        let trQueryIndex = 0;
+        // Her açılışta rastgele başla
+        let trQueryIndex = Math.floor(Math.random() * TR_MUSIC_QUERIES.length);
 
         async function getYouTubePopularMusic(maxResults = 24, pageToken = '') {
             // Önce trending dene
@@ -5446,22 +5413,23 @@
 
             if (window.db && location.protocol !== 'file:') {
                 try {
-                    // activeChatDocId hazır olana kadar bekle
-                    let waited = 0;
-                    while (!activeChatDocId && waited < 5000) {
-                        await new Promise(r => setTimeout(r, 200));
-                        waited += 200;
+                    // activeChatDocId yoksa yeniden yükle
+                    if (!activeChatDocId) {
+                        await loadMessages(currentChatFriend);
+                        // Yüklenmesini bekle
+                        let w = 0;
+                        while (!activeChatDocId && w < 5000) {
+                            await new Promise(r => setTimeout(r, 200));
+                            w += 200;
+                        }
                     }
-                    if (activeChatDocId) {
-                        await window.db.collection('mesajlar').doc(activeChatDocId)
-                            .collection('sohbet').add(msg);
-                        window.db.collection('mesajlar').doc(activeChatDocId)
-                            .update({ sonMesaj: `🎵 ${title}`, sonMesajGönderen: currentUser, sonMesajZamanı: new Date() })
-                            .catch(() => {});
-                        showNotification(`${title} paylaşıldı!`, 'success');
-                    } else {
-                        throw new Error('no doc');
-                    }
+                    if (!activeChatDocId) throw new Error('no doc');
+                    await window.db.collection('mesajlar').doc(activeChatDocId)
+                        .collection('sohbet').add(msg);
+                    window.db.collection('mesajlar').doc(activeChatDocId)
+                        .update({ sonMesaj: `🎵 ${title}`, sonMesajGönderen: currentUser, sonMesajZamanı: new Date() })
+                        .catch(() => {});
+                    showNotification(`${title} paylaşıldı!`, 'success');
                 } catch(e) {
                     const chatId = getChatId(currentUser, currentChatFriend);
                     saveMessageLocal(chatId, msg);
