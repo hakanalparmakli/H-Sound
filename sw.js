@@ -112,6 +112,18 @@ self.addEventListener('message', (event) => {
     if (event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
+
+    // Müzik çalıyor sinyali - SW'yi canlı tut
+    if (event.data.type === 'MUSIC_PLAYING') {
+        // Tüm client'lara bildir
+        self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+                if (client.id !== event.source.id) {
+                    client.postMessage({ type: 'MUSIC_STATUS', playing: true });
+                }
+            });
+        });
+    }
 });
 
 console.log('🎵 H-Sound Service Worker hazır!');

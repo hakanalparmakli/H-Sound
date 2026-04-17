@@ -3966,14 +3966,144 @@
             const existingWrap = document.getElementById('youtube-player-wrap');
             if (existingWrap) existingWrap.remove();
 
+            // SW ping interval temizle
+            if (window.swPingInterval) { clearInterval(window.swPingInterval); window.swPingInterval = null; }
+
             console.log(`🎵 Playing: ${title} (ID: ${videoId})`);
             showNotification(`"${title}" yükleniyor...`, 'info');
 
+            // Önce Invidious'tan direkt audio stream dene (arka planda çalışır)
+            const audioPlayed = await tryInvidiousAudioStream(videoId, title);
+            if (audioPlayed) return;
+
+            // Fallback: YouTube IFrame
             const success = await tryPlayYouTubeMusic(videoId, title);
             if (!success) {
                 console.log('🔄 YouTube playback failed, using fallback audio');
                 playFallbackAudio(title);
             }
+        }
+
+        // Invidious'tan direkt audio stream al - arka planda çalışır
+        async function tryInvidiousAudioStream(videoId, title) {
+            try {
+                const base = getInvidiousBase();
+                const url = `${base}/api/v1/videos/${videoId}?fields=adaptiveFormats,formatStreams`;
+                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+                if (!res.ok) return false;
+                const data = await res.json();
+
+                // En iyi audio formatını seç (opus veya mp4a)
+                let audioUrl = null;
+                const formats = data.adaptiveFormats || [];
+                const audioFormats = formats.filter(f => f.type && f.type.startsWith('audio/'));
+                // Kaliteye göre sırala
+                audioFormats.sort((a, b) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
+                if (audioFormats.length > 0) audioUrl = audioFormats[0].url;
+
+                // adaptiveFormats yoksa formatStreams dene
+                if (!audioUrl && data.formatStreams && data.formatStreams.length > 0) {
+                    audioUrl = data.formatStreams[0].url;
+                }
+
+                if (!audioUrl) return false;
+
+                console.log('🎵 Invidious audio stream bulundu, direkt çalıyor...');
+                playDirectAudio(audioUrl, videoId, title);
+                return true;
+            } catch(e) {
+                console.log('⚠️ Invidious audio stream başarısız:', e.message);
+                return false;
+            }
+        }
+
+        // Direkt <audio> elementi ile çal - arka planda sorunsuz çalışır
+        function playDirectAudio(audioUrl, videoId, title) {
+            const audio = document.createElement('audio');
+            audio.id = 'html5-audio-player';
+            audio.src = audioUrl;
+            audio.autoplay = true;
+            audio.preload = 'auto';
+            // Arka planda çalması için kritik
+            audio.setAttribute('playsinline', '');
+            audio.style.display = 'none';
+            document.body.appendChild(audio);
+
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const progress = document.getElementById('progress');
+            const currentTimeEl = document.getElementById('current-time');
+            const durationTimeEl = document.getElementById('duration-time');
+
+            audio.addEventListener('play', () => {
+                isPlaying = true;
+                playerReady = true;
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                showNotification(`"${title}" çalıyor`, 'success');
+            });
+            audio.addEventListener('pause', () => {
+                isPlaying = false;
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+            });
+            audio.addEventListener('ended', () => {
+                isPlaying = false;
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                if (playMode === 'repeat-one') {
+                    audio.currentTime = 0; audio.play();
+                } else {
+                    setTimeout(() => playNextSong(), 500);
+                }
+            });
+            audio.addEventListener('timeupdate', () => {
+                if (audio.duration > 0) {
+                    const pct = (audio.currentTime / audio.duration) * 100;
+                    if (progress) progress.style.width = pct + '%';
+                    if (currentTimeEl) currentTimeEl.textContent = formatTime(Math.floor(audio.currentTime));
+                    if (durationTimeEl) durationTimeEl.textContent = formatTime(Math.floor(audio.duration));
+                }
+            });
+            audio.addEventListener('error', () => {
+                console.log('❌ Direkt audio başarısız, YouTube IFrame deneniyor...');
+                audio.remove();
+                tryPlayYouTubeMusic(videoId, title).then(ok => { if (!ok) playFallbackAudio(title); });
+            });
+
+            // Play/Pause buton kontrolü
+            if (playPauseBtn) {
+                playPauseBtn.onclick = () => {
+                    if (audio.paused) { audio.play(); } else { audio.pause(); }
+                };
+            }
+
+            // Progress bar tıklama
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.onclick = (e) => {
+                    const rect = progressBar.getBoundingClientRect();
+                    audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+                };
+            }
+
+            // MediaSession
+            if ('mediaSession' in navigator) {
+                const currentSong = playlist[currentSongIndex] || {};
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: title,
+                    artist: currentSong.artist || 'H-Sound',
+                    album: 'H-Sound',
+                    artwork: currentSong.thumbnail ? [{ src: currentSong.thumbnail, sizes: '300x300', type: 'image/jpeg' }] : []
+                });
+                navigator.mediaSession.setActionHandler('play', () => audio.play());
+                navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => playPrevSong());
+                navigator.mediaSession.setActionHandler('nexttrack', () => playNextSong());
+                navigator.mediaSession.setActionHandler('seekto', (d) => { audio.currentTime = d.seekTime; });
+            }
+
+            audio.play().catch(() => {
+                tryPlayYouTubeMusic(videoId, title).then(ok => { if (!ok) playFallbackAudio(title); });
+            });
         }
 
         // YouTube müzik çalmaya çalış
@@ -4152,15 +4282,29 @@
             // ── Sayfa gizlenince müziği durdurma - arka planda çalmaya devam et ──
             document.removeEventListener('visibilitychange', window._visibilityHandler);
             window._visibilityHandler = () => {
-                // Sayfa gizlenince hiçbir şey yapma - müzik çalmaya devam etsin
                 if (document.hidden) {
-                    console.log('📱 Sayfa arka plana geçti - müzik devam ediyor');
-                    // MediaSession state'i güncelle
-                    if ('mediaSession' in navigator) {
+                    console.log('📱 Sayfa arka plana geçti - müzik devam ettiriliyor');
+                    // YouTube arka planda pause ederse 500ms ve 1500ms sonra zorla devam ettir
+                    setTimeout(() => {
                         try {
                             const state = player.getPlayerState();
-                            navigator.mediaSession.playbackState = (state === YT.PlayerState.PLAYING) ? 'playing' : 'paused';
+                            if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
+                                player.playVideo();
+                                console.log('▶️ Arka planda zorla devam ettirildi (500ms)');
+                            }
                         } catch(e) {}
+                    }, 500);
+                    setTimeout(() => {
+                        try {
+                            const state = player.getPlayerState();
+                            if (state === YT.PlayerState.PAUSED) {
+                                player.playVideo();
+                                console.log('▶️ Arka planda zorla devam ettirildi (1500ms)');
+                            }
+                        } catch(e) {}
+                    }, 1500);
+                    if ('mediaSession' in navigator) {
+                        try { navigator.mediaSession.playbackState = 'playing'; } catch(e) {}
                     }
                 }
             };
@@ -4216,6 +4360,23 @@
                 clearInterval(window.youtubeProgressInterval);
             }
             window.youtubeProgressInterval = setInterval(updateProgress, 1000);
+
+            // SW'ye periyodik ping - sayfayı ve SW'yi canlı tut
+            if (window.swPingInterval) clearInterval(window.swPingInterval);
+            window.swPingInterval = setInterval(() => {
+                try {
+                    const state = player.getPlayerState();
+                    if (state === YT.PlayerState.PLAYING) {
+                        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                            navigator.serviceWorker.controller.postMessage({ type: 'MUSIC_PLAYING' });
+                        }
+                        // Arka planda pause edildiyse zorla devam ettir
+                        if (document.hidden) {
+                            player.playVideo();
+                        }
+                    }
+                } catch(e) {}
+            }, 3000);
             
             // Progress bar tıklama kontrolü
             const progressBar = document.getElementById('progress-bar');
