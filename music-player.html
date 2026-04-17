@@ -4069,11 +4069,9 @@
                 tryPlayYouTubeMusic(videoId, title).then(ok => { if (!ok) playFallbackAudio(title); });
             });
 
-            // Play/Pause buton kontrolü
+            // Play/Pause buton - onclick'i temizle, togglePlayPause zaten html5-audio-player'ı kontrol ediyor
             if (playPauseBtn) {
-                playPauseBtn.onclick = () => {
-                    if (audio.paused) { audio.play(); } else { audio.pause(); }
-                };
+                playPauseBtn.onclick = null;
             }
 
             // Progress bar tıklama
@@ -4096,7 +4094,7 @@
                 });
                 navigator.mediaSession.setActionHandler('play', () => audio.play());
                 navigator.mediaSession.setActionHandler('pause', () => audio.pause());
-                navigator.mediaSession.setActionHandler('previoustrack', () => playPrevSong());
+                navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousSong());
                 navigator.mediaSession.setActionHandler('nexttrack', () => playNextSong());
                 navigator.mediaSession.setActionHandler('seekto', (d) => { audio.currentTime = d.seekTime; });
             }
@@ -4268,7 +4266,7 @@
                     try { player.pauseVideo(); } catch(e) {}
                 });
                 navigator.mediaSession.setActionHandler('previoustrack', () => {
-                    playPrevSong();
+                    playPreviousSong();
                 });
                 navigator.mediaSession.setActionHandler('nexttrack', () => {
                     playNextSong();
@@ -4820,7 +4818,6 @@
 
         function togglePlayPause() {
             if (!playerReady) {
-                // Şarkı yükleniyorsa bekle, yoksa uyar
                 if (playlist.length > 0 && currentSongIndex >= 0) {
                     showNotification('Şarkı yükleniyor, lütfen bekleyin...', 'info');
                 } else {
@@ -4828,57 +4825,36 @@
                 }
                 return;
             }
-            
-            // YouTube Player kontrolü (Birincil)
+
+            // Önce HTML5 audio elementini kontrol et (Invidious stream)
+            const audio = document.getElementById('html5-audio-player');
+            if (audio) {
+                if (audio.paused) {
+                    audio.play().catch(e => console.log('❌ Audio play failed:', e));
+                } else {
+                    audio.pause();
+                }
+                return;
+            }
+
+            // YouTube Player kontrolü (IFrame fallback)
             if (window.currentYouTubePlayer) {
                 try {
                     const state = window.currentYouTubePlayer.getPlayerState();
                     if (state === YT.PlayerState.PLAYING) {
                         window.currentYouTubePlayer.pauseVideo();
-                        console.log('⏸️ YouTube player paused via button');
-                    } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED) {
+                    } else {
                         window.currentYouTubePlayer.playVideo();
-                        console.log('▶️ YouTube player resumed via button');
                     }
                     return;
                 } catch (error) {
                     console.log('❌ YouTube player control error:', error);
-                    // YouTube player hatası varsa fallback'e geç
                 }
             }
-            
-            // Fallback HTML5 Audio kontrolü (İkincil)
-            const audio = document.getElementById('html5-audio-player');
-            if (audio) {
-                if (isPlaying) {
-                    audio.pause();
-                    console.log('⏸️ HTML5 audio paused via button');
-                } else {
-                    audio.play().then(() => {
-                        console.log('▶️ HTML5 audio resumed via button');
-                    }).catch(error => {
-                        console.log('❌ Audio play failed:', error);
-                        // Ses çalamazsa simülasyona geç
-                        isPlaying = true;
-                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                        showNotification('Çalıyor (simülasyon modu)', 'info');
-                    });
-                }
-            } else {
-                // Audio yoksa simülasyon modunda çalış (Son çare)
-                isPlaying = !isPlaying;
-                playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-                
-                if (isPlaying) {
-                    showNotification('Devam ediyor (simülasyon)', 'info');
-                    // Progress tracking'i yeniden başlat
-                    if (!progressInterval) {
-                        createVisualSimulation(document.getElementById('song-title').textContent || 'Şarkı');
-                    }
-                } else {
-                    showNotification('Duraklatıldı', 'info');
-                }
-            }
+
+            // Son çare: simülasyon
+            isPlaying = !isPlaying;
+            playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
         }
 
         // Mod sırası: normal → repeat-all → repeat-one → shuffle → normal
@@ -4938,11 +4914,10 @@
         function playPreviousSong() {
             if (playlist.length === 0) return;
 
-            if (playMode === 'shuffle') {
-                const randomIndex = Math.floor(Math.random() * playlist.length);
-                const randomSong = playlist[randomIndex];
-                currentSongIndex = randomIndex;
-                playSong(randomSong.videoId, randomSong.title, randomSong.thumbnail, randomSong.artist);
+            // Şarkı 3 saniyeden fazla çalındıysa başa sar, değilse önceki şarkıya git
+            const audio = document.getElementById('html5-audio-player');
+            if (audio && audio.currentTime > 3) {
+                audio.currentTime = 0;
                 return;
             }
 
