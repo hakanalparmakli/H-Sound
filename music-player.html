@@ -239,6 +239,11 @@
             100% { transform: rotate(360deg); }
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scaleX(1); }
+            50% { opacity: 0.4; transform: scaleX(1.5); }
+        }
+
         .error-message {
             background-color: #331f1f;
             border: 1px solid #722f2f;
@@ -1769,7 +1774,7 @@
                 <li><a href="#" id="home-link" class="active"><i class="fas fa-home"></i> Ana Sayfa</a></li>
                 <li><a href="#" id="search-link"><i class="fas fa-search"></i> Ara</a></li>
                 <li><a href="#" id="playlists-link"><i class="fas fa-compact-disc"></i> Çalma Listeleri</a></li>
-                <li><a href="#" id="friends-link"><i class="fas fa-users"></i> Arkadaşlar</a></li>
+                <li><a href="#" id="friends-link"><i class="fas fa-users"></i> Arkadaşlar <span id="friend-req-badge" style="display:none;background:#E74C3C;color:white;border-radius:50%;padding:1px 6px;font-size:11px;margin-left:4px;"></span></a></li>
                 <li><a href="#" id="downloads-link"><i class="fas fa-download"></i> İndirilenler</a></li>
                 <li><a href="#" id="recently-played-link"><i class="fas fa-history"></i> Son Dinlenenler</a></li>
                 <li><a href="#" id="settings-link"><i class="fas fa-cog"></i> Ayarlar</a></li>
@@ -1931,18 +1936,19 @@
                 firebase.initializeApp(firebaseConfig);
                 window.auth = firebase.auth();
                 window.db = firebase.firestore();
+                window._firebaseReady = true;
                 console.log('🔥 Firebase initialized and ready!');
             } catch (error) {
                 console.log('⚠️ Firebase initialization failed:', error.message);
-                // Mock Firebase servisleri
                 window.auth = { currentUser: null };
-                window.db = { collection: () => ({ add: () => Promise.resolve(), get: () => Promise.resolve({ empty: true, docs: [] }) }) };
+                window.db = null;
+                window._firebaseReady = false;
             }
         } else {
-            console.log('ℹ️ Firebase not supported on file:// protocol - Using mock services');
-            // Mock Firebase servisleri
+            console.log('ℹ️ Firebase not supported on file:// protocol');
             window.auth = { currentUser: null };
-            window.db = { collection: () => ({ add: () => Promise.resolve(), get: () => Promise.resolve({ empty: true, docs: [] }) }) };
+            window.db = null;
+            window._firebaseReady = false;
         }
     </script>
 
@@ -2553,6 +2559,8 @@
             if (activeLink) {
                 activeLink.classList.add('active');
             }
+            // Aktif menüyü session'a kaydet (yenileme sonrası geri dön)
+            sessionStorage.setItem('h_sound_current_view', currentView);
         }
 
         function clearContentArea() {
@@ -2931,22 +2939,104 @@
             `;
         }
 
+        // Son dinlenenlere şarkı kaydet (max 50)
+        function saveToRecentlyPlayed(videoId, title, thumbnail, artist) {
+            const currentUser = localStorage.getItem('h_sound_username') || 'guest';
+            const key = `h_sound_recently_played_${currentUser}`;
+            let history = JSON.parse(localStorage.getItem(key) || '[]');
+            // Aynı şarkı varsa başa taşı
+            history = history.filter(s => s.videoId !== videoId);
+            history.unshift({ videoId, title, thumbnail, artist, playedAt: Date.now() });
+            if (history.length > 50) history = history.slice(0, 50);
+            localStorage.setItem(key, JSON.stringify(history));
+        }
+
         function showRecentlyPlayedPage() {
             currentView = 'recently-played';
             setActiveLink(recentlyPlayedLink);
             searchContainer.classList.add('hidden');
             clearContentArea();
-            
+            renderRecentlyPlayedPage(false);
+        }
+
+        function renderRecentlyPlayedPage(selectMode) {
+            const currentUser = localStorage.getItem('h_sound_username') || 'guest';
+            const key = `h_sound_recently_played_${currentUser}`;
+            const history = JSON.parse(localStorage.getItem(key) || '[]');
+
+            if (history.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="content-header">
+                        <h2><i class="fas fa-history"></i> Son Dinlenenler</h2>
+                    </div>
+                    <div class="no-content-message">
+                        <i class="fas fa-history" style="font-size:48px;color:var(--primary-color);margin-bottom:20px;"></i>
+                        <h3>Henüz dinlenen müzik yok</h3>
+                        <p>Bir şarkı çaldığında burada görünecek.</p>
+                    </div>`;
+                return;
+            }
+
+            const itemsHTML = history.map((song, i) => {
+                const date = new Date(song.playedAt).toLocaleDateString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+                return `
+                    <div class="download-item recently-item" id="recently-item-${i}" style="${selectMode ? 'cursor:pointer;' : ''}">
+                        ${selectMode ? `<input type="checkbox" class="recently-checkbox" data-index="${i}" style="margin-right:12px;width:18px;height:18px;accent-color:#E74C3C;flex-shrink:0;">` : ''}
+                        <div class="download-info" style="flex:1;min-width:0;${selectMode ? '' : 'cursor:pointer;'}" ${selectMode ? '' : `onclick="playSong('${song.videoId}','${song.title.replace(/'/g,"\\'")}','${song.thumbnail}','${(song.artist||'').replace(/'/g,"\\'")}')"`}>
+                            <img src="${song.thumbnail}" onerror="handleThumbnailError(this)" style="width:45px;height:45px;border-radius:6px;margin-right:12px;object-fit:cover;flex-shrink:0;">
+                            <div style="min-width:0;">
+                                <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${song.title}</div>
+                                <div style="font-size:12px;color:var(--secondary-text-color);">${song.artist || ''} • ${date}</div>
+                            </div>
+                        </div>
+                        ${!selectMode ? `
+                        <button class="download-btn" onclick="playSong('${song.videoId}','${song.title.replace(/'/g,"\\'")}','${song.thumbnail}','${(song.artist||'').replace(/'/g,"\\'")}')">
+                            <i class="fas fa-play"></i>
+                        </button>` : ''}
+                    </div>`;
+            }).join('');
+
             contentArea.innerHTML = `
-                <div class="content-header">
-                    <h2><i class="fas fa-history"></i> Son Dinlenenler</h2>
+                <div class="content-header" style="flex-wrap:wrap;gap:10px;">
+                    <h2><i class="fas fa-history"></i> Son Dinlenenler <span style="font-size:14px;color:var(--secondary-text-color);">(${history.length})</span></h2>
+                    <div style="display:flex;gap:8px;">
+                        ${selectMode ? `
+                            <button onclick="selectAllRecently()" class="setting-btn" style="padding:8px 14px;font-size:13px;">
+                                <i class="fas fa-check-double"></i> Tümünü Seç
+                            </button>
+                            <button onclick="deleteSelectedRecently()" class="btn btn-danger" style="padding:8px 16px;font-size:13px;border-radius:6px;">
+                                <i class="fas fa-trash"></i> Seçilenleri Sil
+                            </button>
+                            <button onclick="renderRecentlyPlayedPage(false)" class="btn btn-secondary" style="padding:8px 14px;font-size:13px;border-radius:6px;">
+                                <i class="fas fa-times"></i> İptal
+                            </button>
+                        ` : `
+                            <button onclick="renderRecentlyPlayedPage(true)" class="setting-btn" style="padding:8px 14px;font-size:13px;">
+                                <i class="fas fa-trash-alt"></i> Sil
+                            </button>
+                        `}
+                    </div>
                 </div>
-                <div class="no-content-message">
-                    <i class="fas fa-history" style="font-size: 48px; color: var(--primary-color); margin-bottom: 20px;"></i>
-                    <h3>Son Dinlenenler</h3>
-                    <p>Henüz dinlenen müzik yok.</p>
-                </div>
-            `;
+                <div style="display:flex;flex-direction:column;gap:8px;">${itemsHTML}</div>`;
+        }
+
+        function selectAllRecently() {
+            const boxes = document.querySelectorAll('.recently-checkbox');
+            const allChecked = Array.from(boxes).every(b => b.checked);
+            boxes.forEach(b => b.checked = !allChecked);
+        }
+
+        function deleteSelectedRecently() {
+            const boxes = document.querySelectorAll('.recently-checkbox:checked');
+            if (boxes.length === 0) { showNotification('Hiçbir şarkı seçilmedi!', 'warning'); return; }
+            const indices = Array.from(boxes).map(b => parseInt(b.dataset.index));
+            const currentUser = localStorage.getItem('h_sound_username') || 'guest';
+            const key = `h_sound_recently_played_${currentUser}`;
+            let history = JSON.parse(localStorage.getItem(key) || '[]');
+            history = history.filter((_, i) => !indices.includes(i));
+            localStorage.setItem(key, JSON.stringify(history));
+            showNotification(`${indices.length} şarkı silindi`, 'success');
+            renderRecentlyPlayedPage(history.length > 0);
         }
 
         function showSettingsPage() {
@@ -2967,7 +3057,8 @@
                     
                     <div class="settings-sections">
                         <!-- Uygulamayı Yükle -->
-                        <div class="settings-section">
+                        ${window.matchMedia('(display-mode: standalone)').matches || localStorage.getItem('h_sound_pwa_installed') === 'true' ? '' : `
+                        <div class="settings-section" id="pwa-install-section">
                             <h3><i class="fas fa-download"></i> Uygulamayı Yükle</h3>
                             <div class="settings-items">
                                 <div class="setting-item">
@@ -2981,6 +3072,7 @@
                                 </div>
                             </div>
                         </div>
+                        `}
 
                         <!-- Hesap Bilgileri -->
                         <div class="settings-section">
@@ -2999,7 +3091,7 @@
                                 <div class="setting-item">
                                     <div class="setting-info">
                                         <div class="setting-title">Hesap Rolü</div>
-                                        <div class="setting-desc">${userRole}</div>
+                                        <div class="setting-desc" style="margin-top:8px;">${getRoleBadgeHTML(userRole)}</div>
                                     </div>
                                     <button class="setting-btn" onclick="showRoleInfo()">
                                         <i class="fas fa-info-circle"></i> Bilgi
@@ -3418,19 +3510,29 @@
                     const snap = await window.db.collection('users').get();
                     snap.forEach(doc => {
                         const u = doc.data();
-                        if (u.username) {
-                            if (!savedUsers[u.username]) {
-                                savedUsers[u.username] = {
-                                    role: u.role || 'Kullanıcı',
-                                    registerDate: u.registerDate || new Date().toISOString(),
-                                    password: u.password || '(bilinmiyor)'
-                                };
-                            } else if (!savedUsers[u.username].password && u.password) {
-                                // localStorage'da şifre yoksa Firebase'den al
-                                savedUsers[u.username].password = u.password;
-                            }
+                        if (!u.username || u.deleted) return;
+                        const isAdmin = (u.role || '').toLowerCase().includes('admin') || u.username === 'Hakan';
+                        if (!savedUsers[u.username]) {
+                            savedUsers[u.username] = {
+                                role: u.role || 'Kullanıcı',
+                                email: isAdmin ? '' : (u.email || ''),
+                                registerDate: u.registerDate || u.createdAt || new Date().toISOString(),
+                                password: u.password || '(bilinmiyor)'
+                            };
+                        } else {
+                            if (!savedUsers[u.username].password && u.password) savedUsers[u.username].password = u.password;
+                            if (!isAdmin && !savedUsers[u.username].email && u.email) savedUsers[u.username].email = u.email;
                         }
                     });
+
+                    // localStorage'daki silinmiş kullanıcıları da temizle
+                    // (Firestore'da olmayan kullanıcıları kaldır)
+                    const firebaseUsernames = new Set();
+                    snap.forEach(doc => { if (doc.data().username && !doc.data().deleted) firebaseUsernames.add(doc.data().username); });
+                    Object.keys(savedUsers).forEach(u => {
+                        if (!firebaseUsernames.has(u) && u !== 'Hakan') delete savedUsers[u];
+                    });
+
                     localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
                 } catch(e) {}
             }
@@ -3446,6 +3548,24 @@
                     <div class="admin-header">
                         <h1><i class="fas fa-crown"></i> Süper Admin Panel</h1>
                         <p>H-Sound Sistem Yönetimi - Hoş geldiniz, ${localStorage.getItem('h_sound_username')}</p>
+                    </div>
+
+                    <!-- Bakım Modu -->
+                    <div class="settings-section" style="margin-bottom:24px;background:#1C1C1C;border-radius:10px;padding:20px;border:1px solid #2C2C2C;">
+                        <h3 style="margin:0 0 15px;color:#E67E22;"><i class="fas fa-tools"></i> Bakım Modu</h3>
+                        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                            <div>
+                                <div style="font-weight:600;">Site Bakım Modu</div>
+                                <div style="font-size:13px;color:#A9A9A9;">Aktifken sadece süper admin giriş yapabilir, yeni kayıt kapalı olur.</div>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;">
+                                <span id="maintenance-status-text" style="font-size:13px;color:#A9A9A9;">Kontrol ediliyor...</span>
+                                <button id="maintenance-toggle-btn" onclick="toggleMaintenanceMode()" 
+                                    style="padding:10px 20px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:14px;background:#555;color:white;">
+                                    <i class="fas fa-spinner fa-spin"></i> Yükleniyor
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="admin-stats">
@@ -3482,6 +3602,7 @@
                             <thead>
                                 <tr>
                                     <th>Kullanıcı Adı</th>
+                                    <th>E-posta</th>
                                     <th>Rol</th>
                                     <th>Kayıt Tarihi</th>
                                     <th>İşlemler</th>
@@ -3494,12 +3615,81 @@
                     </div>
                 </div>
             `;
+
+            // Bakım modu durumunu yükle
+            loadMaintenanceStatus();
+        }
+
+        // Bakım modu durumunu yükle ve butonu güncelle
+        async function loadMaintenanceStatus() {
+            const btn = document.getElementById('maintenance-toggle-btn');
+            const txt = document.getElementById('maintenance-status-text');
+            if (!btn || !txt) return;
+
+            if (!window._firebaseReady || !window.db) {
+                txt.textContent = 'Firebase bağlantısı yok';
+                btn.style.display = 'none';
+                return;
+            }
+
+            try {
+                const doc = await window.db.collection('settings').doc('maintenance').get();
+                const isOn = doc.exists && doc.data().enabled === true;
+                updateMaintenanceBtn(isOn);
+            } catch(e) {
+                txt.textContent = 'Yüklenemedi: ' + e.message;
+            }
+        }
+
+        function updateMaintenanceBtn(isOn) {
+            const btn = document.getElementById('maintenance-toggle-btn');
+            const txt = document.getElementById('maintenance-status-text');
+            if (!btn || !txt) return;
+            if (isOn) {
+                txt.innerHTML = '<span style="color:#E74C3C;font-weight:600;">🔴 Bakım Modu AÇIK</span>';
+                btn.style.background = '#27AE60';
+                btn.innerHTML = '<i class="fas fa-toggle-on"></i> Kapat';
+            } else {
+                txt.innerHTML = '<span style="color:#27AE60;font-weight:600;">🟢 Site Normal</span>';
+                btn.style.background = '#E67E22';
+                btn.innerHTML = '<i class="fas fa-toggle-off"></i> Bakıma Al';
+            }
+        }
+
+        async function toggleMaintenanceMode() {
+            if (!window._firebaseReady || !window.db) {
+                showNotification('Firebase bağlantısı gerekli!', 'error');
+                return;
+            }
+            const btn = document.getElementById('maintenance-toggle-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const doc = await window.db.collection('settings').doc('maintenance').get();
+                const isOn = doc.exists && doc.data().enabled === true;
+                await window.db.collection('settings').doc('maintenance').set({ enabled: !isOn });
+                updateMaintenanceBtn(!isOn);
+                showNotification(isOn ? '✅ Bakım modu kapatıldı' : '🔧 Bakım modu açıldı — Diğer kullanıcılar atılacak', isOn ? 'success' : 'warning');
+            } catch(e) {
+                showNotification('Hata: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         // Kullanıcı tablosu satırları oluştur
         function generateUsersTableRows(users) {
             let rows = '';
-            Object.entries(users).forEach(([username, userData]) => {
+            // Süper admin her zaman en üstte
+            const sorted = Object.entries(users).sort(([, a], [, b]) => {
+                const isSuperA = (a.role || '').toLowerCase().includes('admin');
+                const isSuperB = (b.role || '').toLowerCase().includes('admin');
+                if (isSuperA && !isSuperB) return -1;
+                if (!isSuperA && isSuperB) return 1;
+                return 0;
+            });
+            sorted.forEach(([username, userData]) => {
                 const roleClass = userData.role.toLowerCase().replace(' ', '').replace('ü', 'u');
                 const registerDate = userData.registerDate
                     ? new Date(userData.registerDate).toLocaleDateString('tr-TR')
@@ -3514,21 +3704,21 @@
                             ${isHakan ? '<i class="fas fa-crown" style="color:#E74C3C;margin-left:5px;"></i>' : ''}
                             ${isBanned ? '<span style="color:#E74C3C;font-size:11px;margin-left:5px;">[BANLANDI]</span>' : ''}
                         </td>
+                        <td style="font-size:12px;color:#A9A9A9;">${(isHakan || (userData.role || '').toLowerCase().includes('admin')) ? '—' : (userData.email || '-')}</td>
                         <td><span class="role-badge role-${roleClass}">${userData.role}</span></td>
                         <td>${registerDate}</td>
                         <td>
+                            ${!isHakan ? `
                             <button class="action-btn btn-edit" onclick="togglePasswordVisibility('${username}', '${userData.password || '?'}', this)" title="Şifreyi Göster">
                                 <i class="fas fa-eye"></i>
                             </button>
+                            ` : ''}
                             ${!isHakan ? `
                                 <button class="action-btn btn-edit" onclick="editUserRole('${username}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button class="action-btn btn-promote" onclick="changeUserPassword('${username}')">
                                     <i class="fas fa-key"></i>
-                                </button>
-                                <button class="action-btn ${isBanned ? 'btn-promote' : 'btn-delete'}" onclick="toggleBanUser('${username}')">
-                                    <i class="fas fa-${isBanned ? 'unlock' : 'ban'}"></i> ${isBanned ? 'Banı Kaldır' : 'Banla'}
                                 </button>
                                 <button class="action-btn btn-delete" onclick="deleteUser('${username}')">
                                     <i class="fas fa-trash"></i>
@@ -3574,24 +3764,78 @@
             modal.innerHTML = `
                 <div class="modal-content" style="max-width:380px;">
                     <button class="modal-close-btn" onclick="this.closest('.modal').remove()">&times;</button>
-                    <h3 style="margin-top:0;color:var(--primary-color);"><i class="fas fa-key"></i> Şifre Değiştir - ${username}</h3>
+                    <h3 style="margin-top:0;color:var(--primary-color);"><i class="fas fa-key"></i> Şifre Değiştir</h3>
+                    <p style="color:var(--secondary-text-color);font-size:13px;">Kullanıcı: <strong style="color:white;">${username}</strong></p>
                     <div class="form-group">
                         <label class="form-label">Yeni Şifre</label>
-                        <input type="text" id="new-pw-input" class="form-input" placeholder="Yeni şifre girin...">
+                        <input type="text" class="form-input pw-change-input" placeholder="Yeni şifre girin (min 6 karakter)">
                     </div>
-                    <button class="btn" onclick="
-                        const pw = document.getElementById('new-pw-input').value.trim();
-                        if(!pw){return;}
-                        const users = JSON.parse(localStorage.getItem('h_sound_users')||'{}');
-                        if(users['${username}']){users['${username}'].password=pw;localStorage.setItem('h_sound_users',JSON.stringify(users));}
-                        showNotification('${username} şifresi değiştirildi!','success');
-                        this.closest('.modal').remove();
-                        showSuperAdminPage();
-                    "><i class="fas fa-save"></i> Kaydet</button>
+                    <button class="btn pw-save-btn" style="margin-top:12px;width:100%;">
+                        <i class="fas fa-save"></i> Kaydet
+                    </button>
                 </div>
             `;
             document.body.appendChild(modal);
-            setTimeout(() => modal.querySelector('#new-pw-input')?.focus(), 100);
+
+            const input = modal.querySelector('.pw-change-input');
+            const saveBtn = modal.querySelector('.pw-save-btn');
+            setTimeout(() => input?.focus(), 100);
+
+            saveBtn.onclick = async () => {
+                const pw = input.value.trim();
+                if (!pw) { showNotification('Şifre boş olamaz!', 'warning'); return; }
+                if (pw.length < 6) { showNotification('Şifre en az 6 karakter olmalı!', 'warning'); return; }
+
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+                // localStorage güncelle
+                const users = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+                if (users[username]) {
+                    users[username].password = pw;
+                    localStorage.setItem('h_sound_users', JSON.stringify(users));
+                }
+
+                // Firebase Firestore güncelle + Auth'a şifre sıfırlama maili gönder
+                if (window._firebaseReady && window.db) {
+                    try {
+                        const snap = await window.db.collection('users').where('username', '==', username).limit(1).get();
+                        if (!snap.empty) {
+                            const email = snap.docs[0].data().email;
+                            const oldPassword = snap.docs[0].data().password;
+
+                            // Firestore'da güncelle
+                            await snap.docs[0].ref.update({ password: pw });
+
+                            // Auth şifresini güncelle: eski şifreyle giriş yap → updatePassword
+                            if (email && oldPassword) {
+                                try {
+                                    const tempCred = await window.auth.signInWithEmailAndPassword(email, oldPassword);
+                                    await tempCred.user.updatePassword(pw);
+                                    console.log('✅ Auth şifresi güncellendi');
+                                } catch(authErr) {
+                                    console.log('Auth update failed:', authErr.code);
+                                    // Auth güncellenemedi, sadece Firestore güncellendi
+                                }
+                            }
+
+                            showNotification(`${username} şifresi değiştirildi!`, 'success');
+                        } else {
+                            showNotification('Kullanıcı Firebase\'de bulunamadı!', 'error');
+                        }
+                    } catch(e) {
+                        showNotification('Hata: ' + e.message, 'error');
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+                        return;
+                    }
+                } else {
+                    showNotification(`${username} şifresi (yerel) değiştirildi!`, 'success');
+                }
+
+                modal.remove();
+                showSuperAdminPage();
+            };
         }
 
         // Search function (YouTube API + Local Database)
@@ -3881,6 +4125,9 @@
         }
         function playSong(videoId, title, thumbnail, artist = 'Bilinmeyen Sanatçı') {
             console.log(`🎵 Playing song: ${title} by ${artist} (ID: ${videoId})`);
+
+            // Son dinlenenlere kaydet
+            saveToRecentlyPlayed(videoId, title, thumbnail, artist);
             
             // Update player info immediately
             songTitle.textContent = title;
@@ -3896,13 +4143,14 @@
             playerFooter.classList.remove('hidden');
             initModeBtn();
             
-            // Mevcut görünümdeki tüm şarkıları playlist'e ekle
+            // Mevcut görünümdeki tüm şarkıları playlist'e ekle (sadece playlist boşsa güncelle)
+            const prevLength = playlist.length;
             updatePlaylistFromCurrentView();
             
             // Tıklanan şarkının index'ini bul
-            currentSongIndex = playlist.findIndex(song => song.videoId === videoId);
+            const foundIndex = playlist.findIndex(song => song.videoId === videoId);
             
-            if (currentSongIndex === -1) {
+            if (foundIndex === -1) {
                 // Şarkı playlist'te yoksa ekle
                 playlist.push({
                     videoId: videoId,
@@ -3911,6 +4159,8 @@
                     artist: artist
                 });
                 currentSongIndex = playlist.length - 1;
+            } else {
+                currentSongIndex = foundIndex;
             }
             
             console.log(`📋 Current song index: ${currentSongIndex + 1}/${playlist.length}`);
@@ -3950,15 +4200,27 @@
         }
 
         // YouTube API ile gerçek müzik çalma sistemi
+        let _playingVideoId = null;   // hangi video şu an çalıyor
+        let _loadingVideoId = null;   // hangi video yükleniyor (race condition önleme)
+
         async function playRealAudio(videoId, title) {
-            // Mevcut audio player'ı durdur
+            // Aynı şarkı zaten yükleniyorsa veya çalıyorsa tekrar başlatma
+            if (_loadingVideoId === videoId) return;
+
+            // Önceki yüklemeyi iptal et
+            _loadingVideoId = videoId;
+            _playingVideoId = null;
+            playerReady = false;
+
+            // Mevcut audio player'ı durdur ve kaldır
             const existingAudio = document.getElementById('html5-audio-player');
             if (existingAudio) {
                 existingAudio.pause();
+                existingAudio.src = '';
                 existingAudio.remove();
             }
 
-            // Mevcut YouTube player'ı ve wrapper'ı temizle
+            // Mevcut YouTube player'ı temizle
             if (window.currentYouTubePlayer) {
                 try { window.currentYouTubePlayer.destroy(); } catch (e) {}
                 window.currentYouTubePlayer = null;
@@ -3966,20 +4228,29 @@
             const existingWrap = document.getElementById('youtube-player-wrap');
             if (existingWrap) existingWrap.remove();
 
-            // SW ping interval temizle
             if (window.swPingInterval) { clearInterval(window.swPingInterval); window.swPingInterval = null; }
+            if (window.youtubeProgressInterval) { clearInterval(window.youtubeProgressInterval); window.youtubeProgressInterval = null; }
 
             console.log(`🎵 Playing: ${title} (ID: ${videoId})`);
             showNotification(`"${title}" yükleniyor...`, 'info');
 
-            // Önce Invidious'tan direkt audio stream dene (arka planda çalışır)
+            // Önce Invidious direkt audio stream dene
             const audioPlayed = await tryInvidiousAudioStream(videoId, title);
-            if (audioPlayed) return;
+            // Yükleme sırasında başka şarkı seçildiyse dur
+            if (_loadingVideoId !== videoId) return;
+
+            if (audioPlayed) {
+                _playingVideoId = videoId;
+                return;
+            }
 
             // Fallback: YouTube IFrame
             const success = await tryPlayYouTubeMusic(videoId, title);
-            if (!success) {
-                console.log('🔄 YouTube playback failed, using fallback audio');
+            if (_loadingVideoId !== videoId) return;
+
+            if (success) {
+                _playingVideoId = videoId;
+            } else {
                 playFallbackAudio(title);
             }
         }
@@ -3989,8 +4260,8 @@
             try {
                 const base = getInvidiousBase();
                 const url = `${base}/api/v1/videos/${videoId}?fields=adaptiveFormats,formatStreams`;
-                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (!res.ok) return false;
+                const res = await fetchWithCorsProxy(url);
+                if (!res) return false;
                 const data = await res.json();
 
                 // En iyi audio formatını seç (opus veya mp4a)
@@ -4024,7 +4295,6 @@
             audio.src = audioUrl;
             audio.autoplay = true;
             audio.preload = 'auto';
-            // Arka planda çalması için kritik
             audio.setAttribute('playsinline', '');
             audio.style.display = 'none';
             document.body.appendChild(audio);
@@ -4063,16 +4333,21 @@
                     if (durationTimeEl) durationTimeEl.textContent = formatTime(Math.floor(audio.duration));
                 }
             });
+
+            // Stream URL süresi dolunca (genellikle 6 saat) yeniden al
             audio.addEventListener('error', () => {
-                console.log('❌ Direkt audio başarısız, YouTube IFrame deneniyor...');
+                // Sadece bu video hâlâ aktifse yeniden dene
+                if (_playingVideoId !== videoId) return;
+                console.log('❌ Audio stream hatası, yeniden deneniyor...');
                 audio.remove();
-                tryPlayYouTubeMusic(videoId, title).then(ok => { if (!ok) playFallbackAudio(title); });
+                _loadingVideoId = null;
+                // Önce Invidious'u tekrar dene, olmazsa YouTube IFrame
+                tryInvidiousAudioStream(videoId, title).then(ok => {
+                    if (!ok) tryPlayYouTubeMusic(videoId, title).then(ok2 => { if (!ok2) playFallbackAudio(title); });
+                });
             });
 
-            // Play/Pause buton - onclick'i temizle, togglePlayPause zaten html5-audio-player'ı kontrol ediyor
-            if (playPauseBtn) {
-                playPauseBtn.onclick = null;
-            }
+            if (playPauseBtn) playPauseBtn.onclick = null;
 
             // Progress bar tıklama
             const progressBar = document.getElementById('progress-bar');
@@ -4086,11 +4361,15 @@
             // MediaSession
             if ('mediaSession' in navigator) {
                 const currentSong = playlist[currentSongIndex] || {};
+                const artworkSrc = currentSong.thumbnail || (location.origin + '/logo.png');
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: title,
                     artist: currentSong.artist || 'H-Sound',
                     album: 'H-Sound',
-                    artwork: currentSong.thumbnail ? [{ src: currentSong.thumbnail, sizes: '300x300', type: 'image/jpeg' }] : []
+                    artwork: [
+                        { src: artworkSrc, sizes: '512x512', type: 'image/png' },
+                        { src: artworkSrc, sizes: '192x192', type: 'image/png' }
+                    ]
                 });
                 navigator.mediaSession.setActionHandler('play', () => audio.play());
                 navigator.mediaSession.setActionHandler('pause', () => audio.pause());
@@ -4099,7 +4378,22 @@
                 navigator.mediaSession.setActionHandler('seekto', (d) => { audio.currentTime = d.seekTime; });
             }
 
+            // Arka planda çalma - visibilitychange ile zorla devam ettir
+            document.removeEventListener('visibilitychange', window._visibilityHandler);
+            window._visibilityHandler = () => {
+                if (document.hidden && _playingVideoId === videoId) {
+                    setTimeout(() => {
+                        const a = document.getElementById('html5-audio-player');
+                        if (a && a.paused && _playingVideoId === videoId) {
+                            a.play().catch(() => {});
+                        }
+                    }, 300);
+                }
+            };
+            document.addEventListener('visibilitychange', window._visibilityHandler);
+
             audio.play().catch(() => {
+                if (_loadingVideoId !== videoId) return;
                 tryPlayYouTubeMusic(videoId, title).then(ok => { if (!ok) playFallbackAudio(title); });
             });
         }
@@ -4251,13 +4545,15 @@
             // ── MediaSession API - Arka plan müzik kontrolü ──────────────
             if ('mediaSession' in navigator) {
                 const currentSong = playlist[currentSongIndex] || {};
+                const artworkSrc = currentSong.thumbnail || (location.origin + '/logo.png');
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: title,
                     artist: currentSong.artist || 'H-Sound',
                     album: 'H-Sound',
-                    artwork: currentSong.thumbnail ? [
-                        { src: currentSong.thumbnail, sizes: '300x300', type: 'image/jpeg' }
-                    ] : []
+                    artwork: [
+                        { src: artworkSrc, sizes: '512x512', type: 'image/png' },
+                        { src: artworkSrc, sizes: '192x192', type: 'image/png' }
+                    ]
                 });
                 navigator.mediaSession.setActionHandler('play', () => {
                     try { player.playVideo(); } catch(e) {}
@@ -4449,9 +4745,20 @@
         }
         // ── Invidious API - Ücretsiz & Sınırsız ──────────────────────────
         const INVIDIOUS_INSTANCES = [
-            'https://inv.thepixora.com'  // cors:true, api:true olan tek instance
+            'https://invidious.privacyredirect.com',
+            'https://inv.tux.pizza',
+            'https://invidious.io.lol',
+            'https://invidious.nerdvpn.de',
+            'https://inv.nadeko.net',
+            'https://inv.thepixora.com'
+        ];
+        // CORS proxy fallback - file:// protokolü için
+        const CORS_PROXIES = [
+            'https://corsproxy.io/?url=',
+            'https://api.allorigins.win/raw?url='
         ];
         let invidiousIndex = 0;
+        let corsProxyIndex = 0;
 
         function getInvidiousBase() {
             return INVIDIOUS_INSTANCES[invidiousIndex % INVIDIOUS_INSTANCES.length];
@@ -4461,28 +4768,51 @@
             invidiousIndex = (invidiousIndex + 1) % INVIDIOUS_INSTANCES.length;
         }
 
-        async function invidiousSearch(query, maxResults = 12) {
-            const base = getInvidiousBase();
-            const url = `${base}/api/v1/search?q=${encodeURIComponent(query)}&type=video&page=1&region=TR`;
-            try {
-                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (!res.ok) return [];
-                const data = await res.json();
-                if (!Array.isArray(data) || data.length === 0) return [];
-                return data
-                    .filter(v => v.type === 'video' && v.videoId && (v.lengthSeconds || 0) > 60)
-                    .slice(0, maxResults)
-                    .map(v => ({
-                        videoId: v.videoId,
-                        title: v.title,
-                        artist: v.author,
-                        channelTitle: v.author,
-                        thumbnail: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-                        lengthSeconds: v.lengthSeconds
-                    }));
-            } catch(e) {
-                return [];
+        async function fetchWithCorsProxy(url) {
+            const proto = location.protocol;
+            const isLocal = proto === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            if (!isLocal) {
+                try {
+                    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+                    if (res.ok) return res;
+                } catch(e) {}
             }
+            // CORS proxy ile dene
+            for (let i = 0; i < CORS_PROXIES.length; i++) {
+                try {
+                    const proxyUrl = CORS_PROXIES[(corsProxyIndex + i) % CORS_PROXIES.length] + encodeURIComponent(url);
+                    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+                    if (res.ok) return res;
+                } catch(e) {}
+            }
+            return null;
+        }
+
+        async function invidiousSearch(query, maxResults = 12) {
+            // Tüm instance'ları dene
+            for (let attempt = 0; attempt < INVIDIOUS_INSTANCES.length; attempt++) {
+                const base = INVIDIOUS_INSTANCES[(invidiousIndex + attempt) % INVIDIOUS_INSTANCES.length];
+                const url = `${base}/api/v1/search?q=${encodeURIComponent(query)}&type=video&page=1&region=TR`;
+                try {
+                    const res = await fetchWithCorsProxy(url);
+                    if (!res) continue;
+                    const data = await res.json();
+                    if (!Array.isArray(data) || data.length === 0) continue;
+                    const results = data
+                        .filter(v => v.type === 'video' && v.videoId && (v.lengthSeconds || 0) > 60)
+                        .slice(0, maxResults)
+                        .map(v => ({
+                            videoId: v.videoId,
+                            title: v.title,
+                            artist: v.author,
+                            channelTitle: v.author,
+                            thumbnail: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+                            lengthSeconds: v.lengthSeconds
+                        }));
+                    if (results.length > 0) return results;
+                } catch(e) {}
+            }
+            return [];
         }
 
         async function searchYouTubeMusic(query, maxResults = 12) {
@@ -4517,23 +4847,25 @@
 
         async function getYouTubePopularMusic(maxResults = 24, pageToken = '') {
             // Önce trending dene
-            try {
-                const base = getInvidiousBase();
-                const url = `${base}/api/v1/trending?type=music&region=TR`;
-                const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        return data.slice(0, maxResults).map(v => ({
-                            videoId: v.videoId,
-                            title: v.title,
-                            artist: v.author,
-                            channelTitle: v.author,
-                            thumbnail: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`
-                        }));
+            for (let attempt = 0; attempt < INVIDIOUS_INSTANCES.length; attempt++) {
+                try {
+                    const base = INVIDIOUS_INSTANCES[(invidiousIndex + attempt) % INVIDIOUS_INSTANCES.length];
+                    const url = `${base}/api/v1/trending?type=music&region=TR`;
+                    const res = await fetchWithCorsProxy(url);
+                    if (res) {
+                        const data = await res.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            return data.slice(0, maxResults).map(v => ({
+                                videoId: v.videoId,
+                                title: v.title,
+                                artist: v.author,
+                                channelTitle: v.author,
+                                thumbnail: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`
+                            }));
+                        }
                     }
-                }
-            } catch(e) {}
+                } catch(e) {}
+            }
             // Fallback: sanatçi araması
             const query = TR_MUSIC_QUERIES[trQueryIndex % TR_MUSIC_QUERIES.length];
             return await searchYouTubeMusic(query, maxResults);
@@ -4920,7 +5252,17 @@
                 audio.currentTime = 0;
                 return;
             }
+            // YouTube player için de kontrol et
+            if (window.currentYouTubePlayer) {
+                try {
+                    if (window.currentYouTubePlayer.getCurrentTime() > 3) {
+                        window.currentYouTubePlayer.seekTo(0, true);
+                        return;
+                    }
+                } catch(e) {}
+            }
 
+            // Shuffle modunda bile geri tuşu her zaman önceki şarkıya gider
             if (currentSongIndex > 0) {
                 currentSongIndex--;
             } else if (playMode === 'repeat-all') {
@@ -6138,44 +6480,64 @@
         }
 
         // Hesabı sil (Hakan hesabı koruması ile)
-        function deleteAccount() {
+        async function deleteAccount() {
             const username = localStorage.getItem('h_sound_username') || 'Kullanıcı';
             
-            // Hakan hesabı koruması
             if (username === 'Hakan') {
                 showNotification('⚠️ Hakan hesabı silinemez!', 'error');
-                alert('🔒 GÜVENLİK KORUMASI\n\nHakan hesabı sistem güvenliği için silinemez.\nBu hesap H-Sound\'un ana yönetici hesabıdır.');
                 return;
             }
             
             const userRole = localStorage.getItem('h_sound_user_role') || 'Kullanıcı';
-            
-            if (confirm(`⚠️ HESAP SİLME UYARISI\n\nHesabınız: ${username}\nRol: ${userRole}\n\nHesabınız kalıcı olarak silinecek!\nTüm verileriniz kaybolacak.\n\nDevam etmek istiyor musunuz?`)) {
-                if (confirm('🚨 SON ONAY\n\nGerçekten hesabınızı silmek istiyor musunuz?\nBu işlem GERİ ALINAMAZ!')) {
-                    // Kullanıcıyı users listesinden sil
-                    const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
-                    delete savedUsers[username];
-                    localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
+            const email = localStorage.getItem('h_sound_email') || '';
+
+            if (!confirm(`⚠️ HESAP SİLME UYARISI\n\nHesabınız: ${username}\nRol: ${userRole}\n\nHesabınız kalıcı olarak silinecek!\nTüm verileriniz kaybolacak.\n\nDevam etmek istiyor musunuz?`)) return;
+            if (!confirm('🚨 SON ONAY\n\nGerçekten hesabınızı silmek istiyor musunuz?\nBu işlem GERİ ALINAMAZ!')) return;
+
+            // Şifre iste — Auth silme için gerekli
+            const pw = prompt('Hesabı silmek için şifrenizi girin:');
+            if (!pw) { showNotification('Şifre girilmedi, işlem iptal edildi.', 'warning'); return; }
+
+            showNotification('Hesap siliniyor...', 'info');
+
+            if (window._firebaseReady && window.db && window.auth) {
+                try {
+                    // Auth'a giriş yap (currentUser null olabilir)
+                    const userCred = await window.auth.signInWithEmailAndPassword(email, pw);
                     
-                    // Kullanıcının tüm verilerini sil
-                    const allKeys = Object.keys(localStorage);
-                    allKeys.forEach(key => {
-                        if (key.startsWith('h_sound_') && !key.includes('users')) {
-                            localStorage.removeItem(key);
-                        }
-                    });
-                    
-                    // Global değişkenleri sıfırla
-                    friends = [];
-                    downloadedSongs = [];
-                    privacyAccepted = false;
-                    
-                    showNotification('Hesabınız başarıyla silindi!', 'info');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
+                    // Firestore'dan sil
+                    const uid = userCred.user.uid;
+                    await window.db.collection('users').doc(uid).delete().catch(() => {});
+                    await window.db.collection('userFriends').doc(username).delete().catch(() => {});
+
+                    // Auth'dan sil
+                    await userCred.user.delete();
+                } catch(e) {
+                    console.log('deleteAccount error:', e.code, e.message);
+                    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                        showNotification('Şifre hatalı! Hesap silinemedi.', 'error');
+                        return;
+                    }
+                    // Auth silme başarısız olsa bile localStorage temizle
                 }
             }
+
+            // localStorage temizle
+            const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
+            delete savedUsers[username];
+            localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('h_sound_') && key !== 'h_sound_users') {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            friends = [];
+            downloadedSongs = [];
+            privacyAccepted = false;
+
+            showNotification('Hesabınız başarıyla silindi!', 'success');
+            setTimeout(() => { window.location.replace('login.html'); }, 1500);
         }
 
         // Çıkış yap
@@ -6184,6 +6546,8 @@
             
             if (confirm(`Çıkış yapmak istediğinizden emin misiniz?\n\nHesap: ${username}`)) {
                 localStorage.setItem('h_sound_logged_in', 'false');
+                sessionStorage.removeItem('h_sound_current_view');
+                if (friendRequestUnsubscribe) { friendRequestUnsubscribe(); friendRequestUnsubscribe = null; }
                 showNotification('Güvenli çıkış yapıldı! Görüşmek üzere...', 'info');
                 setTimeout(() => {
                     checkLoginStatus();
@@ -6204,12 +6568,11 @@
 
         window.addEventListener('appinstalled', () => {
             deferredInstallPrompt = null;
+            localStorage.setItem('h_sound_pwa_installed', 'true');
             showNotification('H-Sound başarıyla yüklendi!', 'success');
-            const btn = document.getElementById('pwa-install-btn');
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-check"></i> Yüklendi';
-                btn.disabled = true;
-            }
+            // Ayarlar sayfası açıksa butonu gizle
+            const section = document.getElementById('pwa-install-section');
+            if (section) section.remove();
         });
 
         function installPWA() {
@@ -6265,19 +6628,11 @@
 
         // Uygulama başlatıldığında varsayılan rol ata ve Hakan hesabını oluştur
         function initializeUserRole() {
-            // Hakan süper admin hesabını oluştur (eğer yoksa)
-            const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
-            
-            if (!savedUsers['Hakan']) {
-                savedUsers['Hakan'] = {
-                    password: 'Hakan5225522541',
-                    role: 'Süper Admin',
-                    registerDate: new Date().toISOString()
-                };
-                localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
-                console.log('🔥 Hakan super admin account created');
-            }
-            
+            // Firebase'den gelen rolü normalize et (superadmin → Süper Admin)
+            const rawRole = localStorage.getItem('h_sound_role') || localStorage.getItem('h_sound_user_role') || '';
+            const normalizedRole = normalizeRole(rawRole);
+            localStorage.setItem('h_sound_user_role', normalizedRole);
+
             // Mevcut kullanıcının rolünü kontrol et
             if (!localStorage.getItem('h_sound_user_role')) {
                 localStorage.setItem('h_sound_user_role', 'Kullanıcı');
@@ -6294,6 +6649,85 @@
             }
         }
 
+        // Firebase rol değerlerini görüntüleme değerine çevir
+        function normalizeRole(role) {
+            switch((role || '').toLowerCase()) {
+                case 'superadmin':
+                case 'super admin':
+                case 'süper admin': return 'Süper Admin';
+                case 'admin': return 'Admin';
+                case 'vip': return 'VIP';
+                case 'premium': return 'Premium';
+                case 'user': return 'User';
+                default: return 'Kullanıcı';
+            }
+        }
+
+        // Rol rozeti HTML'i
+        function getRoleBadgeHTML(role) {
+            const badges = {
+                'Süper Admin': {
+                    icon: 'fas fa-crown',
+                    label: 'Süper Admin',
+                    bg: 'linear-gradient(135deg, #E74C3C, #C0392B)',
+                    glow: 'rgba(231,76,60,0.4)',
+                    extra: '✦ Tam Yetki'
+                },
+                'Admin': {
+                    icon: 'fas fa-shield-alt',
+                    label: 'Admin',
+                    bg: 'linear-gradient(135deg, #E67E22, #D35400)',
+                    glow: 'rgba(230,126,34,0.4)',
+                    extra: 'Yönetici'
+                },
+                'VIP': {
+                    icon: 'fas fa-gem',
+                    label: 'VIP',
+                    bg: 'linear-gradient(135deg, #9B59B6, #8E44AD)',
+                    glow: 'rgba(155,89,182,0.4)',
+                    extra: 'Özel Üye'
+                },
+                'Premium': {
+                    icon: 'fas fa-star',
+                    label: 'Premium',
+                    bg: 'linear-gradient(135deg, #3498DB, #2980B9)',
+                    glow: 'rgba(52,152,219,0.4)',
+                    extra: 'Premium Üye'
+                },
+                'User': {
+                    icon: 'fas fa-user-check',
+                    label: 'User',
+                    bg: 'linear-gradient(135deg, #27AE60, #229954)',
+                    glow: 'rgba(39,174,96,0.4)',
+                    extra: 'Kayıtlı Üye'
+                },
+                'Kullanıcı': {
+                    icon: 'fas fa-user',
+                    label: 'Kullanıcı',
+                    bg: 'linear-gradient(135deg, #7F8C8D, #636E72)',
+                    glow: 'rgba(127,140,141,0.3)',
+                    extra: 'Standart'
+                }
+            };
+            const b = badges[role] || badges['Kullanıcı'];
+            return `
+                <span style="
+                    display:inline-flex;align-items:center;gap:8px;
+                    background:${b.bg};
+                    color:white;
+                    padding:6px 14px;
+                    border-radius:20px;
+                    font-size:13px;
+                    font-weight:700;
+                    box-shadow:0 0 12px ${b.glow};
+                    letter-spacing:0.5px;
+                ">
+                    <i class="${b.icon}"></i> ${b.label}
+                </span>
+                <span style="color:#A9A9A9;font-size:12px;margin-left:8px;">${b.extra}</span>
+            `;
+        }
+
         // SÜPER ADMİN FONKSİYONLARI
 
         // Kullanıcı şifresini göster
@@ -6306,8 +6740,7 @@
             const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
             const currentRole = savedUsers[username].role;
             
-            // Admin ve Süper Admin rolleri verilemez - sadece Hakan süper admin
-            const roles = ['Kullanıcı', 'User', 'Premium', 'VIP'];
+            const roles = ['User', 'Premium', 'VIP'];
             let roleOptions = '';
             roles.forEach(role => {
                 roleOptions += `${role === currentRole ? '✓ ' : ''}${role}\n`;
@@ -6318,8 +6751,24 @@
             if (newRole && roles.includes(newRole)) {
                 savedUsers[username].role = newRole;
                 localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
+
+                // Firebase'e de yaz
+                if (window._firebaseReady && window.db) {
+                    window.db.collection('users').where('username', '==', username).limit(1).get()
+                        .then(snap => {
+                            if (!snap.empty) snap.docs[0].ref.update({ role: newRole });
+                        }).catch(() => {});
+                }
+
+                // Eğer değiştirilen kullanıcı şu an giriş yapmışsa localStorage'ını güncelle
+                const loggedUser = localStorage.getItem('h_sound_username');
+                if (loggedUser === username) {
+                    localStorage.setItem('h_sound_role', newRole);
+                    localStorage.setItem('h_sound_user_role', normalizeRole(newRole));
+                }
+
                 showNotification(`${username} kullanıcısının rolü "${newRole}" olarak değiştirildi!`, 'success');
-                showSuperAdminPage(); // Sayfayı yenile
+                showSuperAdminPage();
             } else if (newRole) {
                 showNotification('Geçersiz rol! Lütfen listeden bir rol seçin.', 'error');
             }
@@ -6357,15 +6806,27 @@
         }
 
         async function confirmDeleteUser(username) {
+            // localStorage'dan sil
             const savedUsers = JSON.parse(localStorage.getItem('h_sound_users') || '{}');
             delete savedUsers[username];
             localStorage.setItem('h_sound_users', JSON.stringify(savedUsers));
 
-            if (window.db && location.protocol !== 'file:') {
+            // Firebase'den sil + deleted flag koy (Auth silemeyiz, ama girişi engelleriz)
+            if (window._firebaseReady && window.db) {
                 try {
-                    await window.db.collection('users').doc(username).delete().catch(() => {});
+                    const snap = await window.db.collection('users').where('username', '==', username).limit(1).get();
+                    if (!snap.empty) {
+                        // Önce deleted flag koy (giriş engellensin)
+                        await snap.docs[0].ref.update({ deleted: true, deletedAt: new Date().toISOString() });
+                        // Sonra dokümanı sil
+                        await snap.docs[0].ref.delete().catch(() => {});
+                    }
                     await window.db.collection('userFriends').doc(username).delete().catch(() => {});
-                } catch(e) {}
+                    await window.db.collection('friendRequests').where('from', '==', username).get()
+                        .then(s => s.forEach(d => d.ref.delete())).catch(() => {});
+                    await window.db.collection('friendRequests').where('to', '==', username).get()
+                        .then(s => s.forEach(d => d.ref.delete())).catch(() => {});
+                } catch(e) { console.log('confirmDeleteUser error:', e); }
             }
 
             showNotification(`${username} silindi!`, 'success');
@@ -6382,10 +6843,30 @@
             const mainApp = document.getElementById('main-app');
 
             if (val === 'true' && username) {
-                loginScreen.classList.add('hidden');
-                mainApp.style.display = 'flex';
+                // Bakım modu kontrolü (giriş yapmış kullanıcılar için)
+                if (window._firebaseReady && window.db) {
+                    window.db.collection('settings').doc('maintenance').get().then(doc => {
+                        const isOn = doc.exists && doc.data().enabled === true;
+                        const role = localStorage.getItem('h_sound_role') || '';
+                        if (isOn && role !== 'superadmin') {
+                            localStorage.setItem('h_sound_logged_in', 'false');
+                            window.location.replace('login.html');
+                            return;
+                        }
+                        loginScreen.classList.add('hidden');
+                        mainApp.style.display = 'flex';
+                        if (typeof setupFriendRequestListener === 'function') setupFriendRequestListener();
+                    }).catch(() => {
+                        loginScreen.classList.add('hidden');
+                        mainApp.style.display = 'flex';
+                        if (typeof setupFriendRequestListener === 'function') setupFriendRequestListener();
+                    });
+                } else {
+                    loginScreen.classList.add('hidden');
+                    mainApp.style.display = 'flex';
+                    if (typeof setupFriendRequestListener === 'function') setupFriendRequestListener();
+                }
             } else {
-                // login.html'e yönlendir
                 window.location.replace('login.html');
             }
         }
@@ -6506,10 +6987,188 @@
         function initializeApp() {
             initializeUserRole();
             setupGlobalThumbnailErrorHandling();
-            showHomePage();
             loadLocalData();
             setupInfiniteScroll();
+
+            // Sayfa yenilenince son menüde kal
+            const savedView = sessionStorage.getItem('h_sound_current_view') || 'home';
+            switch(savedView) {
+                case 'search': showSearchPage(); break;
+                case 'playlists': showPlaylistsPage(); break;
+                case 'friends': showFriendsPage(); break;
+                case 'downloads': showDownloadsPage(); break;
+                case 'recently-played': showRecentlyPlayedPage(); break;
+                case 'settings': showSettingsPage(); break;
+                case 'superadmin': showSuperAdminPage(); break;
+                default: showHomePage();
+            }
+
+            // Firebase'de Hakan'ı superadmin yap
+            setupHakanSuperAdmin();
+
+            // Arkadaşlık isteklerini anlık dinle
+            setupFriendRequestListener();
+
+            // Bakım modunu anlık dinle
+            setupMaintenanceListener();
+
+            // Kullanıcının rolünü anlık dinle
+            setupRoleListener();
+
             console.log('🎉 H-Sound ready!');
+        }
+
+        // Bakım modunu anlık izle — açılınca overlay göster
+        let maintenanceUnsubscribe = null;
+        function setupMaintenanceListener() {
+            if (!window._firebaseReady || !window.db) return;
+            const currentRole = localStorage.getItem('h_sound_role') || '';
+            if (maintenanceUnsubscribe) { maintenanceUnsubscribe(); maintenanceUnsubscribe = null; }
+
+            maintenanceUnsubscribe = window.db.collection('settings').doc('maintenance')
+                .onSnapshot(doc => {
+                    const isOn = doc.exists && doc.data().enabled === true;
+                    const role = localStorage.getItem('h_sound_role') || '';
+                    const existing = document.getElementById('maintenance-overlay');
+
+                    if (isOn && role !== 'superadmin') {
+                        if (!existing) {
+                            const overlay = document.createElement('div');
+                            overlay.id = 'maintenance-overlay';
+                            overlay.style.cssText = `
+                                position:fixed;top:0;left:0;width:100%;height:100%;
+                                background:rgba(0,0,0,0.92);z-index:99999;
+                                display:flex;flex-direction:column;align-items:center;justify-content:center;
+                                color:white;text-align:center;padding:30px;box-sizing:border-box;
+                            `;
+                            overlay.innerHTML = `
+                                <div style="font-size:64px;margin-bottom:20px;">🔧</div>
+                                <h1 style="color:#E67E22;font-size:28px;margin:0 0 12px;">Bakım Modu</h1>
+                                <p style="color:#A9A9A9;font-size:16px;max-width:400px;line-height:1.6;">
+                                    H-Sound şu an bakım modunda.<br>Kısa süre içinde geri döneceğiz.
+                                </p>
+                                <div style="margin-top:30px;width:40px;height:4px;background:#E67E22;border-radius:2px;animation:pulse 1.5s infinite;"></div>
+                            `;
+                            document.body.appendChild(overlay);
+                        }
+                    } else {
+                        if (existing) existing.remove();
+                    }
+                }, () => {});
+        }
+
+        // Kullanıcının rolünü Firebase'den anlık izle
+        let roleUnsubscribe = null;
+        function setupRoleListener() {
+            if (!window._firebaseReady || !window.db) return;
+            const uid = localStorage.getItem('h_sound_uid');
+            if (!uid) return;
+            if (roleUnsubscribe) { roleUnsubscribe(); roleUnsubscribe = null; }
+
+            roleUnsubscribe = window.db.collection('users').doc(uid)
+                .onSnapshot(doc => {
+                    if (!doc.exists) return;
+                    const newRole = doc.data().role || 'user';
+                    const displayRole = normalizeRole(newRole);
+                    localStorage.setItem('h_sound_role', newRole);
+                    localStorage.setItem('h_sound_user_role', displayRole);
+                    // Ayarlar sayfası açıksa yenile
+                    if (currentView === 'settings') showSettingsPage();
+                    // Superadmin linkini güncelle
+                    if (superadminLink) {
+                        if (displayRole === 'Süper Admin') superadminLink.classList.remove('hidden');
+                        else superadminLink.classList.add('hidden');
+                    }
+                }, () => {});
+        }
+
+        // Firebase'de Hakan hesabını superadmin olarak ayarla
+        async function setupHakanSuperAdmin() {
+            if (!window.db || location.protocol === 'file:') return;
+            try {
+                // Önce UID ile dene (login.html'den kaydedilmiş olabilir)
+                const uid = localStorage.getItem('h_sound_uid');
+                const loggedUsername = localStorage.getItem('h_sound_username');
+
+                if (uid && loggedUsername === 'Hakan') {
+                    await window.db.collection('users').doc(uid).set({
+                        username: 'Hakan',
+                        role: 'superadmin'
+                    }, { merge: true });
+                    console.log('🔥 Hakan (UID) superadmin olarak güncellendi');
+                    return;
+                }
+
+                // UID yoksa username ile ara
+                const snap = await window.db.collection('users').where('username', '==', 'Hakan').limit(1).get();
+                if (!snap.empty) {
+                    const data = snap.docs[0].data();
+                    if (data.role !== 'superadmin') {
+                        await snap.docs[0].ref.update({ role: 'superadmin' });
+                        console.log('🔥 Hakan superadmin olarak güncellendi (Firebase)');
+                    }
+                }
+            } catch(e) { console.log('setupHakanSuperAdmin error:', e); }
+        }
+
+        // Arkadaşlık isteklerini anlık dinle (Firestore onSnapshot)
+        let friendRequestUnsubscribe = null;
+        let friendListUnsubscribe = null;
+
+        function setupFriendRequestListener() {
+            if (!window.db || location.protocol === 'file:') return;
+            const currentUser = localStorage.getItem('h_sound_username');
+            if (!currentUser) return;
+
+            if (friendRequestUnsubscribe) { friendRequestUnsubscribe(); friendRequestUnsubscribe = null; }
+
+            friendRequestUnsubscribe = window.db.collection('friendRequests')
+                .where('to', '==', currentUser)
+                .where('status', '==', 'pending')
+                .onSnapshot(snap => {
+                    const incoming = [];
+                    snap.forEach(doc => incoming.push(doc.data().from));
+
+                    incoming.forEach(from => {
+                        if (!friendRequests.includes(from)) friendRequests.push(from);
+                    });
+                    friendRequests = friendRequests.filter(f => incoming.includes(f));
+                    localStorage.setItem(`h_sound_friend_requests_${currentUser}`, JSON.stringify(friendRequests));
+
+                    const badge = document.getElementById('friend-req-badge');
+                    if (badge) {
+                        badge.textContent = friendRequests.length;
+                        badge.style.display = friendRequests.length > 0 ? 'inline-block' : 'none';
+                    }
+
+                    if (currentView === 'friends') {
+                        const countEl = document.getElementById('requests-count');
+                        if (countEl) {
+                            countEl.textContent = friendRequests.length;
+                            countEl.style.background = friendRequests.length > 0 ? '#E74C3C' : '#555';
+                        }
+                        displayFriendRequests();
+                    }
+                }, err => console.log('friendRequest listener error:', err));
+
+            // Arkadaş listesini anlık dinle — karşı taraf kaldırınca burada da düşsün
+            if (friendListUnsubscribe) { friendListUnsubscribe(); friendListUnsubscribe = null; }
+
+            friendListUnsubscribe = window.db.collection('userFriends').doc(currentUser)
+                .onSnapshot(doc => {
+                    if (!doc.exists) return;
+                    const fbFriends = doc.data().friends || [];
+                    // Kaldırılan arkadaşları yerel listeden de çıkar
+                    const removed = friends.filter(f => !fbFriends.includes(f));
+                    if (removed.length > 0) {
+                        friends = friends.filter(f => fbFriends.includes(f));
+                        localStorage.setItem(`h_sound_friends_${currentUser}`, JSON.stringify(friends));
+                        removed.forEach(name => {
+                            showNotification(`${name} sizi arkadaş listesinden çıkardı`, 'info');
+                        });
+                        if (currentView === 'friends') renderFriendsPage();
+                    }
+                }, () => {});
         }
     </script>
 </body>
